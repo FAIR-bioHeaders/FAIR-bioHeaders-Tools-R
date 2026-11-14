@@ -1,8 +1,11 @@
-# Native acceptance, digest layer. R only: no Python, no foreign toolkit, no oracle.
+# Native acceptance: R only. This job is the acceptance path for this package.
 #
-# This is the first increment of the acceptance spine. The shared-vector run, the vendoring
-# audit and the draft-suite runs join it with the reader, in the follow-up PR of this stack;
-# until then the tests here are the digest layer's own published-vector checks.
+# It installs an R runtime and the R packages this package declares, builds the package,
+# runs R CMD check (which runs the testthat suites, including the shared-vector acceptance
+# run), then runs the vendoring audit and the command-line vector report. It installs no
+# Python, no `fair-bioheaders`, and no other foreign-language implementation, and a guard
+# step asserts that the package's own code never shells out to one. The reference-toolkit
+# differential lives in reference-differential.yaml, separate and non-blocking.
 name: Native acceptance
 
 on:
@@ -16,7 +19,7 @@ permissions:
 
 jobs:
   check:
-    name: R CMD check (${{ matrix.os }})
+    name: R CMD check + shared vectors (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,12 +27,21 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         r: ["release"]
         include:
+          # the older release is the floor this package claims; the digest core is C99 and
+          # the schema layer needs jsonvalidate >= 1.5.0 for its ajv 2020-12 path
           - os: ubuntu-latest
             r: oldrel-3
     env:
+      RHUB_PLATFORM: ${{ matrix.os }}
+      # keep R's package cache off the workflow's critical path
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: "true"
     steps:
       - uses: actions/checkout@v4
+
+      - name: Record the R runtime
+        run: |
+          which R Rscript || true
+          R --version | head -2
 
       - uses: r-lib/actions/setup-pandoc@v2
 
@@ -39,12 +51,21 @@ jobs:
           use-public-rspm: true
 
       - name: Install the declared dependencies only
-        run: install.packages(c("jsonlite", "testthat"))
+        run: |
+          install.packages(c("digest", "jsonlite", "jsonvalidate", "yaml", "testthat",
+                             "withr", "roxygen2"))
         shell: Rscript {0}
 
-      - name: Assert no foreign-language implementation is declared or called
+      - name: Assert no foreign-language implementation was installed
         run: |
+          set -u
+          # This job must not gain a Python or toolkit dependency. The check is on the R
+          # library paths and on what the package declares, not on what the runner image
+          # happens to ship.
           Rscript -e '
+            libs <- unlist(.libPaths())
+            present <- rownames(installed.packages(lib.loc = libs))
+            stopifnot(!any(tolower(present) %in% c("reticulate", "minirustyr")))
             d <- read.dcf("DESCRIPTION")
             fields <- tolower(c("Imports", "Suggests", "LinkingTo", "SystemRequirements"))
             txt <- paste(unlist(d[, intersect(fields, colnames(d)), drop = TRUE]), collapse = " ")
@@ -53,10 +74,13 @@ jobs:
             }
             cat("declared dependencies:", txt, "\n")
           '
+          # the package's own code must never shell out
           Rscript -e '
             files <- list.files("R", pattern = "[.]R$", full.names = TRUE)
             code <- unlist(lapply(files, readLines, warn = FALSE))
-            hits <- grep("system2\\(|system\\(|shell\\(|python", code, value = TRUE)
+            hits <- grep("system2\\(|system\\(|shell\\(|sys\\.executable|python", code,
+              value = TRUE
+            )
             if (length(hits)) {
               writeLines(hits)
               stop("R/ must not invoke an external process; found ", length(hits), " line(s)")
@@ -64,35 +88,34 @@ jobs:
             cat("no external-process calls in R/\n")
           '
 
-      - name: Show what the compiled core is checked against
-        run: |
-          Rscript -e '
-            # the load-time self-test is the guard against a miscompiled core: if it fails,
-            # the package does not load at all, so this step is the whole test
-            library(FAIRbioHeadersTools)
-            cat("abc  ->", FAIRbioHeadersTools::bh_sha512_256_b64(charToRaw("abc")), "\n")
-            cat("expect  UwSOJoGUHvmbLim3a0x9q+TC0MY0/G1G4OLxMQfnryM=\n")
-            cat("loaded: the published 512/256 sample digests reproduced at load time\n")
-          '
+      - name: Audit the vendored upstream data against its provenance
+        run: Rscript tools/check_vendoring.R
 
       - name: Build
         run: R CMD build .
 
       - name: R CMD check
         run: |
-          mkdir -p "$RUNNER_TEMP/check-reports"
           tarball=$(ls FAIRbioHeadersTools_*.tar.gz)
+          mkdir -p "$RUNNER_TEMP/check-reports"
           R CMD check --no-manual --output="$RUNNER_TEMP/check-reports" "$tarball" 2>&1 |
-            tee "$RUNNER_TEMP/check-reports/check.log"
+            tee "$RUNNER_TEMP/check-reports/R CMD check.log"
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             echo "::error::R CMD check failed with status $status"
             exit "$status"
           fi
 
-      - name: Upload the check log
+      - name: Shared-vector acceptance report
+        run: |
+          Rscript tools/run_conformance.R --report "$GITHUB_WORKSPACE/vector-report"
+          Rscript tools/run_conformance.R --draft --report "$GITHUB_WORKSPACE/vector-report"
+
+      - name: Upload native reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: check-${{ matrix.os }}-r${{ matrix.r }}
-          path: ${{ runner.temp }}/check-reports
+          name: native-${{ matrix.os }}-r${{ matrix.r }}
+          path: |
+            vector-report
+            ${{ runner.temp }}/check-reports

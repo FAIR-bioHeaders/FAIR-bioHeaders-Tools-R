@@ -1,6 +1,6 @@
+^\.github$
+^AGENTS.md$
 ^docs$
 ^taskcheck.*$
+^taskcheck$
 ^tools$
-^AGENTS.md$
-^[.]github$
-^vector-report$
