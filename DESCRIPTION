@@ -1,0 +1,8 @@
+Package: FAIRbioHeadersTools
+Title: R Tools for FAIR-bioHeaders
+Version: 0.1.0
+Authors@R: person("FAIR-bioHeaders-Tools contributors", role = c("aut", "cre"))
+Description: A generic R package foundation for tools supporting
+    FAIR-bioHeaders.
+License: GPL-3
+Encoding: UTF-8
