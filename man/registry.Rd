@@ -11,11 +11,14 @@ Two tables are kept apart on purpose.
 \item \code{\link[=bh_contracts]{bh_contracts()}} lists the frozen contract copies under \verb{inst/schemas/}, one per
 header type per version, with the release, the commit of the source tag and the
 SHA-256 of the bytes. Selection rules V1 to V6 name these.
-\item \code{\link[=bh_types]{bh_types()}} lists the header types this revision reads: FHR, FHP and FHGFF3,
-all released. The family has five type names; FHT and FHGM have no released
-contract - no \code{schemaVersion}, no registry row and no w3id URL - and drafts take
-no release form (docs/SCHEMA-VERSIONS.md V7). Neither is registered, bundled or
-read at this revision; rule V7 recognition arrives with the draft lane, and until
-then an FHT citation is selected under V5 exactly as the released rules specify.
+\item \code{\link[=bh_types]{bh_types()}} lists the family: FHR, FHP and FHGFF3 as released, FHT as a draft with
+no released contract, and FHGM as a draft \emph{model} type that is not a header type at
+all - its records ride inside an FHGFF3 header under \code{x-fhgm-models}, so they carry
+no \code{schema} field to select on and no serialization of their own.
 }
+
+Neither table is a support claim beyond what \code{\link[=bh_capability]{bh_capability()}} states operation by
+operation. FHT and FHGM get no \code{schemaVersion}, no registry row and no w3id URL here,
+and they stay out of \code{inst/schemas/versions.json}: rule V7, drafts take no release
+form.
 }

@@ -62,7 +62,7 @@ NULL
         reason = .bh_not_run_reasons[[fmt]] %||% "not-run: no native reader"
       ))
     }
-    a <- .bh_analyze(file.path(dir, v$file), format = fmt)
+    a <- .bh_analyze(file.path(dir, v$file), format = fmt, draft = FALSE)
     list(
       id = v$id, format = fmt, expected = v$expected, ran = TRUE,
       observed = if (isTRUE(a$valid)) "valid" else "invalid",

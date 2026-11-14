@@ -26,6 +26,7 @@ formats must all run, and their total must equal the pinned 228.
 agrees for a reason this package does not verify is reported as a gap.
 }
 
-The rule V7 draft lane, and the FHT development suite it runs separately, arrive
-with the draft-lane revision; nothing about this runner reads draft bytes.
+\code{\link[=bh_draft_vectors]{bh_draft_vectors()}} runs the FHT development suite, which is separate published material
+from a different repository: it runs only with the rule V7 lane open, its results are
+labelled draft evidence, and it is never counted toward the 291.
 }

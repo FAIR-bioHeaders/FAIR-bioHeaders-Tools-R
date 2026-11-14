@@ -34,7 +34,7 @@ NULL
 #' The shared suite names its containers - `x.fhp.fasta`, `x.fhr.fasta`, `x.fhgff3.gff3`,
 #' `x.fhr.gfa`, and `.gz` for the compressed transport - and the prefix (`;~` versus `#~`)
 #' plus the block boundary (`>` record marker versus `##gff-version 3`) follow from that.
-#' There is no content sniff here, and docs/STATUS.md records that as a gap: a file
+#' There is no content sniff here, and [bh_capability()] records that as a gap: a file
 #' whose name says nothing must pass `format`.
 #' @noRd
 .bh_guess_format <- function(path) {
@@ -57,7 +57,8 @@ NULL
 #' Full read of one file.
 #' @noRd
 .bh_analyze <- function(path, format = NULL, compressed = NA,
-                        verify_checksum = TRUE, validate_contract = TRUE) {
+                        draft = getOption("bh.draft_lane", FALSE), verify_checksum = TRUE,
+                        validate_contract = TRUE) {
   format <- format %||% .bh_guess_format(path)
   if (!format %in% names(.bh_formats)) {
     bh_abort("input", paste0("unknown serialization ", sQuote(format)))
@@ -88,8 +89,15 @@ NULL
   }
   if (!is.null(record)) {
     warnings_out <- c(warnings_out, .bh_marker_warnings(lines, format))
-    selection <- bh_select(record$schema, schema_version = record$schemaVersion)
+    selection <- bh_select(record$schema, schema_version = record$schemaVersion, draft = draft)
     warnings_out <- c(warnings_out, selection$warnings)
+    # Rule V7 requires the draft notice on *every* record read through the lane, so it is
+    # signalled here and not merely collected: a caller who never looks at $warnings still
+    # hears about it. Everything else is collected and surfaced by bh_read(strict = TRUE),
+    # because those diagnostics describe the file rather than the reader's mode.
+    if (identical(selection$status, "draft")) {
+      for (w in selection$warnings) bh_warn("draft", "%s", w)
+    }
   }
 
   if (verify_checksum && cs$ok) {
@@ -143,6 +151,9 @@ NULL
 #' @param format The serialization. Inferred from the file name by default; pass it when
 #'   the name does not say.
 #' @param compressed `TRUE`, `FALSE` or `NA` to detect a gzip member.
+#' @param draft Draft lane: `FALSE` (default), `TRUE`, or draft type names such as
+#'   `"FHT"`. With the lane closed, a draft citation is selected under V5 exactly as
+#'   before the lane existed.
 #' @param verify_checksum,validate_contract Do the byte verification and the contract
 #'   validation. Turning either off narrows the answer, and the result records that.
 #' @param ... Passed to the same reader by [bh_checksum()] and [bh_validate()].
@@ -153,9 +164,10 @@ NULL
 #' file.exists(f)
 #' @export
 bh_read <- function(path, format = NULL, compressed = NA,
-                    verify_checksum = TRUE, validate_contract = TRUE, ...) {
+                    draft = getOption("bh.draft_lane", FALSE), verify_checksum = TRUE,
+                    validate_contract = TRUE, ...) {
   a <- .bh_analyze(path,
-    format = format, compressed = compressed,
+    format = format, compressed = compressed, draft = draft,
     verify_checksum = verify_checksum, validate_contract = validate_contract
   )
   structure(
@@ -227,9 +239,10 @@ bh_verify <- function(path, ...) isTRUE(bh_checksum(path, ...)$valid)
 #'
 #' @rdname bh_read
 #' @export
-bh_validate <- function(path, format = NULL, compressed = NA, ...) {
+bh_validate <- function(path, format = NULL, compressed = NA,
+                        draft = getOption("bh.draft_lane", FALSE), ...) {
   a <- .bh_analyze(path,
-    format = format, compressed = compressed,
+    format = format, compressed = compressed, draft = draft,
     validate_contract = TRUE, ...
   )
   list(

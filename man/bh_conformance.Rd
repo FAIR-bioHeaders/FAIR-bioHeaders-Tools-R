@@ -4,7 +4,7 @@
 \alias{bh_conformance}
 \title{Runs the shared conformance vectors through the native reader}
 \usage{
-bh_conformance(suite = NULL, formats = NULL, limit = NULL)
+bh_conformance(suite = NULL, formats = NULL, draft = FALSE, limit = NULL)
 }
 \arguments{
 \item{suite}{A directory holding \code{manifest.json} and the vector files; defaults to the
@@ -12,6 +12,9 @@ vendored copy under \verb{tests/conformance/}.}
 
 \item{formats}{Restrict the run to these formats. The accounting still covers all 291,
 and the count guards are skipped, because a partial run is not an acceptance run.}
+
+\item{draft}{Passed to the reader; \code{FALSE} (the default) runs the released vectors exactly
+as they were before the draft lane existed.}
 
 \item{limit}{Run only the first N vectors per format, for a quick local pass.}
 }

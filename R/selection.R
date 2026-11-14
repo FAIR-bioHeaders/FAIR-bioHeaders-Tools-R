@@ -15,11 +15,8 @@
 #'   number is invented for it and the lane never reads it as a draft.
 #' * V6 raw-main plus the *number* 1 is an FHR 1 record, checked against v0.3.1's schema
 #'   and warned about as deprecated, not invalid.
-#'
-#' Rule V7 (opt-in recognition of unreleased draft contracts) is not implemented in
-#' this revision of the package; it arrives with the draft lane. Until then there is
-#' no draft form of any kind here: an FHT citation behaves like any other value under
-#' V5, exactly as the released rules have always specified.
+#' * V7 an unreleased draft, recognised only when the caller asked for the lane, read
+#'   against the bytes this package was built with and warned about on every record.
 #'
 #' @name selection
 NULL
@@ -35,11 +32,15 @@ NULL
 #'
 #' @param value The record's `schema` value.
 #' @param schema_version The record's `schemaVersion`, when known (rule V6 needs it).
+#' @param draft Draft-lane request: `FALSE` (default) or a character vector of draft
+#'   types to recognise, for example `"FHT"`. Only the raw-main URL of the development
+#'   repository that owns the type is in the lane.
 #' @return A list with `rule`, `header_type`, `release`, `file`, `schema_version`,
-#'   `status` (`released`, `fhr1` or `unsupported`), `message` and `warnings`.
+#'   `status` (`released`, `fhr1`, `draft` or `unsupported`), `message` and `warnings`.
 #' @export
-bh_select <- function(value, schema_version = NULL) {
+bh_select <- function(value, schema_version = NULL, draft = FALSE) {
   reg <- .bh_registry()
+  lane <- .bh_lane_types(draft)
 
   pick <- function(type, release, rule) {
     v <- reg$releases[[release]][[.bh_type_name(type)]]
@@ -122,6 +123,14 @@ bh_select <- function(value, schema_version = NULL) {
                paste(bh_releases(.bh_type_name(type)), collapse = ", "), ")")))
     }
     return(pick(type, release, "V3"))
+  }
+
+  # V7: only a raw-main URL of the development repository that owns a draft type, and
+  # only when the caller asked for the lane.
+  for (t in names(lane)) {
+    if (isTRUE(lane[[t]]) && identical(value, .bh_draft_citation(t))) {
+      return(.bh_draft_selection(t, value))
+    }
   }
 
   # V5

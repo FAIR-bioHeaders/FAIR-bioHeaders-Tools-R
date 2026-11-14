@@ -13,16 +13,15 @@ The checksum is a vendored FIPS 180-4 SHA-512/256 implementation
 (\code{\link[=bh_sha512_256]{bh_sha512_256()}}, \code{\link[=bh_sha512_256_file]{bh_sha512_256_file()}}); \code{docs/DIGEST.md} in the source
 repository records why it is not delegated to \code{digest}, the R \code{openssl} package,
 a system command or the Python toolkit. Reading and validation are \code{\link[=bh_read]{bh_read()}},
-\code{\link[=bh_verify]{bh_verify()}} and \code{\link[=bh_validate]{bh_validate()}}. What this package does not implement is
-declared in docs/STATUS.md and by the not-run reasons of the shared-vector run.
+\code{\link[=bh_verify]{bh_verify()}} and \code{\link[=bh_validate]{bh_validate()}}. The type and operation coverage, including
+what this package does not implement, is \code{\link[=bh_capability]{bh_capability()}}.
 }
 \section{Support statement}{
 
 Released contracts: FHR 2.1, FHP 1.2 and FHGFF3 1.2 (specification v0.6.0).
-FHT and FHGM have no released contract - no \code{schemaVersion}, no registry row, no
-w3id URL - and this revision of the package does not read them at all: the rule V7
-opt-in draft lane is a separate, later addition. An FHT citation is therefore
-selected under rule V5 exactly as the released rules specify.
+FHT and FHGM have no released contract: no \code{schemaVersion}, no registry row and
+no w3id URL. They are reachable only through the explicit rule V7 draft lane
+(\code{\link[=bh_draft_lane]{bh_draft_lane()}}), and this package makes no released-support claim for either.
 }
 
 \author{

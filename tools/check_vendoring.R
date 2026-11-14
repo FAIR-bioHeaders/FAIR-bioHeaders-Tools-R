@@ -111,12 +111,7 @@ if (flag("--fresh")) {
       report(FALSE, paste0(nm, ": no --", tolower(nm), " checkout given"))
       next
     }
-    row <- Filter(function(r) identical(r$header_type, nm), prov$files)
-    if (!length(row)) {
-      report(FALSE, paste0(nm, ": no draft row is registered in inst/VENDORED.json"))
-      next
-    }
-    row <- row[[1]]
+    row <- Filter(function(r) identical(r$header_type, nm), prov$files)[[1]]
     st <- system2("git", c("-C", shQuote(repo), "fetch", "--quiet", "origin"),
       stdout = TRUE, stderr = TRUE
     )

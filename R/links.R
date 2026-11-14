@@ -1,7 +1,7 @@
-#' Parent-link verification (recomputing the checksums a header cites for its parents)
+#' Parent-link verification (the rule the FHT development suite calls C3)
 #'
 #' A header may cite a parent file: FHGFF3 through `derivedFrom[].genome.checksum` (and the
-#' `annotates` form) and FHP through its own `derivedFrom` entries. The cited value is
+#' `annotates` form), FHT and FHP through their own `derivedFrom` entries. The cited value is
 #' the SHA-512/256 of the parent's bytes, so verifying a link means recomputing it over the
 #' parent the caller names. Nothing about that is inferable from the child alone: two
 #' assemblies can share an accession, and a file name is not provenance. So the parent paths
@@ -19,12 +19,12 @@ NULL
 #' The parent links a header cites
 #'
 #' @param path A file carrying a header with `derivedFrom` entries.
-#' @param format,compressed Passed to the reader.
+#' @param format,compressed,draft Passed to the reader.
 #' @return A data frame with one row per cited link: `index`, `header_type`,
 #'   `relationship`, `accession`, `stated_checksum`.
 #' @export
-bh_parent_links <- function(path, format = NULL, compressed = NA) {
-  a <- .bh_analyze(path, format = format, compressed = compressed,
+bh_parent_links <- function(path, format = NULL, compressed = NA, draft = getOption("bh.draft_lane", FALSE)) {
+  a <- .bh_analyze(path, format = format, compressed = compressed, draft = draft,
     verify_checksum = FALSE, validate_contract = FALSE
   )
   if (is.null(a$record)) return(.bh_empty_links())
@@ -58,13 +58,14 @@ bh_parent_links <- function(path, format = NULL, compressed = NA) {
 #' @param parent Parent file paths, matched to the cited links in order. A named vector
 #'   (`c(FHR = "genome.fhr.fasta")`) matches by the cited `headerType` instead; entries no
 #'   name covers stay `unchecked`.
-#' @param format,compressed Passed to the reader.
+#' @param format,compressed,draft Passed to the reader.
 #' @return A list with `links` (the cited links plus `parent`, `computed`, `verdict` -
 #'   `match`, `mismatch` or `unchecked`), `all_matched`, `mismatched` and `unchecked`
 #'   counts.
 #' @export
-bh_verify_links <- function(path, parent = NULL, format = NULL, compressed = NA) {
-  links <- bh_parent_links(path, format = format, compressed = compressed)
+bh_verify_links <- function(path, parent = NULL, format = NULL, compressed = NA,
+                            draft = getOption("bh.draft_lane", FALSE)) {
+  links <- bh_parent_links(path, format = format, compressed = compressed, draft = draft)
   if (!nrow(links)) {
     return(list(links = links, all_matched = TRUE, mismatched = 0L, unchecked = 0L))
   }
