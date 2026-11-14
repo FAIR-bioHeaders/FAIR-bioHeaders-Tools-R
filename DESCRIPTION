@@ -5,5 +5,5 @@ Authors@R: person("FAIR-bioHeaders-Tools contributors", email = "molik@fhref.org
     role = c("aut", "cre"))
 Description: A generic R package foundation for tools supporting
     FAIR-bioHeaders.
-License: GPL-3
+License: MPL-2.0 | file LICENSE
 Encoding: UTF-8
