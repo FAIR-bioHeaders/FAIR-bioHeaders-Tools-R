@@ -31,6 +31,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Record the R runtime
+        run: |
+          which R Rscript || true
+          R --version | head -2
+
       - uses: r-lib/actions/setup-pandoc@v2
 
       - uses: r-lib/actions/setup-r@v2
@@ -42,41 +47,30 @@ jobs:
         run: install.packages(c("jsonlite", "testthat"))
         shell: Rscript {0}
 
-      - name: Assert no foreign-language implementation is declared or called
-        run: |
-          Rscript -e '
-            d <- read.dcf("DESCRIPTION")
-            fields <- tolower(c("Imports", "Suggests", "LinkingTo", "SystemRequirements"))
-            txt <- paste(unlist(d[, intersect(fields, colnames(d)), drop = TRUE]), collapse = " ")
-            if (grepl("python|reticulate|virtualenv|conda", txt, ignore.case = TRUE)) {
-              stop("DESCRIPTION names a foreign-language dependency: ", txt)
-            }
-            cat("declared dependencies:", txt, "\n")
-          '
-          Rscript -e '
-            files <- list.files("R", pattern = "[.]R$", full.names = TRUE)
-            code <- unlist(lapply(files, readLines, warn = FALSE))
-            hits <- grep("system2\\(|system\\(|shell\\(|python", code, value = TRUE)
-            if (length(hits)) {
-              writeLines(hits)
-              stop("R/ must not invoke an external process; found ", length(hits), " line(s)")
-            }
-            cat("no external-process calls in R/\n")
-          '
-
-      - name: Show what the compiled core is checked against
-        run: |
-          Rscript -e '
-            # the load-time self-test is the guard against a miscompiled core: if it fails,
-            # the package does not load at all, so this step is the whole test
-            library(FAIRbioHeadersTools)
-            cat("abc  ->", FAIRbioHeadersTools::bh_sha512_256_b64(charToRaw("abc")), "\n")
-            cat("expect  UwSOJoGUHvmbLim3a0x9q+TC0MY0/G1G4OLxMQfnryM=\n")
-            cat("loaded: the published 512/256 sample digests reproduced at load time\n")
-          '
+      - name: Assert the package is native, structurally
+        run: Rscript tools/assert_native.R
 
       - name: Build
         run: R CMD build .
+
+      - name: Install
+        run: R CMD INSTALL FAIRbioHeadersTools_0.1.0.tar.gz
+
+      - name: Show what the compiled core is checked against
+        run: |
+          # .onLoad() runs the published sample digests through the compiled core and refuses
+          # to load the package when they disagree, so a successful library() call here is the
+          # assertion; the printed value is what a reader checks against docs/DIGEST.md
+          Rscript -e '
+            library(FAIRbioHeadersTools)
+            cat("abc    ->", bh_sha512_256_b64(charToRaw("abc")), "\n")
+            cat("expect  UwSOJoGUHvmbLim3a0x9q+TC0MY0/G1G4OLxMQfnryM=\n")
+            cat("bytes   -> sha512-256:", bh_digest_bytes("sha512-256"),
+                "| sha512:", bh_digest_bytes("sha512"), "\n")
+            cat("trap    -> truncated SHA-512 differs:",
+                !identical(substr(bh_sha512(charToRaw("abc"), "hex"), 1, 64),
+                           bh_sha512_256(charToRaw("abc"), "hex")), "\n")
+          '
 
       - name: R CMD check
         run: |
