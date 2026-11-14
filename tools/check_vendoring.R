@@ -15,6 +15,10 @@
 #' Exit status is nonzero on any drift, with one line per finding. Advisory for the
 #' shared-guidance text comparisons of the federation; normative for these bytes.
 
+# Local definition: base R only gained %||% in 4.4, and this script runs on the older
+# releases the CI matrix covers.
+`%||%` <- function(a, b) if (is.null(a) || !length(a)) b else a
+
 .options <- commandArgs(trailingOnly = TRUE)
 flag <- function(name) name %in% .options
 arg <- function(name, default = NULL) {
