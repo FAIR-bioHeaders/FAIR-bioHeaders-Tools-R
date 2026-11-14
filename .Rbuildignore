@@ -1,1 +1,6 @@
 ^docs$
+^taskcheck.*$
+^tools$
+^AGENTS.md$
+^[.]github$
+^vector-report$
