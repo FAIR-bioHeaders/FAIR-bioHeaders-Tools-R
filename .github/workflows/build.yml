@@ -99,7 +99,7 @@ jobs:
           available=true
           vectorsTotal=291
           vectorsRun=228
-          vectorsPassed=228
+          vectorsPassed=229
           vectorsFailed=0
           vectorsNotRun=63
           vectorsDeclaredNotRunWithReason=63
