@@ -86,12 +86,9 @@ compression function is right" from "one value came out right by luck".
 
 ### 2. The reference implementation, through the shared suite
 
-(Scope note for this revision: the digest layer and its published-vector tests land here; the
-comparison against the suite's own stated checksums
-(`tests/testthat/test-digest-fixtures.R`) and the supplemental client differential
-(`tools/differential_digest.R`) land with the reader in the next PR of this stack. Every
-number quoted below was executed locally on the combined work before the split, and each PR's
-status comment reports the run it makes reproducible.)
+(Landed with the reader: `tests/testthat/test-digest-fixtures.R` compares against the suite's
+own stated checksums, and `tools/differential_digest.R` runs the supplemental client
+comparison. Both are reproducible from this branch; the numbers below are what they print.)
 
 The strongest evidence is not a hash of `"abc"`: it is that the shared suite states the
 checksum of its own bytes. For **all 87 valid sequence-format vectors** at the v0.6.0
@@ -103,7 +100,29 @@ pinned data, not a live Python call: no test in this package invokes Python.
 
 Across the whole suite the native run agrees with the manifest on **228 of 228**
 sequence-format vectors, and the acceptance job reports all **291** as pass, fail or
-not-run-with-reason.
+not-run-with-reason:
+
+```
+$ Rscript tools/run_conformance.R
+shared v0.6.0 suite (291 vectors)
+  vectors accounted for:  291
+            not-run pass
+  fasta           0   98
+  fhgff3          0   38
+  fhp-fasta       0   36
+  gfa             0   56
+  jsonld         37    0
+  microdata      26    0
+  unexpected results:  0
+PASS: shared v0.6.0 suite (291 vectors)
+```
+
+The supplemental OpenSSL-client differential prints `OK: the vendored core agrees with the
+independent client on every input above (106 comparisons)` - 19 constructed inputs plus the 87
+fixture checksums, recomputed live by `openssl dgst -sha512-256` rather than read from a pin.
+Against the released toolkit itself (`fair-bioheaders` 0.11.0, `bioheaders verify`), the native
+verdicts and the toolkit's verdicts agree on **228 of 228** sequence vectors, and each agrees
+with the manifest on the same 228 - `tools/differential_toolkit.py`, reported and never gating.
 
 ### 3. The negative control, asserted rather than assumed
 
@@ -127,11 +146,13 @@ fails first.
 
 ## Portability, stated as it stands
 
-Verified on this revision: macOS 14 arm64 (aarch64-apple-darwin23), R 4.6.1, Apple clang 21 -
-`R CMD check --no-manual` Status OK, 44 check steps, 202 testthat assertions, 0 skips,
-0 warnings, 0 notes. The standalone C harness (31 vectors x 16 chunkings = 496 checks, all
-passing) was run against `src/sha512.c` outside R during development and is not committed as a
-package test; the same vectors are covered by `tests/testthat/test-digest-vectors.R`.
+Verified: macOS 14 arm64 (aarch64-apple-darwin23), R 4.6.1, Apple clang 21 -
+`R CMD check --no-manual` Status OK, 44 check steps, 681 testthat assertions, 0 skips,
+0 warnings, 0 notes, with the whole suite (shared 291 + FHT 66 + FHGM 31) executed inside the
+check run rather than alongside it. The empty-stub baseline on `main` was 39 check steps and
+`Status: OK` with no tests. The standalone C harness (31 vectors x 16 chunkings = 496 checks,
+all passing) was used to bring the core up outside R; it is not committed, because the same
+vectors and chunkings are covered by `tests/testthat/test-digest-vectors.R`.
 
 **Not verified**: Linux and Windows builds of the vendored core. The CI matrix runs
 `ubuntu-latest` and `macos-latest`; `windows-latest` is not claimed, and the R-specific

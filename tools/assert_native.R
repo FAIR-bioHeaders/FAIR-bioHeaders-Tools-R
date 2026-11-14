@@ -121,8 +121,8 @@ if (length(fail)) {
   for (f in fail) cat("VIOLATION: ", gsub("\\\\n", "\n", f), "\n", sep = "")
   quit(status = 1L)
 }
-uses_engine <- any(grepl("jsonvalidate", sapply(rfiles, function(f)
-  paste(readLines(f, warn = FALSE), collapse = " ")
+uses_engine <- any(grepl("jsonvalidate", vapply(rfiles, function(f)
+  paste(readLines(f, warn = FALSE), collapse = " "), ""
 )))
 cat("native: no foreign-language dependency, no external-process call",
   if (uses_engine) ", engine pinned (no function accepts an engine argument)" else

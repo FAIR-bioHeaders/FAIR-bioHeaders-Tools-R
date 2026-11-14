@@ -1,8 +1,13 @@
-# Native acceptance, digest layer. R only: no Python, no foreign toolkit, no oracle.
+# Native acceptance: R only. This job is the acceptance path for this package.
 #
-# This is the first increment of the acceptance spine. The shared-vector run, the vendoring
-# audit and the draft-suite runs join it with the reader, in the follow-up PR of this stack;
-# until then the tests here are the digest layer's own published-vector checks.
+# It installs an R runtime and the R packages this package declares, asserts that the package
+# is native in structure rather than in intent (tools/assert_native.R), builds, runs
+# R CMD check - which is where the shared-vector acceptance runs, because the suites are part
+# of the package's tests - then audits the vendored bytes and writes the vector reports.
+#
+# It installs no Python, no fair-bioheaders, and no other foreign-language implementation.
+# The reference differentials live in reference-differential.yaml: separate, supplemental,
+# continue-on-error, and never a precondition for this job.
 name: Native acceptance
 
 on:
@@ -16,7 +21,7 @@ permissions:
 
 jobs:
   check:
-    name: R CMD check (${{ matrix.os }})
+    name: R CMD check + shared vectors (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,6 +29,8 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         r: ["release"]
         include:
+          # the older release is the floor this package claims; the digest core is C99 and the
+          # schema layer needs jsonvalidate >= 1.5.0 for its ajv 2020-12 path
           - os: ubuntu-latest
             r: oldrel-3
     env:
@@ -44,38 +51,27 @@ jobs:
           use-public-rspm: true
 
       - name: Install the declared dependencies only
-        run: install.packages(c("jsonlite", "testthat"))
+        run: |
+          install.packages(c("digest", "jsonlite", "jsonvalidate", "yaml", "testthat",
+            "withr"))
         shell: Rscript {0}
+
+      - name: Install (the tools scripts load the package; R CMD check does not)
+        run: |
+          R CMD build .
+          R CMD INSTALL FAIRbioHeadersTools_0.1.0.tar.gz
 
       - name: Assert the package is native, structurally
         run: Rscript tools/assert_native.R
 
-      - name: Build
-        run: R CMD build .
-
-      - name: Install
-        run: R CMD INSTALL FAIRbioHeadersTools_0.1.0.tar.gz
-
-      - name: Show what the compiled core is checked against
-        run: |
-          # .onLoad() runs the published sample digests through the compiled core and refuses
-          # to load the package when they disagree, so a successful library() call here is the
-          # assertion; the printed value is what a reader checks against docs/DIGEST.md
-          Rscript -e '
-            library(FAIRbioHeadersTools)
-            cat("abc    ->", bh_sha512_256_b64(charToRaw("abc")), "\n")
-            cat("expect  UwSOJoGUHvmbLim3a0x9q+TC0MY0/G1G4OLxMQfnryM=\n")
-            cat("bytes   -> sha512-256:", bh_digest_bytes("sha512-256"),
-                "| sha512:", bh_digest_bytes("sha512"), "\n")
-            cat("trap    -> truncated SHA-512 differs:",
-                !identical(substr(bh_sha512(charToRaw("abc"), "hex"), 1, 64),
-                           bh_sha512_256(charToRaw("abc"), "hex")), "\n")
-          '
+      - name: Audit the vendored upstream data against its provenance
+        run: Rscript tools/check_vendoring.R
 
       - name: R CMD check
         run: |
           mkdir -p "$RUNNER_TEMP/check-reports"
           tarball=$(ls FAIRbioHeadersTools_*.tar.gz)
+          rm -rf "$RUNNER_TEMP/check-reports/FAIRbioHeadersTools.Rcheck"
           R CMD check --no-manual --output="$RUNNER_TEMP/check-reports" "$tarball" 2>&1 |
             tee "$RUNNER_TEMP/check-reports/check.log"
           status=${PIPESTATUS[0]}
@@ -84,9 +80,32 @@ jobs:
             exit "$status"
           fi
 
-      - name: Upload the check log
+      - name: Shared-vector acceptance report
+        run: |
+          Rscript tools/run_conformance.R --report "$GITHUB_WORKSPACE/vector-report"
+          Rscript tools/run_conformance.R --draft --report "$GITHUB_WORKSPACE/vector-report"
+          Rscript tools/run_conformance.R --fhgm --report "$GITHUB_WORKSPACE/vector-report"
+
+      - name: Show what the compiled core is checked against
+        run: |
+          # .onLoad() runs the published sample digests through the compiled core and refuses
+          # to load the package when they disagree, so a successful library() call here is the
+          # assertion; the printed value is what the reader compares against docs/DIGEST.md
+          Rscript -e '
+            library(FAIRbioHeadersTools)
+            cat("abc    ->", bh_sha512_256_b64(charToRaw("abc")), "\n")
+            cat("expect  UwSOJoGUHvmbLim3a0x9q+TC0MY0/G1G4OLxMQfnryM=\n")
+            cat("digests: sha512-256 =", bh_digest_bytes("sha512-256"), "bytes;",
+                "sha512 =", bh_digest_bytes("sha512"), "bytes\n")
+            cat("engine:  ajv probe -",
+                all(unlist(bh_dialect_probe())), "\n")
+          '
+
+      - name: Upload native reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: check-${{ matrix.os }}-r${{ matrix.r }}
-          path: ${{ runner.temp }}/check-reports
+          name: native-${{ matrix.os }}-r${{ matrix.r }}
+          path: |
+            vector-report
+            ${{ runner.temp }}/check-reports

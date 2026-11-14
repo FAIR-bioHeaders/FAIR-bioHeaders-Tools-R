@@ -1,0 +1,99 @@
+# Supplemental reference differential. NOT acceptance, and nothing here gates a merge.
+#
+# The native job proves the library against pinned expectations. This job asks a different
+# question - does an independent implementation still agree, and if we ever diverge, who moved?
+# A missing client or interpreter is reported as skipped and the job still passes, so a
+# foreign oracle can never turn the primary signal red or be a precondition for it.
+name: Reference differential (supplemental)
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  digest-client:
+    name: Vendored SHA-512/256 vs a system openssl client
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - run: |
+          install.packages(c("digest", "jsonlite", "jsonvalidate", "yaml", "testthat"))
+        shell: Rscript {0}
+      - run: |
+          R CMD build .
+          R CMD INSTALL FAIRbioHeadersTools_0.1.0.tar.gz
+      - name: Differential
+        run: Rscript tools/differential_digest.R
+
+  python-toolkit:
+    name: Verdicts vs the released fair-bioheaders
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - run: |
+          install.packages(c("digest", "jsonlite", "jsonvalidate", "yaml", "testthat"))
+        shell: Rscript {0}
+      - run: |
+          R CMD build .
+          R CMD INSTALL FAIRbioHeadersTools_0.1.0.tar.gz
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the reference toolkit at the pinned release
+        run: python -m pip install --quiet fair-bioheaders==0.11.0
+      - name: Native run
+        run: Rscript tools/run_conformance.R --report native
+      - name: Reference run
+        run: python3 tools/differential_toolkit.py --out toolkit-verdicts.tsv
+      - name: Compare the two reports
+        run: |
+          Rscript -e '
+            # quote = "" matters: a diagnostic field legitimately contains double quotes
+            # (a YAML value echoed back), and the default quoting rule would eat whole rows
+            nat <- utils::read.delim("native/vectors-shared.tsv", stringsAsFactors = FALSE,
+              quote = ""
+            )
+            ref <- utils::read.delim("toolkit-verdicts.tsv", stringsAsFactors = FALSE,
+              quote = ""
+            )
+            stopifnot(nrow(nat) == 291L, nrow(ref) == 228L)
+            k <- intersect(nat$id, ref$id)
+            nat <- nat[match(k, nat$id), ]
+            ref <- ref[match(k, ref$id), ]
+            native_agrees <- nat$observed == nat$expected
+            toolkit_agrees <- ref$toolkit_says == ref$expected
+            cat("compared", length(k), "sequence vectors\n")
+            cat("  native agrees with the manifest :", sum(native_agrees), "\n")
+            cat("  toolkit agrees with the manifest:", sum(toolkit_agrees), "\n")
+            moved <- k[native_agrees != toolkit_agrees]
+            if (length(moved)) {
+              cat("  vectors where the two implementations differ:\n")
+              for (i in moved) cat("   ", i, "| native", nat$observed[nat$id == i],
+                                   "| toolkit", ref$toolkit_says[ref$id == i], "\n")
+            } else {
+              cat("  no divergence between the two implementations\n")
+            }
+            # reported, never gating: this job is continue-on-error and is not acceptance
+          '
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reference-differential
+          path: |
+            native
+            toolkit-verdicts.tsv
