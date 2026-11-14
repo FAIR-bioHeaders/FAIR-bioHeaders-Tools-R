@@ -2,3 +2,6 @@
 ^\.github$
 ^taskcheck.*$
 ^\.rlib$
+^tools$
+^AGENTS.md$
+^vector-report$

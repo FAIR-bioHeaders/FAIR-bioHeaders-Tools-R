@@ -1,6 +1,13 @@
+# build artifacts
 .rlib/
 *.o
 *.so
+*.dylib
 .Rhistory
 *.tar.gz
 *.Rcheck/
+src/*.o
+src/*.so
+# local scratch
+taskcheck*/
+.Rproj.user/
