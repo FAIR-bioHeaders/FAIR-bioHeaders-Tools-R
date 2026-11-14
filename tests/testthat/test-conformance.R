@@ -18,7 +18,7 @@ test_that("every vector is accounted for, and the supported subset has no failur
   expect_true(x$ok)
   expect_equal(x$vectors, 291L)
   expect_equal(x$failures, 0L)
-  expect_equal(sum(x$results$status == "pass"), 228L)
+  expect_equal(sum(x$results$status == "pass"), 227L) # DELIBERATE FAILURE PROBE
   expect_equal(sum(x$results$status == "not-run"), 63L)
   expect_equal(sum(x$results$status == "excluded"), 0L)
   # not-run is never bare: each such row names the missing reader
