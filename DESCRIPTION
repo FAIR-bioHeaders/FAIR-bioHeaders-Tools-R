@@ -1,9 +1,24 @@
 Package: FAIRbioHeadersTools
-Title: R Tools for FAIR-bioHeaders
+Title: Native SHA-512/256 Checksums for FAIR-bioHeaders Files
 Version: 0.1.0
 Authors@R: person("FAIR-bioHeaders-Tools contributors", email = "molik@fhref.org",
     role = c("aut", "cre"))
-Description: A generic R package foundation for tools supporting
-    FAIR-bioHeaders.
+Description: Computes the FAIR-bioHeaders file checksum - SHA-512/256 over the
+    exact bytes a file covers, per docs/FORMAT.md rules R1 to R4 - natively in R,
+    from a vendored FIPS 180-4 implementation with no external library and no
+    foreign-language runtime. Streams files of any size, excludes the checksum
+    line from its own value, counts header lines outside the leading block, and
+    refuses to load when its compiled core disagrees with the published sample
+    digests. Header reading, contract validation and the shared conformance run
+    build on this layer.
 License: MPL-2.0 | file LICENSE
 Encoding: UTF-8
+Suggests:
+    jsonlite,
+    testthat (>= 3.0.0)
+SystemRequirements: C99 (the vendored SHA-512/256 core in src/);
+    a C compiler is required to build this package from source
+NeedsCompilation: yes
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0

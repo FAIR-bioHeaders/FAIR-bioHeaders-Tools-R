@@ -1,0 +1,92 @@
+# Native acceptance, digest layer. R only: no Python, no foreign toolkit, no oracle.
+#
+# This is the first increment of the acceptance spine. The shared-vector run, the vendoring
+# audit and the draft-suite runs join it with the reader, in the follow-up PR of this stack;
+# until then the tests here are the digest layer's own published-vector checks.
+name: Native acceptance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: R CMD check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        r: ["release"]
+        include:
+          - os: ubuntu-latest
+            r: oldrel-3
+    env:
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record the R runtime
+        run: |
+          which R Rscript || true
+          R --version | head -2
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+
+      - name: Install the declared dependencies only
+        run: install.packages(c("jsonlite", "testthat"))
+        shell: Rscript {0}
+
+      - name: Assert the package is native, structurally
+        run: Rscript tools/assert_native.R
+
+      - name: Build
+        run: R CMD build .
+
+      - name: Install
+        run: R CMD INSTALL FAIRbioHeadersTools_0.1.0.tar.gz
+
+      - name: Show what the compiled core is checked against
+        run: |
+          # .onLoad() runs the published sample digests through the compiled core and refuses
+          # to load the package when they disagree, so a successful library() call here is the
+          # assertion; the printed value is what a reader checks against docs/DIGEST.md
+          Rscript -e '
+            library(FAIRbioHeadersTools)
+            cat("abc    ->", bh_sha512_256_b64(charToRaw("abc")), "\n")
+            cat("expect  UwSOJoGUHvmbLim3a0x9q+TC0MY0/G1G4OLxMQfnryM=\n")
+            cat("bytes   -> sha512-256:", bh_digest_bytes("sha512-256"),
+                "| sha512:", bh_digest_bytes("sha512"), "\n")
+            cat("trap    -> truncated SHA-512 differs:",
+                !identical(substr(bh_sha512(charToRaw("abc"), "hex"), 1, 64),
+                           bh_sha512_256(charToRaw("abc"), "hex")), "\n")
+          '
+
+      - name: R CMD check
+        run: |
+          mkdir -p "$RUNNER_TEMP/check-reports"
+          tarball=$(ls FAIRbioHeadersTools_*.tar.gz)
+          R CMD check --no-manual --output="$RUNNER_TEMP/check-reports" "$tarball" 2>&1 |
+            tee "$RUNNER_TEMP/check-reports/check.log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "::error::R CMD check failed with status $status"
+            exit "$status"
+          fi
+
+      - name: Upload the check log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-${{ matrix.os }}-r${{ matrix.r }}
+          path: ${{ runner.temp }}/check-reports
