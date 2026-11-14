@@ -99,3 +99,68 @@ test_that("the report serialises the accounting", {
     names(parsed$by_format)))
   expect_true(length(parsed$by_format$jsonld$not_run_reasons) >= 1L)
 })
+
+# The locator's refusal to fall back, checked in both directions. A suite path that resolves
+# by accident is worse than one that fails: "missing fixtures must fail" is only a real
+# guarantee if nothing downstream can substitute other data for the missing ones.
+test_that("a named suite location is authoritative and never falls back", {
+  real <- .bh_suite_dir()
+  bogus <- file.path(tempdir(), "bh-no-suite-here")
+  dir.create(bogus, showWarnings = FALSE)
+  # named and wrong -> error, even though the vendored copy two directories away is fine
+  withr::with_options(list(bh.conformance_dir = bogus), {
+    expect_error(.bh_suite_dir(), "holds no manifest.json", class = "bh_conformance")
+    expect_error(bh_conformance(), "holds no manifest.json", class = "bh_conformance")
+  })
+  # named and right -> that path is the one used
+  withr::with_options(list(bh.conformance_dir = real), {
+    expect_equal(.bh_suite_dir(), real)
+  })
+  # nothing named -> the search finds the vendored copy, and says what it looked at
+  expect_equal(.bh_suite_dir(), real)
+  expect_error(.bh_search("definitely-not-here", "shared suite"), "Looked in",
+    class = "bh_conformance")
+})
+
+test_that("the draft locators follow the same rule", {
+  bogus <- file.path(tempdir(), "bh-no-draft-here")
+  dir.create(bogus, showWarnings = FALSE)
+  withr::with_options(list(bh.draft_dir = bogus), {
+    expect_error(.bh_draft_suite_dir(), "holds no manifest.json", class = "bh_conformance")
+  })
+  withr::with_options(list(bh.fhgm_dir = bogus), {
+    expect_error(.bh_fhgm_suite_dir(), "holds no manifest.json", class = "bh_conformance")
+  })
+  expect_true(nzchar(.bh_draft_suite_dir()))
+  expect_true(nzchar(.bh_fhgm_suite_dir()))
+})
+
+# A case-only-difference probe. On a case-sensitive filesystem a path that differs only in
+# case must not resolve; on a case-insensitive one it will, which is exactly how a broken
+# fixture path can look green on macOS and red on Linux. The probe measures the filesystem
+# rather than assuming it from R.version$os.
+.bh_case_sensitive_fs <- function() {
+  d <- file.path(tempdir(), paste0("bhcase", as.integer(Sys.time())))
+  dir.create(d, showWarnings = FALSE, recursive = TRUE)
+  f <- file.path(d, "probe.txt")
+  writeLines("x", f)
+  hit <- file.exists(file.path(d, "PROBE.txt"))
+  unlink(d, recursive = TRUE)
+  !hit
+}
+
+test_that("a case-mangled suite path fails where the filesystem is case-sensitive", {
+  real <- .bh_suite_dir()
+  if (!.bh_case_sensitive_fs()) {
+    skip(paste0(
+      "this filesystem is case-insensitive, so a case-mangled path resolves to the real ",
+      "one and this control cannot bite here. It runs on the Linux CI leg, where it does.",
+      " Suite: ", real
+    ))
+  }
+  mangled <- sub("conformance", "Conformance", real, fixed = TRUE)
+  expect_false(identical(mangled, real))
+  withr::with_options(list(bh.conformance_dir = mangled), {
+    expect_error(.bh_suite_dir(), "holds no manifest.json", class = "bh_conformance")
+  })
+})

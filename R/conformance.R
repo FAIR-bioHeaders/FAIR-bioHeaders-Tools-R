@@ -49,47 +49,66 @@ NULL
 #' Finds the vendored shared suite.
 #' @noRd
 .bh_suite_dir <- function(suite = NULL) {
-  cands <- c(
+  named <- .bh_resolve_named(c(
     suite,
     getOption("bh.conformance_dir"),
-    Sys.getenv("FAIRBH_CONFORMANCE_DIR", unset = NA_character_),
+    Sys.getenv("FAIRBH_CONFORMANCE_DIR", unset = NA_character_)
+  ), "shared conformance suite")
+  if (!is.null(named)) return(named)
+  .bh_search(c(
     .bh_test_path_cand(),
     system.file("conformance", package = "FAIRbioHeadersTools"),
-    "tests/conformance", "conformance"
-  )
+    "tests/conformance"
+  ), "shared conformance suite (vendored at tests/conformance)")
+}
+
+# A named suite location is authoritative: it either holds a manifest.json or this errors.
+# Falling through to another candidate would let a typo, a mis-set option, or a case-insensitive
+# filesystem quietly resolve a bad path to some other copy of the data - which turns "missing
+# fixtures must fail" into a pass that proves nothing. (A sibling library hit exactly this:
+# green on macOS, red on Linux, same workflow.)
+.bh_resolve_named <- function(named, what) {
+  named <- named[!is.na(named) & nzchar(named)]
+  if (!length(named)) return(NULL)
+  p <- named[[1L]]
+  if (!file.exists(file.path(p, "manifest.json"))) {
+    bh_abort("conformance", paste0(
+      "the ", what, " was named as ", p, " but holds no manifest.json. Refusing to fall ",
+      "back to another location: a fallback that rescues a bad path is how a missing suite ",
+      "starts reporting passes."
+    ))
+  }
+  normalizePath(p, mustWork = TRUE)
+}
+
+# The un-named case: search the known spots, and say which were searched when none matches.
+.bh_search <- function(cands, what) {
   cands <- cands[!is.na(cands) & nzchar(cands)]
   for (c in cands) {
-    if (file.exists(file.path(c, "manifest.json"))) return(normalizePath(c))
+    if (file.exists(file.path(c, "manifest.json"))) return(normalizePath(c, mustWork = TRUE))
   }
   bh_abort("conformance", paste0(
-    "the shared conformance suite was not found. Looked in: ",
+    "the ", what, " was not found. Looked in: ",
     paste(sQuote(unique(cands)), collapse = ", "),
-    ". It is vendored at tests/conformance; re-create it with tools/vendor_upstream.R."
+    ". Re-create it with tools/vendor_upstream.R."
   ))
 }
 
 .bh_draft_suite_dir <- function(suite = NULL) {
+  named <- .bh_resolve_named(c(
+    suite,
+    getOption("bh.draft_dir"),
+    Sys.getenv("FAIRBH_DRAFT_DIR", unset = NA_character_)
+  ), "FHT development suite")
+  if (!is.null(named)) return(named)
   tp <- NULL
   if (requireNamespace("testthat", quietly = TRUE)) {
     tp <- tryCatch(testthat::test_path(), error = function(e) NULL)
   }
-  cands <- c(
-    suite,
-    getOption("bh.draft_dir"),
-    Sys.getenv("FAIRBH_DRAFT_DIR", unset = NA_character_),
+  .bh_search(c(
     if (!is.null(tp)) file.path(tp, "..", "draft", "fht"),
-    file.path(system.file(package = "FAIRbioHeadersTools"), "draft", "fht"),
-    "tests/draft/fht", "conformance-draft/fht"
-  )
-  cands <- cands[!is.na(cands) & nzchar(cands)]
-  for (c in cands) {
-    if (file.exists(file.path(c, "manifest.json"))) return(normalizePath(c))
-  }
-  bh_abort("conformance", paste0(
-    "the FHT development suite was not found. It is vendored at ",
-    "tests/draft/fht from FHT-Specification; re-create it with ",
-    "tools/vendor_upstream.R."
-  ))
+    "tests/draft/fht"
+  ), "FHT development suite (vendored at tests/draft/fht from FHT-Specification)")
 }
 
 # Runs one suite. `lane` is the draft argument passed through, `pinned` is the provenance

@@ -162,22 +162,17 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
 }
 
 .bh_fhgm_suite_dir <- function(suite = NULL) {
+  named <- .bh_resolve_named(c(
+    suite, getOption("bh.fhgm_dir"),
+    Sys.getenv("FAIRBH_FHGM_DIR", unset = NA_character_)
+  ), "FHGM development suite")
+  if (!is.null(named)) return(named)
   tp <- NULL
   if (requireNamespace("testthat", quietly = TRUE)) {
     tp <- tryCatch(testthat::test_path(), error = function(e) NULL)
   }
-  cands <- c(
-    suite, getOption("bh.fhgm_dir"),
-    Sys.getenv("FAIRBH_FHGM_DIR", unset = NA_character_),
+  .bh_search(c(
     if (!is.null(tp)) file.path(tp, "..", "draft", "fhgm"),
-    "tests/draft/fhgm", "draft/fhgm"
-  )
-  cands <- cands[!is.na(cands) & nzchar(cands)]
-  for (c in cands) {
-    if (file.exists(file.path(c, "manifest.json"))) return(normalizePath(c))
-  }
-  bh_abort("conformance", paste0(
-    "the FHGM development suite was not found. It is vendored at tests/draft/fhgm from ",
-    "FHGM-Specification; re-create it with tools/vendor_upstream.R."
-  ))
+    "tests/draft/fhgm"
+  ), "FHGM development suite (vendored at tests/draft/fhgm from FHGM-Specification)")
 }
