@@ -1,9 +1,29 @@
 Package: FAIRbioHeadersTools
-Title: R Tools for FAIR-bioHeaders
+Title: Native R Reader, Checksum Verifier and Contract Validator for FAIR-bioHeaders
 Version: 0.1.0
 Authors@R: person("FAIR-bioHeaders-Tools contributors", email = "molik@fhref.org",
     role = c("aut", "cre"))
-Description: A generic R package foundation for tools supporting
-    FAIR-bioHeaders.
+Description: Reads, verifies and validates FAIR-bioHeaders file-bound metadata
+    (docs/FORMAT.md) in R with no foreign-language runtime: a vendored FIPS 180-4
+    SHA-512/256 implementation produces the file checksum, header YAML is parsed
+    with rule-exact byte-line semantics, and the released FHR, FHP and FHGFF3
+    contracts are validated as JSON Schema draft/2020-12 with asserted formats.
+    Ships the pinned contract copies and their provenance and a runner for the
+    shared language-neutral conformance vectors. Draft types (rule V7) are not
+    read at this revision.
 License: MPL-2.0 | file LICENSE
 Encoding: UTF-8
+Imports:
+    digest,
+    jsonlite,
+    jsonvalidate (>= 1.5.0),
+    yaml (>= 2.3.7)
+Suggests:
+    testthat (>= 3.0.0),
+    withr
+SystemRequirements: C99 (the vendored SHA-512/256 core in src/);
+    a C compiler is required to build this package from source
+NeedsCompilation: yes
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0

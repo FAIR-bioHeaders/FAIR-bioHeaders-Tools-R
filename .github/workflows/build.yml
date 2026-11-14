@@ -1,0 +1,150 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # Primary acceptance: the released contracts, read natively, checked by R CMD check.
+  # No Python and no foreign toolkit anywhere in this job - the only inputs are R, the
+  # CRAN dependencies declared in DESCRIPTION, this repository (whose tests/conformance
+  # bytes are vendored and digest-audited here, not fetched), and the toolchain.
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::jsonvalidate, any::roxygen2
+          needs: check
+
+      - name: Assert the acceptance path is native
+        run: |
+          # The package itself must not shell out to, embed or load another
+          # implementation: no subprocess, no pipe, no foreign interpreter from R/
+          # or src/. (tools/*.R are CI harness scripts, not installed code; the
+          # harness uses git and curl only, never a foreign language runtime.)
+          set -e
+          if grep -rnE 'system2?\(|pipe\(|shell\.|reticulate|subprocess|python|openssl (dgst|enc)|callr' R/ src/ inst/ ; then
+            echo "^ native acceptance must not invoke another implementation" >&2
+            exit 1
+          fi
+          for f in requirements.txt pyproject.toml setup.py environment.yml Cargo.toml package.json pom.xml Project.toml DESCRIPTION.dev; do
+            if [ -e "$f" ]; then
+              echo "unexpected foreign project file in an R library: $f" >&2
+              exit 1
+            fi
+          done
+          if grep -nE 'SystemRequirements:.*(python|openssl)' DESCRIPTION ; then
+            echo "the package must not declare a foreign runtime" >&2
+            exit 1
+          fi
+          # and the vendored suite the run depends on is audited against its pins
+          Rscript tools/check_vendoring.R
+
+      - name: Install
+        run: |
+          R CMD build .
+          R CMD INSTALL FAIRbioHeadersTools_*.tar.gz
+
+      - name: Test (unit + integration + shared vectors, with skip and count guards)
+        run: |
+          # Any failure, any error, ANY skip, or fewer than the floor of assertions
+          # fails the build (docs/NATIVE-ACCEPTANCE.md).
+          BH_MIN_TESTS=400 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
+          cat tests.properties
+          for line in failed=0 errors=0 skipped=0; do
+            grep -qxF "$line" tests.properties || { echo "expected $line" >&2; exit 1; }
+          done
+
+      - name: R CMD check (the spine)
+        run: R CMD check --as-cran --no-manual FAIRbioHeadersTools_*.tar.gz
+
+      - name: Native acceptance (291-vector ledger + default-behavior golden)
+        run: |
+          BH_ACCEPTANCE_RECEIPT=acceptance-ledger.properties \
+          BH_GOLDEN_RECEIPT=default-behavior-golden.properties \
+            Rscript tools/acceptance_native.R
+
+      - name: Assert the acceptance ledger accounts for every shared vector
+        run: |
+          # The ledger is the completeness claim: all 291 shared vectors accounted
+          # for, 228 run here, 63 declared not-run each with its reason. A stale
+          # declared count is a build failure, never a quiet pass. Fixed-string line
+          # comparison, so no value here is produced by parsing the file it checks.
+          set -e
+          receipt=acceptance-ledger.properties
+          if [ ! -s "$receipt" ]; then
+            echo "missing $receipt - acceptance_native.R did not write it" >&2
+            exit 1
+          fi
+          cat "$receipt"
+          cat > "${RUNNER_TEMP:-.}/ledger-expected.txt" <<'EXPECTED'
+          available=true
+          vectorsTotal=291
+          vectorsRun=228
+          vectorsPassed=228
+          vectorsFailed=0
+          vectorsNotRun=63
+          vectorsDeclaredNotRunWithReason=63
+          fasta=98/98 passed, 0 not run
+          gfa=56/56 passed, 0 not run
+          fhp-fasta=36/36 passed, 0 not run
+          fhgff3=38/38 passed, 0 not run
+          microdata=0/26 passed, 26 not run
+          jsonld=0/37 passed, 37 not run
+          EXPECTED
+          missing=0
+          while IFS= read -r line; do
+            grep -qxF "$line" "$receipt" || { echo "ledger: no '$line' line" >&2; missing=1; }
+          done < "${RUNNER_TEMP:-.}/ledger-expected.txt"
+          if [ "$missing" -ne 0 ]; then
+            echo "the acceptance ledger does not match the declared v0.6.0 baseline" >&2
+            exit 1
+          fi
+
+      - name: Assert the default-behavior golden compared everything
+        run: |
+          set -e
+          receipt=default-behavior-golden.properties
+          if [ ! -s "$receipt" ]; then
+            echo "missing $receipt - the golden comparison did not run" >&2
+            exit 1
+          fi
+          cat "$receipt"
+          for pair in vectorsCompared=291 documentsCompared=228 selectionCasesCompared=32 goldenDifferences=0; do
+            key=${pair%%=*}; want=${pair##*=}
+            got=$(sed -n "s/^$key=//p" "$receipt")
+            if [ "$got" != "$want" ]; then
+              echo "$key=$got, expected $want" >&2
+              exit 1
+            fi
+          done
+
+      - name: Upload native reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-acceptance-${{ matrix.os }}
+          path: |
+            tests.properties
+            acceptance-ledger.properties
+            default-behavior-golden.properties
+          if-no-files-found: error
+

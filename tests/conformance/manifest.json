@@ -1,0 +1,5680 @@
+{
+  "manifestVersion": 1,
+  "specification": "docs/FORMAT.md",
+  "microdataSpecification": "docs/MICRODATA.md",
+  "jsonldSpecification": "docs/JSONLD.md",
+  "fhpSpecification": "docs/FHP.md",
+  "fhgff3Specification": "docs/FHGFF3.md",
+  "schemaVersionsSpecification": "docs/SCHEMA-VERSIONS.md",
+  "checksumDefinition": "base64(SHA-512/256) over the (decompressed) file bytes except the root-level checksum line and its terminator (FASTA, GFA, FHP FASTA and FHGFF3 only; in microdata and JSON-LD the checksum is an ordinary metadata value)",
+  "rules": {
+    "R1": {
+      "summary": "Checksum rule 1: hash the exact file bytes without normalization; for gzip/BGZF input, the decompressed bytes. A line ends at LF, CRLF or a CR not followed by LF."
+    },
+    "R2": {
+      "summary": "Checksum rule 2: exactly one root-level checksum line with an unquoted key; spaces only to match root indentation and before the colon; nested checksum properties stay covered."
+    },
+    "R3": {
+      "summary": "Checksum rule 3: exclude that entire line and its terminator; hash every other byte, so changing covered bytes invalidates the checksum."
+    },
+    "R4": {
+      "summary": "Checksum rule 4: SHA-512/256 digest in standard padded base64, no prefix; the encoding is canonical (the unused bits are zero) and checksums compare as exact strings."
+    },
+    "R5": {
+      "summary": "Header parsing: the checksum line holds only the 44-character value, plain or quoted, with optional spaces or tabs; comments, tags, other text, block scalars and continuation lines are invalid."
+    },
+    "R6": {
+      "summary": "Header parsing: FHR header lines are UTF-8 without U+0085, U+2028 or U+2029; bytes outside header lines are not decoded."
+    },
+    "R7": {
+      "summary": "Header parsing: a FASTA/GFA file must not begin with a UTF-8 byte order mark."
+    },
+    "R8": {
+      "summary": "Header parsing: no duplicate mapping keys, YAML anchors, aliases or merge keys."
+    },
+    "R9": {
+      "summary": "Header parsing: in microdata the first of repeated attributes applies; itemtype and itemprop are space-separated token lists."
+    },
+    "R10": {
+      "summary": "Header parsing: FHR lines form the leading header block; a later FHR line, including one from a concatenated file, is invalid."
+    },
+    "R11": {
+      "summary": "Header writing (FASTA): header lines should not contain a raw '>' or '@'; writers escape them as \\x3E and \\x40 in double-quoted YAML scalars, which read back as the same characters.",
+      "notApplicable": "R11 is a recommendation: a raw '>' or '@' in a FASTA header line makes a validator warn, not reject, so no input is invalid under it. The valid vectors that cite R11 show escaped values and a raw value that stays valid."
+    },
+    "R12": {
+      "summary": "Header parsing: YAML metadata is read with YAML 1.2 core-schema types and must read the same under YAML 1.1; explicit tags and plain scalars that the two versions read differently (010, 1_000, 1:30, yes, on, 1e3) are invalid."
+    },
+    "R13": {
+      "summary": "Numbers: a numeric metadata value must be a finite number. YAML .nan, .inf and -.inf, and NaN or Infinity written as a JSON extension, make the record invalid."
+    },
+    "R14": {
+      "summary": "Links: a value whose schema format is uri should use http or https (ftp, urn, doi and info are also accepted); any other scheme, such as javascript:, data: or file:, stays schema-valid, but validators warn and JSON-LD writers do not write it as a link.",
+      "notApplicable": "R14 makes validators warn, not reject: an unexpected link scheme is schema-valid in FHR 2.0. Its valid vectors carry \"warnings\": [\"R14\"]."
+    },
+    "R15": {
+      "summary": "Extension fields: from FHR 2.1 and FHP and FHGFF3 1.1, a top-level key matching ^x-[A-Za-z0-9][A-Za-z0-9_.-]*$ may hold any value; every other unknown key, an x- key in a nested object and an x- key in a record that states the older minor or cites an older release stay invalid; R8, R11, R12 and R13 apply to them."
+    },
+    "M1": {
+      "summary": "Microdata: exactly one FHR item scope; a nested item scope without itemprop is a separate item whose properties do not leak."
+    },
+    "M2": {
+      "summary": "Microdata: HTML parsing with implied end tags; values come from the defining element's value attribute, else its text."
+    },
+    "M3": {
+      "summary": "Microdata: data-fhr-type values must match the declared JSON type; typed strings are exact; untyped schema numbers and lists are converted."
+    },
+    "M4": {
+      "summary": "Microdata: the extracted metadata must validate against fhr.json; a repeated property cannot fill a single-valued field."
+    },
+    "M5": {
+      "summary": "Microdata: no extension fields; writers leave x- keys out, and an FHR item with an x- itemprop is invalid."
+    },
+    "J1": {
+      "summary": "JSON-LD: a canonical document has a published FHR context (embedded or a known URL) and no keyword but @type and a root @id; @context and @type are set aside, subjectOf is documentation, and export terms are set aside."
+    },
+    "J2": {
+      "summary": "JSON-LD: duplicate object keys are invalid."
+    },
+    "J3": {
+      "summary": "JSON-LD: any other form is read by JSON-LD 1.1 expansion with bundled contexts only. The only context allowed is the FHR context (a known URL or an embedded copy equal as parsed JSON, alone or as the only item of an array) on a top-level object; any other context, remote, unknown, embedded, extended or nested, is invalid."
+    },
+    "J4": {
+      "summary": "JSON-LD: exactly one top-level node (directly or the only item of @graph); every property must map to an FHR field in its scope, and unknown terms or a root @id make the document invalid."
+    },
+    "J5": {
+      "summary": "JSON-LD: IRI fields take @id or a string; dateCreated takes xsd:date or no type, and no other datatype is allowed; single-valued fields take one value; commandLineOption comes from @list; a node given only by @id is invalid."
+    },
+    "J6": {
+      "summary": "JSON-LD: the resulting metadata must validate against fhr.json."
+    },
+    "J7": {
+      "summary": "JSON-LD: writers emit the record with an embedded context and typed nodes, byte for byte as docs/JSONLD.md describes.",
+      "notApplicable": "J7 constrains writers; a reader has no invalid input for it. The valid vectors that cite J7 are writer output."
+    },
+    "J8": {
+      "summary": "JSON-LD in HTML: inside <script type=\"application/ld+json\">, '<', '>' and '&' in the JSON text are written as \\u003c, \\u003e and \\u0026; the document reads back to the same metadata.",
+      "notApplicable": "J8 constrains writers that embed JSON-LD in HTML; the escaped text is ordinary JSON, so a reader has no invalid input for it. Its valid vector shows that the escapes read back to the real characters."
+    },
+    "J9": {
+      "summary": "JSON-LD: no extension fields; writers leave x- keys out, and a document with a root x- key is invalid in the canonical form as in any other."
+    },
+    "P1": {
+      "summary": "FHP: the metadata of a protein FASTA header must validate against fhp.json."
+    },
+    "P2": {
+      "summary": "FHP: a record is read as FHP only when its schema is an FHP schema URL; any other header is validated as FHR."
+    },
+    "G1": {
+      "summary": "FHGFF3: line 1 matches ##gff-version 3 or ##gff-version 3.x.y (three numeric components), optionally followed by spaces or tabs; the leading header block runs from line 2 to the first nonblank line that is not a # line, or to ##FASTA; #~ lines may be mixed with other # lines inside it, and a #~ line on line 1 or after it is invalid."
+    },
+    "G2": {
+      "summary": "FHGFF3: the metadata must validate against fhgff3.json, including the genome link (an annotates link to an FHR genome, a genomeReference, or both)."
+    },
+    "G3": {
+      "summary": "FHGFF3: a record is read as FHGFF3 only when its schema is an FHGFF3 schema URL; any other header is validated as that type."
+    },
+    "V1": {
+      "summary": "Selection: the raw-main URL of a type's schema file selects the current schema of that type; there is no fallback to an older release. Raw URLs under either repository name, FAIR-bioHeaders-Specification or FHR-Specification, are the same."
+    },
+    "V2": {
+      "summary": "Selection: a release's raw tag URL (.../FAIR-bioHeaders-Specification/vX.Y.Z/<file>, or the same under FHR-Specification) selects that release's schema of the file's type."
+    },
+    "V3": {
+      "summary": "Selection: a w3id URL https://w3id.org/fair-bioheaders/<type>/vX.Y.Z (trailing slash allowed) selects that release's schema of the type, including older releases."
+    },
+    "V4": {
+      "summary": "Selection: a release that the reader does not have, a release without a schema of that type, or a raw URL with any other ref gives an unsupported-version result, never another schema."
+    },
+    "V5": {
+      "summary": "Selection: any other schema value is FHR, validated against the current FHR schema."
+    },
+    "V6": {
+      "summary": "Selection, FHR 1 compatibility: a record whose schema is the raw-main fhr.json URL (either repository name) and whose schemaVersion is the number 1 (1 or 1.0, not the string \"1\" or a boolean) is an FHR 1 record, validated against the v0.3.1 FHR schema; the citation is deprecated, not invalid."
+    },
+    "V7": {
+      "summary": "Selection, unreleased draft contracts (opt-in): a reader may recognise a draft contract at the raw-main URL of the development repository that owns its type (https://raw.githubusercontent.com/FAIR-bioHeaders/<repo>/main/<file>, a <file> outside the V1 list). A type may already have a released schema file in V1; that file remains governed by V1, while a later draft of that type is eligible only under a distinct <file> not in V1. V7 applies only behind an explicit user decision, reads against bytes pinned by commit and SHA-256 digest, and warns on every record so read. Without that decision such a value is V5, and a draft never takes a release form: a w3id or raw-tag URL stays any other value under V5.",
+      "notApplicable": "V7 is an opt-in reader lane for draft files not listed by V1; a published type's listed file remains governed by V1. This suite publishes no draft contract, so no vector is valid or invalid under V7. Without the explicit user decision, a draft raw-main URL is read as FHR (V5), which fasta-schema-other-value and fasta-schema-other-value-version-1 cover."
+    }
+  },
+  "vectors": [
+    {
+      "id": "fasta-lf",
+      "file": "valid/fasta-lf.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R7",
+        "R10"
+      ],
+      "description": "LF line endings; the checksum line is the last FHR line.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-crlf",
+      "file": "valid/fasta-crlf.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "CRLF line endings; CR bytes are hashed.",
+      "checksum": "lNyA+NbQ5W7vf6uimxP7rpCcPknMko59XicLmy6sK0o=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-cr",
+      "file": "valid/fasta-cr.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "Lone CR line endings.",
+      "checksum": "N+6zIIhkTPWhefoHax7xzt8wKz+vKa2Dv6M/CrMnJE8=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-mixed-endings",
+      "file": "valid/fasta-mixed-endings.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "LF, CRLF and CR line endings mixed in one file.",
+      "checksum": "2sHEEX0vV3Ix1uYu9+WWnf2hs2I407VhvrgTwnoodhE=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-no-final-newline",
+      "file": "valid/fasta-no-final-newline.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "The last sequence line has no terminator.",
+      "checksum": "QUWoCcdTp0KT89rxeKwEwLWuGLBFrPN1p7L5C8dAIKE=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-comments-and-blank-lines",
+      "file": "valid/fasta-comments-and-blank-lines.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R3",
+        "R10"
+      ],
+      "description": "Ordinary comments, blank lines and a YAML comment before and between FHR lines; all of them are hashed.",
+      "checksum": "qVj9yN+Ooqe+cA0ZNve94bP7wx73HCq+/rP/yZXU6fw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-root-indented",
+      "file": "valid/fasta-root-indented.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2"
+      ],
+      "description": "Every FHR line, including the checksum line, has root indentation 1.",
+      "checksum": "4HLy5K8hhXTWYxboqP4RbHNnqt819Oj0zhBBwgRh6MQ=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-space-before-colon",
+      "file": "valid/fasta-space-before-colon.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2"
+      ],
+      "description": "Spaces before the colon.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-nested-checksum",
+      "file": "valid/fasta-nested-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2",
+        "R3"
+      ],
+      "description": "An indented checksum line nested in a block scalar (documentation) is ordinary covered metadata, not the root checksum line.",
+      "checksum": "SXB42Q4f2C7wYTV1zaO2ZWoKo0zeF7W1opdCCTUbbGk=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-quoted-value",
+      "file": "valid/fasta-quoted-value.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2",
+        "R5"
+      ],
+      "description": "The checksum value is a quoted single-line scalar; the key is unquoted.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-checksum-trailing-spaces",
+      "file": "valid/fasta-checksum-trailing-spaces.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R3",
+        "R5"
+      ],
+      "description": "Trailing spaces on the checksum line are excluded with it.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-checksum-first",
+      "file": "valid/fasta-checksum-first.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2",
+        "R3"
+      ],
+      "description": "The checksum line is the first line of the file.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-non-utf8-outside-header",
+      "file": "valid/fasta-non-utf8-outside-header.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R6"
+      ],
+      "description": "Non-UTF-8 bytes in an ordinary comment and a sequence line are hashed, not decoded.",
+      "checksum": "kWY8QbKvAIDfDD74cmMG4nX1Spkhcjc74JRqV8YGgZw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-utf8-metadata",
+      "file": "valid/fasta-utf8-metadata.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R6"
+      ],
+      "description": "Non-ASCII UTF-8 text in a header value.",
+      "checksum": "wvirOxDYliEq2XlfcmGfANFRZrkv5GNMyNucNCKUAOk=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-yaml-indicators-in-strings",
+      "file": "valid/fasta-yaml-indicators-in-strings.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R8"
+      ],
+      "description": "Anchor, alias and merge-key characters inside a quoted string are text.",
+      "checksum": "1LVhbQjrhtpZDYaw/8aO9HxWKXuUyrJUIWl51JXT+1U=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-yaml-portable-types",
+      "file": "valid/fasta-yaml-portable-types.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R12"
+      ],
+      "description": "Values every YAML version reads alike: a plain date (a string, as written), a quoted '010' (the string 010), and plain 10 and 41.5.",
+      "checksum": "6Wo3VOQd8/9seVnt+1OuehKyjcBnaf+dFFsGDcl0nSs=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "010",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-escaped-record-markers",
+      "file": "valid/fasta-escaped-record-markers.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R11"
+      ],
+      "description": "A value holding '@' and '>' written as \\x40 and \\x3E in a double-quoted scalar; it reads back with the real characters.",
+      "checksum": "6KeO3AN52A6/kOs1DlPfLQnlR39flxYeotG4Ywt3Kxo=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "documentation": "contact someone@example.org; contigs > 1000 bp"
+      }
+    },
+    {
+      "id": "fasta-raw-record-markers",
+      "file": "valid/fasta-raw-record-markers.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R11"
+      ],
+      "description": "The same value with a raw '@' and '>': still valid (R11 is a recommendation), but a validator should warn, and kseq-based readers read a bogus record at the '@'.",
+      "checksum": "2ZlK/Lbp9zUVokZdhq8nJ9cy77HP6G0DZzCg1obixWU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "documentation": "contact someone@example.org; contigs > 1000 bp"
+      }
+    },
+    {
+      "id": "fasta-link-scheme-warning",
+      "file": "valid/fasta-link-scheme-warning.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R14"
+      ],
+      "description": "relatedLink holds an https URL and a javascript: URI. Both are URIs, so the file is valid, but a validator should warn about the javascript: scheme.",
+      "warnings": [
+        "R14"
+      ],
+      "checksum": "l1x24EGsOT2ae4fUg6ZP8q17vfMNwkrtEi3dSNDYR4o=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "relatedLink": [
+          "https://example.org/synthetic",
+          "javascript:void(0)"
+        ]
+      }
+    },
+    {
+      "id": "gfa-lf",
+      "file": "valid/gfa-lf.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R7",
+        "R10"
+      ],
+      "description": "LF line endings; the checksum line is the last FHR line.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-crlf",
+      "file": "valid/gfa-crlf.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "CRLF line endings; CR bytes are hashed.",
+      "checksum": "CwQ+bUm7c7/sFPw5xPeK9ol67NK4ElhgoHQP0I47ViA=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-cr",
+      "file": "valid/gfa-cr.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "Lone CR line endings.",
+      "checksum": "oJ+gtGngm3hblsMd/eg8aXbVofQHA5lFHtHr61dtMLc=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-mixed-endings",
+      "file": "valid/gfa-mixed-endings.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "LF, CRLF and CR line endings mixed in one file.",
+      "checksum": "Mw/zI7Xqyz4yM5wlIvpct0vj/HEPlg0cF1K9YQw56+Q=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-no-final-newline",
+      "file": "valid/gfa-no-final-newline.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R3"
+      ],
+      "description": "The last sequence line has no terminator.",
+      "checksum": "Y+7dpSAPrsehaCRRmMoq5asZV6SyeJIPL7HrGLxgvVo=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-comments-and-blank-lines",
+      "file": "valid/gfa-comments-and-blank-lines.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R3",
+        "R10"
+      ],
+      "description": "Ordinary comments, blank lines and a YAML comment before and between FHR lines; all of them are hashed.",
+      "checksum": "JmJyPq+cr8DdgHuHkafxeBmSvyrqDIqTLFDC6CCmcdg=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-root-indented",
+      "file": "valid/gfa-root-indented.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2"
+      ],
+      "description": "Every FHR line, including the checksum line, has root indentation 1.",
+      "checksum": "b0rLkr1/lhr/6QupSRafWjtPCasQfOz1VqhVPBApz0I=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-space-before-colon",
+      "file": "valid/gfa-space-before-colon.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2"
+      ],
+      "description": "Spaces before the colon.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-nested-checksum",
+      "file": "valid/gfa-nested-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2",
+        "R3"
+      ],
+      "description": "An indented checksum line nested in a block scalar (documentation) is ordinary covered metadata, not the root checksum line.",
+      "checksum": "0PhvCGDMOpbYFfRJwz5Qw8meHwwnCb0FgErasa52NKo=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-quoted-value",
+      "file": "valid/gfa-quoted-value.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2",
+        "R5"
+      ],
+      "description": "The checksum value is a quoted single-line scalar; the key is unquoted.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-checksum-trailing-spaces",
+      "file": "valid/gfa-checksum-trailing-spaces.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R3",
+        "R5"
+      ],
+      "description": "Trailing spaces on the checksum line are excluded with it.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-checksum-first",
+      "file": "valid/gfa-checksum-first.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R2",
+        "R3"
+      ],
+      "description": "The checksum line is the first line of the file.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-non-utf8-outside-header",
+      "file": "valid/gfa-non-utf8-outside-header.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R1",
+        "R6"
+      ],
+      "description": "Non-UTF-8 bytes in an ordinary comment and a sequence line are hashed, not decoded.",
+      "checksum": "fsm9C1awDscNutlat2qUChFCypCSkWIjUv2iJWnIRDI=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-utf8-metadata",
+      "file": "valid/gfa-utf8-metadata.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R6"
+      ],
+      "description": "Non-ASCII UTF-8 text in a header value.",
+      "checksum": "Ya54KOIPKH1/1oCAhdjgP7/BSGSWS2VwdMhmf0qX43E=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-yaml-indicators-in-strings",
+      "file": "valid/gfa-yaml-indicators-in-strings.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R8"
+      ],
+      "description": "Anchor, alias and merge-key characters inside a quoted string are text.",
+      "checksum": "AtIlihtGL+x9uOfTeZUsamEBl7ez9gP2KH+dDrWrRzw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-yaml-portable-types",
+      "file": "valid/gfa-yaml-portable-types.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R12"
+      ],
+      "description": "Values every YAML version reads alike: a plain date (a string, as written), a quoted '010' (the string 010), and plain 10 and 41.5.",
+      "checksum": "mQcG5H3Hta09J28IpDPslqWg4xDBG+Dx6UhoHwK1pyc=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "010",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-gzip",
+      "file": "valid/fasta-gzip.fhr.fasta.gz",
+      "format": "fasta",
+      "compressed": true,
+      "compression": "gzip",
+      "expected": "valid",
+      "rules": [
+        "R1"
+      ],
+      "description": "fasta-lf compressed as one gzip member; same checksum.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-bgzf",
+      "file": "valid/fasta-bgzf.fhr.fasta.gz",
+      "format": "fasta",
+      "compressed": true,
+      "compression": "bgzf",
+      "expected": "valid",
+      "rules": [
+        "R1"
+      ],
+      "description": "fasta-lf compressed as multi-block BGZF; same checksum.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "fasta-gzip-multimember",
+      "file": "valid/fasta-gzip-multimember.fhr.fasta.gz",
+      "format": "fasta",
+      "compressed": true,
+      "compression": "gzip",
+      "expected": "valid",
+      "rules": [
+        "R1"
+      ],
+      "description": "fasta-lf as two gzip members split inside the checksum line; same checksum.",
+      "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-gzip",
+      "file": "valid/gfa-gzip.fhr.gfa.gz",
+      "format": "gfa",
+      "compressed": true,
+      "compression": "gzip",
+      "expected": "valid",
+      "rules": [
+        "R1"
+      ],
+      "description": "gfa-lf compressed as one gzip member; same checksum.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-bgzf",
+      "file": "valid/gfa-bgzf.fhr.gfa.gz",
+      "format": "gfa",
+      "compressed": true,
+      "compression": "bgzf",
+      "expected": "valid",
+      "rules": [
+        "R1"
+      ],
+      "description": "gfa-lf compressed as multi-block BGZF; same checksum.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "gfa-gzip-multimember",
+      "file": "valid/gfa-gzip-multimember.fhr.gfa.gz",
+      "format": "gfa",
+      "compressed": true,
+      "compression": "gzip",
+      "expected": "valid",
+      "rules": [
+        "R1"
+      ],
+      "description": "gfa-lf as two gzip members split inside the checksum line; same checksum.",
+      "checksum": "ma1p3crG1VKXSyT7cfllyeFiNrZ5NU3WOODwCEmwASw=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked"
+      }
+    },
+    {
+      "id": "microdata-canonical",
+      "file": "valid/microdata-canonical.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M1",
+        "M3",
+        "M4",
+        "R13"
+      ],
+      "description": "The converter's typed serialization: nested objects, arrays, an empty array, integers and numbers.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "instrument": [],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "assemblyProtocol": "https://example.org/protocols/synthetic-assembly",
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5,
+          "readTechnology": "synthetic"
+        }
+      }
+    },
+    {
+      "id": "microdata-first-attribute-wins",
+      "file": "valid/microdata-first-attribute-wins.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R9",
+        "M2"
+      ],
+      "description": "Repeated itemtype, itemprop, data-fhr-type and datetime attributes; the first of each applies.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-itemtype-token-list",
+      "file": "valid/microdata-itemtype-token-list.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R9",
+        "M1"
+      ],
+      "description": "The root itemtype lists the FHR type among other types, separated by spaces, a tab and a newline.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-itemprop-token-list",
+      "file": "valid/microdata-itemprop-token-list.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R9"
+      ],
+      "description": "One element supplies both metadataAuthor and assemblyAuthor through an itemprop token list; another itemprop has surrounding whitespace.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic author of metadata and assembly"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic author of metadata and assembly"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-implied-end-tags",
+      "file": "valid/microdata-implied-end-tags.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M2"
+      ],
+      "description": "Unclosed p, li, td, tr, dt and dd elements inside the FHR scope end where HTML implies their end tags.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "documentation": "Paragraph closed by the next p start tag.",
+        "genomeSynonym": [
+          "first synonym",
+          "second synonym"
+        ],
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "dateCreated": "2026-10-08"
+      }
+    },
+    {
+      "id": "microdata-nested-unrelated-scope",
+      "file": "valid/microdata-nested-unrelated-scope.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M1"
+      ],
+      "description": "Item scopes without itemprop, inside and before the FHR scope, hold genome, version, dateCreated and masking properties that are not FHR values.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-value-attributes",
+      "file": "valid/microdata-value-attributes.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M2",
+        "M3"
+      ],
+      "description": "time[datetime], data[value], meter[value], meta[content], a[href], link[href] and img[src] supply the value instead of the element text.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "assemblyProtocol": "https://example.org/protocols/synthetic-assembly",
+        "relatedLink": [
+          "https://example.org/images/synthetic.png",
+          "https://example.org/synthetic"
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "microdata-value-attributes-elsewhere-ignored",
+      "file": "valid/microdata-value-attributes-elsewhere-ignored.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M2"
+      ],
+      "description": "content, value, datetime, href and src on elements that do not define them are ignored; a time without datetime uses its text.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-html-escaping",
+      "file": "valid/microdata-html-escaping.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M2",
+        "M3"
+      ],
+      "description": "Escaped markup, ampersands and quotes in text and in an attribute decode once, exactly; nothing is executed.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic <script>alert(1)</script> & \"double\" 'single' &lt;literal&gt;",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Attribute text: a & b <c> \"d\" 'e'",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-non-ascii",
+      "file": "valid/microdata-non-ascii.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M2",
+        "M3"
+      ],
+      "description": "Non-ASCII UTF-8 text and character references; a typed string keeps its leading, trailing and inner whitespace.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic genome caf\u00e9 \u00b5m \u2014 \u6e2c\u8a66 \ud83e\uddec",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Zo\u00eb \u00c5ngstr\u00f6m \u6e2c\u8a66"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "  Leading and trailing spaces,\ta tab and\na newline are kept.  ",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-utf8-bom",
+      "file": "valid/microdata-utf8-bom.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R7"
+      ],
+      "description": "HTML metadata beginning with a UTF-8 byte order mark, which is ignored.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "microdata-typed-values",
+      "file": "valid/microdata-typed-values.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M3"
+      ],
+      "description": "data-fhr-type keeps number-like strings as strings, integers as integers, numbers as numbers and an empty array as an empty array.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "2",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "2",
+          "true",
+          "null",
+          "1.0"
+        ],
+        "instrument": [],
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "commandLineOption": [
+              "-k",
+              "31"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 16,
+          "N90": 0,
+          "totalBasePairs": 16,
+          "gcContent": 37.5,
+          "readTechnology": "100"
+        }
+      }
+    },
+    {
+      "id": "microdata-untyped-schema-values",
+      "file": "valid/microdata-untyped-schema-values.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M3",
+        "M4"
+      ],
+      "description": "Plain microdata without data-fhr-type: schema numbers are converted, a single value of a list field becomes a one-item list, repeated values become a list.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "only synonym"
+        ],
+        "identifier": [
+          "example:one",
+          "example:two"
+        ],
+        "vitalStats": {
+          "N50": 16,
+          "gcContent": 37.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-canonical-embedded",
+      "file": "valid/jsonld-canonical-embedded.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J2",
+        "J6",
+        "J7"
+      ],
+      "description": "Writer output: the embedded context, @type on the record and on every nested node, a name-only author typed Agent and an ORCID author typed Person.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-canonical-url",
+      "file": "valid/jsonld-canonical-url.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J6"
+      ],
+      "description": "The context is referenced by its raw-main URL; nothing is fetched.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-keys-reordered",
+      "file": "valid/jsonld-keys-reordered.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1"
+      ],
+      "description": "Every object's keys, the root @context and nested @type included, are in reverse order.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-legacy-software-string",
+      "file": "valid/jsonld-legacy-software-string.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J7"
+      ],
+      "description": "A legacy assemblySoftware string stays a string, with no @type.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": "synthetic-assembler",
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-schema-versioned-url",
+      "file": "valid/jsonld-schema-versioned-url.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J6"
+      ],
+      "description": "The record cites a versioned schema URL, which is kept unchanged.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-documentation-url",
+      "file": "valid/jsonld-documentation-url.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J7"
+      ],
+      "description": "documentation is an absolute URL, so it is written as subjectOf and read back as documentation.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "https://example.org/synthetic/README",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-author-name-type",
+      "file": "valid/jsonld-author-name-type.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J7"
+      ],
+      "description": "An explicit nameType (v0.4) types the author node Organization and is kept as a literal for the round trip.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Example Sequencing Centre",
+            "nameType": "Organizational"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-export-terms",
+      "file": "valid/jsonld-export-terms.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J7"
+      ],
+      "description": "Export-context terms @id, keywords, url and conformsTo (Bioschemas Dataset 1.0-RELEASE) are not FHR fields and are set aside.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-documentation-other-scheme",
+      "file": "valid/jsonld-documentation-other-scheme.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J7"
+      ],
+      "description": "documentation is a file: URL, not an http, https or ftp URL, so the writer keeps it as documentation text instead of a subjectOf link.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "file:///data/synthetic/README",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-script-escaped",
+      "file": "valid/jsonld-script-escaped.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "J8"
+      ],
+      "description": "Writer output escaped for a script element: every '<', '>', '&', U+2028 and U+2029 in the values is written as a \\u escape, so values such as '</script>' and '<!--<script>' cannot end or re-open the element. It reads back with the real characters.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "</script>",
+          "<!--<script>",
+          "]]>",
+          "a & b < c > d",
+          "line\u2028separator\u2029end"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-link-scheme-warning",
+      "file": "valid/jsonld-link-scheme-warning.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "R14"
+      ],
+      "description": "A canonical document whose relatedLink holds a javascript: URI. It is valid, but a reader should warn, and a writer refuses to write it as a link (R14).",
+      "warnings": [
+        "R14"
+      ],
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic",
+          "javascript:void(0)"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-expanded",
+      "file": "valid/jsonld-expanded.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J3",
+        "J4",
+        "J5",
+        "J6"
+      ],
+      "description": "The canonical document in JSON-LD expanded form: full IRIs, value objects, @id for IRI fields, @list for commandLineOption and no context.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-graph-single-node",
+      "file": "valid/jsonld-graph-single-node.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J4"
+      ],
+      "description": "The FHR context with the record as the only node of @graph.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-context-url-array",
+      "file": "valid/jsonld-context-url-array.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J3",
+        "J4"
+      ],
+      "description": "The FHR context URL as the only item of a context array: the FHR context alone, read by expansion; nothing is fetched.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-iri-as-string",
+      "file": "valid/jsonld-iri-as-string.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J3",
+        "J5"
+      ],
+      "description": "The FHR context with value objects: the IRI fields schema and relatedLink are plain strings, and dateCreated is a value typed xsd:date.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "fhp-fasta-lf",
+      "file": "valid/fhp-fasta-lf.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "P2",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R7",
+        "R10"
+      ],
+      "description": "Protein FASTA with stops, rare and ambiguous residues, lower case and a gap; LF line endings.",
+      "checksum": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhp-fasta-crlf",
+      "file": "valid/fhp-fasta-crlf.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "R1",
+        "R3"
+      ],
+      "description": "CRLF line endings; CR bytes are hashed.",
+      "checksum": "kFopN0MNS3kRrcpgm7N1rF6OQlg9Qbwq8iBa3UnCWoA=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhp-fasta-no-final-newline",
+      "file": "valid/fhp-fasta-no-final-newline.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "R1"
+      ],
+      "description": "The last residue line has no terminator.",
+      "checksum": "06Y9cjeP5vmuQ8NfgiFzpcxtE7dx8fpaQeFTAwcLkZI=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhp-fasta-comments-and-blank-lines",
+      "file": "valid/fhp-fasta-comments-and-blank-lines.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "R3",
+        "R10"
+      ],
+      "description": "An ordinary comment and a blank line before the FHP lines; both are hashed.",
+      "checksum": "H42XXYI7m5XVZcDQRYFL1fpz5UGCCbwcXugSZ8Jkn+4=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhp-fasta-escaped-record-markers",
+      "file": "valid/fhp-fasta-escaped-record-markers.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "R11"
+      ],
+      "description": "An FHP value holding '>' and '@' written as \\x3E and \\x40 in a double-quoted scalar; it reads back with the real characters.",
+      "checksum": "MzKJfkBFGNsy96UljmFYWpuuW1zkmWfW5ZdR1xpbJZQ=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted",
+        "documentation": "proteins > 50 aa; contact someone@example.org"
+      }
+    },
+    {
+      "id": "fhp-fasta-gzip",
+      "file": "valid/fhp-fasta-gzip.fhp.fasta.gz",
+      "format": "fhp-fasta",
+      "compressed": true,
+      "compression": "gzip",
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "R1"
+      ],
+      "description": "fhp-fasta-lf compressed as one gzip member; same checksum.",
+      "checksum": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhp-fasta-bgzf",
+      "file": "valid/fhp-fasta-bgzf.fhp.fasta.gz",
+      "format": "fhp-fasta",
+      "compressed": true,
+      "compression": "bgzf",
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "R1"
+      ],
+      "description": "fhp-fasta-lf compressed as multi-block BGZF; same checksum.",
+      "checksum": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhp-fasta-database-source",
+      "file": "valid/fhp-fasta-database-source.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1",
+        "P2"
+      ],
+      "description": "sourceType database with a source entry and no derivedFrom.",
+      "checksum": "yDeKGkA/esUJoUUfondAJPRB6ZTiAmUh1oJ6z79Nf3Q=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "database"
+      }
+    },
+    {
+      "id": "fhp-fasta-mixed-sources",
+      "file": "valid/fhp-fasta-mixed-sources.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1"
+      ],
+      "description": "sourceType mixed with a parent file, a database source and a contribution.",
+      "checksum": "swhZYZowXQm+9ho9Djd7+gvKBbJlBLw/l9PZOevRQPs=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "mixed"
+      }
+    },
+    {
+      "id": "fhp-fasta-rich",
+      "file": "valid/fhp-fasta-rich.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1"
+      ],
+      "description": "Every optional FHP field.",
+      "checksum": "8PFQl3axuAdJna/Thr/VqST9jtoUdK7Hy5wXv4HdMwc=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhp-fasta-busco-lineage-dotted",
+      "file": "valid/fhp-fasta-busco-lineage-dotted.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "P1"
+      ],
+      "description": "BUSCO completeness with the dotted dataset version odb12.2 that FHP 1.2 allows (#170).",
+      "converterResults": [
+        "valid",
+        "unsupported-version"
+      ],
+      "checksum": "wVckjyO2MygTdILNVtSbTORFkw3zWSX5xaOG903164I=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhgff3-minimal-checksum-link",
+      "file": "valid/fhgff3-minimal-checksum-link.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1",
+        "G2",
+        "G3",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R7",
+        "R10"
+      ],
+      "description": "The genome linked by its FHR checksum (derivedFrom annotates); header after ##gff-version 3; LF line endings.",
+      "checksum": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-minimal-reference-link",
+      "file": "valid/fhgff3-minimal-reference-link.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G2"
+      ],
+      "description": "The genome given by accession and SeqCol digest (genomeReference).",
+      "checksum": "QRuPEpmwTfsplNQio/NDAEp9aXXob7K47Wk6ynDd7Ww=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-both-links",
+      "file": "valid/fhgff3-both-links.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G2"
+      ],
+      "description": "Both genome-link forms for the same genome; the checksum is authoritative.",
+      "checksum": "hRwS7IGOdgKUar114haeNjHVEHFDgEzX+2EIjXTq5N4=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-directives-interleaved",
+      "file": "valid/fhgff3-directives-interleaved.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1",
+        "R3",
+        "R10"
+      ],
+      "description": "##sequence-region, #!genome-build, ##species and a comment before and between #~ lines; all are hashed.",
+      "checksum": "lQmsVoa3t+LaGtXmHN7AvKvp1D7BD1cpkYFuDBjzK90=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-directives-after-header",
+      "file": "valid/fhgff3-directives-after-header.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1"
+      ],
+      "description": "Native directives after the #~ lines, before the first feature.",
+      "checksum": "jn7guoHrU8ax9NnX1GTKqHKQgCuSZH0Kb/jTpgAFOEo=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-triple-hash-before-features",
+      "file": "valid/fhgff3-triple-hash-before-features.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1"
+      ],
+      "description": "A ### directive before any feature stays inside the leading block.",
+      "checksum": "y3135nAVbCiWXWafTPLGjJc2qZO4e0/+mBw/Zn9PAtg=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-embedded-fasta",
+      "file": "valid/fhgff3-embedded-fasta.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1",
+        "R1",
+        "R3"
+      ],
+      "description": "A ##FASTA section after the features; its residues are hashed.",
+      "checksum": "ETqM44J8vEqJxLdxvE29CyQnQsT27b/wF4GVUtFiiJw=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-header-only",
+      "file": "valid/fhgff3-header-only.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1",
+        "G2"
+      ],
+      "description": "A header and no features: an empty annotation.",
+      "checksum": "AkD3S0MaDJfO0fK4A4PhB6EDCTsWwi7JK16E9eyza2w=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-version-3-1-26",
+      "file": "valid/fhgff3-version-3-1-26.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1"
+      ],
+      "description": "##gff-version 3.1.26 on line 1.",
+      "checksum": "quXvIKm2ZDCWtCF4DC9TiG5a/+Z/svA+xjY/fq+4l0Q=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-version-3-trailing-whitespace",
+      "file": "valid/fhgff3-version-3-trailing-whitespace.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1"
+      ],
+      "description": "##gff-version 3 followed by a space and a tab; G1 allows trailing spaces or tabs.",
+      "checksum": "AZKTL2vPK6JZRJN5EmCOVWGaaZrnC+w/m2SVWtXz2WQ=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-crlf",
+      "file": "valid/fhgff3-crlf.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G1",
+        "R1",
+        "R3"
+      ],
+      "description": "CRLF line endings; CR bytes are hashed.",
+      "checksum": "fZYxQtxOb8F/zOzD7DYOWE/76FypNufTCRyp9Ju2eUk=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-gzip",
+      "file": "valid/fhgff3-gzip.fhgff3.gff3.gz",
+      "format": "fhgff3",
+      "compressed": true,
+      "compression": "gzip",
+      "expected": "valid",
+      "rules": [
+        "G1",
+        "R1"
+      ],
+      "description": "fhgff3-minimal-checksum-link compressed as one gzip member; same checksum.",
+      "checksum": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-bgzf",
+      "file": "valid/fhgff3-bgzf.fhgff3.gff3.gz",
+      "format": "fhgff3",
+      "compressed": true,
+      "compression": "bgzf",
+      "expected": "valid",
+      "rules": [
+        "G1",
+        "R1"
+      ],
+      "description": "fhgff3-minimal-checksum-link compressed as multi-block BGZF; same checksum.",
+      "checksum": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-nested-parent-checksum",
+      "file": "valid/fhgff3-nested-parent-checksum.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G2",
+        "R2",
+        "R3"
+      ],
+      "description": "A second parent (a filtered FHGFF3 annotation); both nested checksums are covered by the root checksum.",
+      "checksum": "T1C1rV3KPPpv3zaHaXrHkyWC2pGVtHkCLgi711a+qoc=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhgff3-busco-lineage-dotted",
+      "file": "valid/fhgff3-busco-lineage-dotted.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "G2"
+      ],
+      "description": "BUSCO completeness with the dotted dataset version odb12.2 that FHGFF3 1.2 allows (#170).",
+      "converterResults": [
+        "valid",
+        "unsupported-version"
+      ],
+      "checksum": "LrjUSzXWiq8RGhdN175fMb6sP97wK92Z+Z+FC/28SH4=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fasta-schema-raw-main",
+      "file": "valid/fasta-schema-raw-main.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V1"
+      ],
+      "description": "The raw-main URL selects the current FHR schema (2.0).",
+      "checksum": "CX4lMG3BrmSzCAmMnTq8+cDtgS22mfV1X7s7fM3QfRE=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+        "schemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "fasta-schema-raw-main-version-1-0",
+      "file": "valid/fasta-schema-raw-main-version-1-0.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V6"
+      ],
+      "description": "An FHR 1 record: raw-main with schemaVersion 1.0, as FHR 1 writers wrote it, is checked against the v0.3.1 schema (deprecated, not invalid). It replaces the retired invalid vector fasta-schema-raw-main-version-1.",
+      "checksum": "3an6Cqo2eomqlt75XIpyWXDtls3GhA8EOpjK97S+ykc=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "id": "fasta-schema-raw-main-version-1-integer",
+      "file": "valid/fasta-schema-raw-main-version-1-integer.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V6"
+      ],
+      "description": "An FHR 1 record: raw-main with schemaVersion 1 is checked against the v0.3.1 schema; 1 and 1.0 are the same number.",
+      "checksum": "uLUfoely+J7DI9Sx/jqgoeC//2laaG/wXEU4bl0mKIE=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "id": "fasta-schema-canonical-raw-main-version-1",
+      "file": "valid/fasta-schema-canonical-raw-main-version-1.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V6"
+      ],
+      "description": "The raw-main URL under the repository's current name with schemaVersion 1 is an FHR 1 record too.",
+      "checksum": "TJ5XF7JXu28nqf/3lR1svPVHRe4d7KRp6VGuosPwKKg=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/main/fhr.json",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "id": "fasta-schema-raw-tag",
+      "file": "valid/fasta-schema-raw-tag.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V2"
+      ],
+      "description": "The v0.4.0 raw tag URL selects the v0.4.0 FHR schema.",
+      "checksum": "eoU+wUDnLpcJEB8kNzf1f1V7VeH6QD1NwKlLcrbjYko=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/v0.4.0/fhr.json",
+        "schemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "fasta-schema-w3id-trailing-slash",
+      "file": "valid/fasta-schema-w3id-trailing-slash.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V3"
+      ],
+      "description": "A w3id release URL with a trailing slash is the same URL.",
+      "checksum": "cxB3Bo3ZVl1n4dJISz+3mqGNJsfcxKLm/T2puLZH6Js=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0/",
+        "schemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "fasta-schema-v0.3.1",
+      "file": "valid/fasta-schema-v0.3.1.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V3"
+      ],
+      "description": "A file citing v0.3.1 is checked against the v0.3.1 schema, which requires the number 1, even though the current schema is 2.0.",
+      "checksum": "WUBTBtMD+mbiN3dFug/q1ghWAdpVDHgWbastGz/Bt3c=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.3.1",
+        "schemaVersion": 1
+      }
+    },
+    {
+      "id": "fasta-schema-other-value",
+      "file": "valid/fasta-schema-other-value.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V5"
+      ],
+      "description": "A schema value that is not a FAIR-bioHeaders schema URL is FHR, checked against the current FHR schema.",
+      "checksum": "5sepUnB+ml2CBrYvj4B+rh+g5sBmIzM121MO8gIq0lQ=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://example.org/schemas/my-fhr-profile.json",
+        "schemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "fasta-schema-canonical-raw-main",
+      "file": "valid/fasta-schema-canonical-raw-main.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V1"
+      ],
+      "description": "The raw-main URL under the repository's current name selects the current FHR schema, as the old name does.",
+      "checksum": "+MUc8GxyLSO99UvY2HDwbfPL9lSCRfKbG0pNq+ghICA=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/main/fhr.json",
+        "schemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "fasta-schema-canonical-raw-tag",
+      "file": "valid/fasta-schema-canonical-raw-tag.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V2"
+      ],
+      "description": "The v0.4.0 raw tag URL under the repository's current name selects the v0.4.0 FHR schema.",
+      "checksum": "xAOubR+30DK2sznX5SVUyCCabsFyZ0ZNPc5MsRyKr+w=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/v0.4.0/fhr.json",
+        "schemaVersion": "2.0"
+      }
+    },
+    {
+      "id": "fhp-fasta-schema-canonical-raw-main",
+      "file": "valid/fhp-fasta-schema-canonical-raw-main.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V1"
+      ],
+      "description": "The raw-main FHP URL under the repository's current name selects the current FHP schema.",
+      "checksum": "b2+lbyBeQZ0AwzRVS1rIBN5OgaVe4BexhQ/AIyt2BBI=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhgff3-schema-canonical-raw-main",
+      "file": "valid/fhgff3-schema-canonical-raw-main.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V1"
+      ],
+      "description": "The raw-main FHGFF3 URL under the repository's current name selects the current FHGFF3 schema.",
+      "checksum": "gGlU8Loh35l1DIFA9U6Qi/nszM2CRfw/FKoqXBgGDHE=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "fhp-fasta-schema-raw-tag",
+      "file": "valid/fhp-fasta-schema-raw-tag.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V2",
+        "V4"
+      ],
+      "description": "The v0.4.0 release publishes FHP, so its raw tag URL selects the FHP 1.0 schema.",
+      "checksum": "5s+pgLaxWa46DzZHU7ObzoUvz7KAlTowCXEv4h8ltZc=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted"
+      }
+    },
+    {
+      "id": "fhgff3-schema-raw-main",
+      "file": "valid/fhgff3-schema-raw-main.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "V1"
+      ],
+      "description": "The raw-main FHGFF3 URL selects the current FHGFF3 schema.",
+      "checksum": "ubDdlbWYhSfh/7ofmosNnc+pdsDBPFA/0bYblwZupvA=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0"
+      }
+    },
+    {
+      "id": "microdata-schema-raw-main-version-1",
+      "file": "valid/microdata-schema-raw-main-version-1.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M3",
+        "V6"
+      ],
+      "description": "An FHR 1 record with an untyped schemaVersion: 1 is read as the number the selected v0.3.1 schema defines, and the record is checked against v0.3.1.",
+      "metadata": {
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+        "schemaVersion": 1,
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "jsonld-schema-raw-main-version-1",
+      "file": "valid/jsonld-schema-raw-main-version-1.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J1",
+        "V6"
+      ],
+      "description": "An FHR 1 record in canonical JSON-LD: raw-main with schemaVersion the number 1 is checked against the v0.3.1 schema.",
+      "metadata": {
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+        "schemaVersion": 1,
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "fasta-extension-fields",
+      "file": "valid/fasta-extension-fields.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R15",
+        "R11",
+        "R12",
+        "V3"
+      ],
+      "description": "FHR 2.1 (v0.5.0) with extension fields of every JSON type, one before the standard fields and the rest after them; their bytes are covered by the checksum like any other header line.",
+      "checksum": "jc00w4V8jVwPpD1NypFO6uF6Z49bnJzw+CDGnUuPfzQ=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "x-refget-commonName": "human",
+        "x-refget-assemblySource": "Synthetic conformance source (placeholder)",
+        "x-example-contact": "someone@example.org; contigs > 1000 bp",
+        "x-example-count": 3,
+        "x-example-ratio": 0.5,
+        "x-example-flags": [
+          true,
+          null
+        ],
+        "x-example-object": {
+          "@id": "https://example.org/extension-only",
+          "list": [
+            "a",
+            2
+          ]
+        },
+        "x-example-empty": ""
+      }
+    },
+    {
+      "id": "gfa-extension-fields",
+      "file": "valid/gfa-extension-fields.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R15",
+        "R11",
+        "R12",
+        "V3"
+      ],
+      "description": "FHR 2.1 (v0.5.0) with extension fields of every JSON type, one before the standard fields and the rest after them; their bytes are covered by the checksum like any other header line.",
+      "checksum": "2lZmmljlbFjH2II59UA262HKnbb3vnWkIfcasf6z+hI=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "x-refget-commonName": "human",
+        "x-refget-assemblySource": "Synthetic conformance source (placeholder)",
+        "x-example-contact": "someone@example.org; contigs > 1000 bp",
+        "x-example-count": 3,
+        "x-example-ratio": 0.5,
+        "x-example-flags": [
+          true,
+          null
+        ],
+        "x-example-object": {
+          "@id": "https://example.org/extension-only",
+          "list": [
+            "a",
+            2
+          ]
+        },
+        "x-example-empty": ""
+      }
+    },
+    {
+      "id": "fasta-extension-fields-raw-main",
+      "file": "valid/fasta-extension-fields-raw-main.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R15",
+        "V1"
+      ],
+      "description": "The raw-main URL selects the current schema, FHR 2.1, which accepts an extension field in a record that states schemaVersion '2.1'.",
+      "checksum": "EaK3VJtz8dmDSJ9g73V0wl2jeQ7Pv/rr/jlSHALS4CY=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/main/fhr.json",
+        "schemaVersion": "2.1",
+        "x-refget-commonName": "human"
+      }
+    },
+    {
+      "id": "fasta-extension-named-like-standard-field",
+      "file": "valid/fasta-extension-named-like-standard-field.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R15"
+      ],
+      "description": "x-genome is an extension field like any other; it does not replace genome, which keeps its value.",
+      "checksum": "hD7e8HFFxksa+cCtub2QzvNcFCWXREdZi5YyqGqiC1A=",
+      "metadata": {
+        "genome": "Synthetic FHR conformance genome",
+        "version": "1.0.0",
+        "masking": "not-masked",
+        "x-genome": "Another name (extension only)"
+      }
+    },
+    {
+      "id": "fhp-fasta-extension-fields",
+      "file": "valid/fhp-fasta-extension-fields.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R15",
+        "P1"
+      ],
+      "description": "FHP 1.1 (v0.5.0) with an extension field holding an object.",
+      "checksum": "FTlHBeBO/h236zLVyppc8qPn9lWt/jGU4Pr7gIIu56s=",
+      "metadata": {
+        "proteome": "Synthetic FHP conformance protein set",
+        "version": "1.0.0",
+        "sourceType": "predicted",
+        "x-example-curation": {
+          "reviewed": true,
+          "round": 2
+        }
+      }
+    },
+    {
+      "id": "fhgff3-extension-fields",
+      "file": "valid/fhgff3-extension-fields.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "R15",
+        "G2"
+      ],
+      "description": "FHGFF3 1.1 (v0.5.0) with an extension field holding a list.",
+      "checksum": "z+xHAzS6jl4kC654SHZar5+oKs2xA++L1xrTPoJ3ECQ=",
+      "metadata": {
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "version": "1.0.0",
+        "x-example-pipeline": [
+          "synthetic-step-1",
+          "synthetic-step-2"
+        ]
+      }
+    },
+    {
+      "id": "jsonld-extension-fields-left-out",
+      "file": "valid/jsonld-extension-fields-left-out.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "J7",
+        "J9"
+      ],
+      "description": "Writer output for an FHR 2.1 record with extension fields, one holding JSON-LD keywords: the writer left them out, so the document holds only standard fields.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.5.0",
+        "schemaVersion": "2.1",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "microdata-extension-fields-left-out",
+      "file": "valid/microdata-extension-fields-left-out.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "valid",
+      "rules": [
+        "M4",
+        "M5"
+      ],
+      "description": "Writer output for an FHR 2.1 record with extension fields: the writer left them out, so the item holds only standard fields.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.5.0",
+        "schemaVersion": "2.1",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU="
+      }
+    },
+    {
+      "id": "fasta-tab-on-checksum-line",
+      "file": "invalid/fasta-tab-on-checksum-line.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "A tab, not a space, separates the colon from the checksum value."
+    },
+    {
+      "id": "fasta-crlf-normalized-checksum",
+      "file": "invalid/fasta-crlf-normalized-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R1",
+      "reason": "CRLF file whose checksum was computed after converting line endings to LF."
+    },
+    {
+      "id": "fasta-missing-checksum",
+      "file": "invalid/fasta-missing-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "No checksum line."
+    },
+    {
+      "id": "fasta-two-checksum-lines",
+      "file": "invalid/fasta-two-checksum-lines.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "Two root-level checksum lines with the same value."
+    },
+    {
+      "id": "fasta-quoted-key",
+      "file": "invalid/fasta-quoted-key.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "The checksum key is quoted."
+    },
+    {
+      "id": "fasta-only-nested-checksum",
+      "file": "invalid/fasta-only-nested-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "Only a nested taxon.checksum holds the digest; there is no root checksum line."
+    },
+    {
+      "id": "fasta-metadata-tampered",
+      "file": "invalid/fasta-metadata-tampered.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "Metadata changed after the checksum was computed (checksum mismatch)."
+    },
+    {
+      "id": "fasta-sequence-tampered",
+      "file": "invalid/fasta-sequence-tampered.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "Sequence changed after the checksum was computed (checksum mismatch)."
+    },
+    {
+      "id": "fasta-checksum-terminator-hashed",
+      "file": "invalid/fasta-checksum-terminator-hashed.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "Checksum computed with the checksum line's terminator still included."
+    },
+    {
+      "id": "fasta-comment-tampered",
+      "file": "invalid/fasta-comment-tampered.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "An ordinary comment changed after the checksum was computed; comments are covered."
+    },
+    {
+      "id": "fasta-truncated-sha512",
+      "file": "invalid/fasta-truncated-sha512.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R4",
+      "reason": "SHA-512 truncated to 32 bytes instead of SHA-512/256."
+    },
+    {
+      "id": "fasta-sha256",
+      "file": "invalid/fasta-sha256.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R4",
+      "reason": "SHA-256 instead of SHA-512/256."
+    },
+    {
+      "id": "fasta-block-literal-checksum",
+      "file": "invalid/fasta-block-literal-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The checksum value is a literal block scalar on the next line."
+    },
+    {
+      "id": "fasta-folded-checksum",
+      "file": "invalid/fasta-folded-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The checksum value is a folded block scalar on the next line."
+    },
+    {
+      "id": "fasta-continued-checksum",
+      "file": "invalid/fasta-continued-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The plain checksum value continues on a second FHR line."
+    },
+    {
+      "id": "fasta-quoted-continued-checksum",
+      "file": "invalid/fasta-quoted-continued-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "A double-quoted checksum value continues on a second FHR line."
+    },
+    {
+      "id": "fasta-comment-on-checksum-line",
+      "file": "invalid/fasta-comment-on-checksum-line.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "A YAML comment follows the checksum value on the checksum line."
+    },
+    {
+      "id": "fasta-record-marker-on-checksum-line",
+      "file": "invalid/fasta-record-marker-on-checksum-line.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "A comment holding a raw '>' follows the checksum value; the checksum line is excluded from the checksum and holds only the value."
+    },
+    {
+      "id": "fasta-tagged-checksum",
+      "file": "invalid/fasta-tagged-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The checksum value carries an explicit !!str tag."
+    },
+    {
+      "id": "fasta-noncanonical-checksum",
+      "file": "invalid/fasta-noncanonical-checksum.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R4",
+      "reason": "The checksum decodes to the right digest but sets an unused bit, so it is not the canonical base64 string."
+    },
+    {
+      "id": "fasta-yaml-leading-zero",
+      "file": "invalid/fasta-yaml-leading-zero.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "vitalStats.L50 is the plain scalar 010: YAML 1.1 reads octal 8, YAML 1.2 reads 10."
+    },
+    {
+      "id": "fasta-yaml-underscore",
+      "file": "invalid/fasta-yaml-underscore.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "vitalStats.L50 is the plain scalar 1_000: YAML 1.1 reads 1000, YAML 1.2 a string."
+    },
+    {
+      "id": "fasta-yaml-sexagesimal",
+      "file": "invalid/fasta-yaml-sexagesimal.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "vitalStats.L50 is the plain scalar 1:30: YAML 1.1 reads 90, YAML 1.2 a string."
+    },
+    {
+      "id": "fasta-yaml-boolean-word",
+      "file": "invalid/fasta-yaml-boolean-word.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "documentation is the plain scalar yes: YAML 1.1 reads true, YAML 1.2 a string."
+    },
+    {
+      "id": "fasta-yaml-tag",
+      "file": "invalid/fasta-yaml-tag.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "The genome value carries an explicit !!str tag."
+    },
+    {
+      "id": "fasta-u0085-in-header",
+      "file": "invalid/fasta-u0085-in-header.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line contains U+0085, a YAML line break."
+    },
+    {
+      "id": "fasta-u2028-in-header",
+      "file": "invalid/fasta-u2028-in-header.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line contains U+2028, a YAML line break."
+    },
+    {
+      "id": "fasta-u2029-in-header",
+      "file": "invalid/fasta-u2029-in-header.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line contains U+2029, a YAML line break."
+    },
+    {
+      "id": "fasta-non-utf8-header",
+      "file": "invalid/fasta-non-utf8-header.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line is not valid UTF-8."
+    },
+    {
+      "id": "fasta-utf8-bom",
+      "file": "invalid/fasta-utf8-bom.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R7",
+      "reason": "The file begins with a UTF-8 byte order mark."
+    },
+    {
+      "id": "fasta-duplicate-key",
+      "file": "invalid/fasta-duplicate-key.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "The root key genome appears twice."
+    },
+    {
+      "id": "fasta-yaml-anchor",
+      "file": "invalid/fasta-yaml-anchor.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "A YAML anchor on the genome value."
+    },
+    {
+      "id": "fasta-yaml-alias",
+      "file": "invalid/fasta-yaml-alias.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "A YAML alias repeats the anchored genome value."
+    },
+    {
+      "id": "fasta-yaml-merge-key",
+      "file": "invalid/fasta-yaml-merge-key.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "taxon uses a YAML merge key."
+    },
+    {
+      "id": "fasta-fhr-line-after-sequence",
+      "file": "invalid/fasta-fhr-line-after-sequence.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R10",
+      "reason": "An FHR line follows the first record; it is hashed, not ignored or merged."
+    },
+    {
+      "id": "fasta-concatenated",
+      "file": "invalid/fasta-concatenated.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R10",
+      "reason": "Two complete FHR files concatenated; each part has a correct checksum."
+    },
+    {
+      "id": "fasta-nan-vital-stats",
+      "file": "invalid/fasta-nan-vital-stats.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R13",
+      "reason": "vitalStats.gcContent is the YAML .nan, which is not a finite JSON number."
+    },
+    {
+      "id": "fasta-infinity-vital-stats",
+      "file": "invalid/fasta-infinity-vital-stats.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R13",
+      "reason": "vitalStats.gcContent is the YAML .inf: not a finite JSON number, and also above gcContent's maximum of 100."
+    },
+    {
+      "id": "gfa-tab-on-checksum-line",
+      "file": "invalid/gfa-tab-on-checksum-line.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "A tab, not a space, separates the colon from the checksum value."
+    },
+    {
+      "id": "gfa-crlf-normalized-checksum",
+      "file": "invalid/gfa-crlf-normalized-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R1",
+      "reason": "CRLF file whose checksum was computed after converting line endings to LF."
+    },
+    {
+      "id": "gfa-missing-checksum",
+      "file": "invalid/gfa-missing-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "No checksum line."
+    },
+    {
+      "id": "gfa-two-checksum-lines",
+      "file": "invalid/gfa-two-checksum-lines.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "Two root-level checksum lines with the same value."
+    },
+    {
+      "id": "gfa-quoted-key",
+      "file": "invalid/gfa-quoted-key.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "The checksum key is quoted."
+    },
+    {
+      "id": "gfa-only-nested-checksum",
+      "file": "invalid/gfa-only-nested-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "Only a nested taxon.checksum holds the digest; there is no root checksum line."
+    },
+    {
+      "id": "gfa-metadata-tampered",
+      "file": "invalid/gfa-metadata-tampered.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "Metadata changed after the checksum was computed (checksum mismatch)."
+    },
+    {
+      "id": "gfa-sequence-tampered",
+      "file": "invalid/gfa-sequence-tampered.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "Sequence changed after the checksum was computed (checksum mismatch)."
+    },
+    {
+      "id": "gfa-checksum-terminator-hashed",
+      "file": "invalid/gfa-checksum-terminator-hashed.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "Checksum computed with the checksum line's terminator still included."
+    },
+    {
+      "id": "gfa-comment-tampered",
+      "file": "invalid/gfa-comment-tampered.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "An ordinary comment changed after the checksum was computed; comments are covered."
+    },
+    {
+      "id": "gfa-truncated-sha512",
+      "file": "invalid/gfa-truncated-sha512.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R4",
+      "reason": "SHA-512 truncated to 32 bytes instead of SHA-512/256."
+    },
+    {
+      "id": "gfa-sha256",
+      "file": "invalid/gfa-sha256.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R4",
+      "reason": "SHA-256 instead of SHA-512/256."
+    },
+    {
+      "id": "gfa-block-literal-checksum",
+      "file": "invalid/gfa-block-literal-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The checksum value is a literal block scalar on the next line."
+    },
+    {
+      "id": "gfa-folded-checksum",
+      "file": "invalid/gfa-folded-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The checksum value is a folded block scalar on the next line."
+    },
+    {
+      "id": "gfa-continued-checksum",
+      "file": "invalid/gfa-continued-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The plain checksum value continues on a second FHR line."
+    },
+    {
+      "id": "gfa-quoted-continued-checksum",
+      "file": "invalid/gfa-quoted-continued-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "A double-quoted checksum value continues on a second FHR line."
+    },
+    {
+      "id": "gfa-comment-on-checksum-line",
+      "file": "invalid/gfa-comment-on-checksum-line.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "A YAML comment follows the checksum value on the checksum line."
+    },
+    {
+      "id": "gfa-tagged-checksum",
+      "file": "invalid/gfa-tagged-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R5",
+      "reason": "The checksum value carries an explicit !!str tag."
+    },
+    {
+      "id": "gfa-noncanonical-checksum",
+      "file": "invalid/gfa-noncanonical-checksum.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R4",
+      "reason": "The checksum decodes to the right digest but sets an unused bit, so it is not the canonical base64 string."
+    },
+    {
+      "id": "gfa-yaml-leading-zero",
+      "file": "invalid/gfa-yaml-leading-zero.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "vitalStats.L50 is the plain scalar 010: YAML 1.1 reads octal 8, YAML 1.2 reads 10."
+    },
+    {
+      "id": "gfa-yaml-underscore",
+      "file": "invalid/gfa-yaml-underscore.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "vitalStats.L50 is the plain scalar 1_000: YAML 1.1 reads 1000, YAML 1.2 a string."
+    },
+    {
+      "id": "gfa-yaml-sexagesimal",
+      "file": "invalid/gfa-yaml-sexagesimal.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "vitalStats.L50 is the plain scalar 1:30: YAML 1.1 reads 90, YAML 1.2 a string."
+    },
+    {
+      "id": "gfa-yaml-boolean-word",
+      "file": "invalid/gfa-yaml-boolean-word.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "documentation is the plain scalar yes: YAML 1.1 reads true, YAML 1.2 a string."
+    },
+    {
+      "id": "gfa-yaml-tag",
+      "file": "invalid/gfa-yaml-tag.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "The genome value carries an explicit !!str tag."
+    },
+    {
+      "id": "gfa-u0085-in-header",
+      "file": "invalid/gfa-u0085-in-header.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line contains U+0085, a YAML line break."
+    },
+    {
+      "id": "gfa-u2028-in-header",
+      "file": "invalid/gfa-u2028-in-header.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line contains U+2028, a YAML line break."
+    },
+    {
+      "id": "gfa-u2029-in-header",
+      "file": "invalid/gfa-u2029-in-header.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line contains U+2029, a YAML line break."
+    },
+    {
+      "id": "gfa-non-utf8-header",
+      "file": "invalid/gfa-non-utf8-header.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R6",
+      "reason": "An FHR header line is not valid UTF-8."
+    },
+    {
+      "id": "gfa-utf8-bom",
+      "file": "invalid/gfa-utf8-bom.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R7",
+      "reason": "The file begins with a UTF-8 byte order mark."
+    },
+    {
+      "id": "gfa-duplicate-key",
+      "file": "invalid/gfa-duplicate-key.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "The root key genome appears twice."
+    },
+    {
+      "id": "gfa-yaml-anchor",
+      "file": "invalid/gfa-yaml-anchor.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "A YAML anchor on the genome value."
+    },
+    {
+      "id": "gfa-yaml-alias",
+      "file": "invalid/gfa-yaml-alias.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "A YAML alias repeats the anchored genome value."
+    },
+    {
+      "id": "gfa-yaml-merge-key",
+      "file": "invalid/gfa-yaml-merge-key.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "taxon uses a YAML merge key."
+    },
+    {
+      "id": "gfa-fhr-line-after-sequence",
+      "file": "invalid/gfa-fhr-line-after-sequence.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R10",
+      "reason": "An FHR line follows the first record; it is hashed, not ignored or merged."
+    },
+    {
+      "id": "gfa-concatenated",
+      "file": "invalid/gfa-concatenated.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R10",
+      "reason": "Two complete FHR files concatenated; each part has a correct checksum."
+    },
+    {
+      "id": "fasta-gzip-sequence-tampered",
+      "file": "invalid/fasta-gzip-sequence-tampered.fhr.fasta.gz",
+      "format": "fasta",
+      "compressed": true,
+      "compression": "gzip",
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "Compressed copy of a sequence-tampered file (checksum mismatch)."
+    },
+    {
+      "id": "microdata-no-fhr-scope",
+      "file": "invalid/microdata-no-fhr-scope.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M1",
+      "reason": "The only item scope has a Schema.org type, not the FHR type."
+    },
+    {
+      "id": "microdata-two-fhr-scopes",
+      "file": "invalid/microdata-two-fhr-scopes.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M1",
+      "reason": "Two complete FHR item scopes."
+    },
+    {
+      "id": "microdata-genome-only-in-nested-scope",
+      "file": "invalid/microdata-genome-only-in-nested-scope.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M1",
+      "reason": "genome appears only inside a nested item scope without itemprop, so the FHR item has no genome."
+    },
+    {
+      "id": "microdata-itemtype-repeated-attribute",
+      "file": "invalid/microdata-itemtype-repeated-attribute.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R9",
+      "reason": "The FHR type is only in a second itemtype attribute; the first applies, so there is no FHR item scope."
+    },
+    {
+      "id": "microdata-itemprop-repeated-attribute",
+      "file": "invalid/microdata-itemprop-repeated-attribute.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R9",
+      "reason": "genome is only in a second itemprop attribute; the first (genomeName, not an FHR property) applies, so genome is missing."
+    },
+    {
+      "id": "microdata-type-mismatch",
+      "file": "invalid/microdata-type-mismatch.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M3",
+      "reason": "gcContent is declared a number but its text is abc."
+    },
+    {
+      "id": "microdata-type-mismatch-value-attribute",
+      "file": "invalid/microdata-type-mismatch-value-attribute.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M3",
+      "reason": "N50 is declared an integer; its value comes from data[value], sixteen, not from the text 16."
+    },
+    {
+      "id": "microdata-value-attribute-applies",
+      "file": "invalid/microdata-value-attribute-applies.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M2",
+      "reason": "masking comes from data[value], partly, which fhr.json does not allow; the text not-masked is not the value."
+    },
+    {
+      "id": "microdata-repeated-single-valued",
+      "file": "invalid/microdata-repeated-single-valued.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M4",
+      "reason": "genome has two values; fhr.json allows one string."
+    },
+    {
+      "id": "microdata-schema-invalid",
+      "file": "invalid/microdata-schema-invalid.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M4",
+      "reason": "Well-formed microdata whose gcContent of 150 exceeds the fhr.json maximum of 100.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Synthetic assembly author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "vitalStats": {
+          "gcContent": 150
+        }
+      }
+    },
+    {
+      "id": "jsonld-nested-extra-key",
+      "file": "invalid/jsonld-nested-extra-key.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J6",
+      "reason": "taxon.checksum has no JSON-LD term and stays in the document, but nested objects are closed from v0.4, so the metadata fails fhr.json.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606",
+          "checksum": "nested property, not the file checksum"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "checksum": "Z1p/siczUlN/N+lDB5Kg6vFRrztGErgLw9H4MfVfZeU=",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-duplicate-key",
+      "file": "invalid/jsonld-duplicate-key.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J2",
+      "reason": "The root key genome appears twice."
+    },
+    {
+      "id": "jsonld-missing-checksum",
+      "file": "invalid/jsonld-missing-checksum.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J6",
+      "reason": "A canonical document whose metadata has no checksum, which fhr.json requires.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhr/v0.4.0",
+        "schemaVersion": "2.0",
+        "genome": "Synthetic FHR conformance genome",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "assemblyAuthor": [
+          {
+            "name": "Josiah Carberry (ORCID example iD)",
+            "uri": "https://orcid.org/0000-0002-1825-0097"
+          }
+        ],
+        "dateCreated": "2026-10-08",
+        "masking": "not-masked",
+        "documentation": "Synthetic FHR conformance vector; not a real assembly.",
+        "genomeSynonym": [
+          "synthetic conformance genome"
+        ],
+        "identifier": [
+          "example:conformance-1"
+        ],
+        "relatedLink": [
+          "https://example.org/synthetic"
+        ],
+        "reuseConditions": "CC0-1.0",
+        "assemblySoftware": [
+          {
+            "name": "synthetic-assembler",
+            "version": "1.2.3",
+            "commandLineOption": [
+              "-t",
+              "2"
+            ]
+          }
+        ],
+        "vitalStats": {
+          "N50": 20,
+          "L50": 1,
+          "totalBasePairs": 20,
+          "gcContent": 45.5
+        }
+      }
+    },
+    {
+      "id": "jsonld-type-object",
+      "file": "invalid/jsonld-type-object.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J1",
+      "reason": "A @type value is an object, not a string or an array of strings."
+    },
+    {
+      "id": "jsonld-documentation-and-subjectof",
+      "file": "invalid/jsonld-documentation-and-subjectof.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J1",
+      "reason": "Both documentation and subjectOf give the documentation value."
+    },
+    {
+      "id": "jsonld-context-remapped",
+      "file": "invalid/jsonld-context-remapped.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J3",
+      "reason": "An embedded copy of the FHR context whose genome and documentation terms exchange their IRIs, so JSON-LD expansion would read each key as the other field."
+    },
+    {
+      "id": "jsonld-context-schemaorg-vocab",
+      "file": "invalid/jsonld-context-schemaorg-vocab.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J3",
+      "reason": "Compacted with a schema.org @vocab and an fhr prefix instead of the FHR context: the keys (name, description, ...) are not the FHR keys their values are read as."
+    },
+    {
+      "id": "jsonld-context-extended",
+      "file": "invalid/jsonld-context-extended.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J3",
+      "reason": "The FHR context URL followed by a local context that adds the term title for schema.org name, used in place of genome."
+    },
+    {
+      "id": "jsonld-context-import",
+      "file": "invalid/jsonld-context-import.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J3",
+      "reason": "A context that @imports the FHR context URL and overrides the genome and documentation terms, which @import allows despite @protected."
+    },
+    {
+      "id": "jsonld-context-nested",
+      "file": "invalid/jsonld-context-nested.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J3",
+      "reason": "The FHR context at the top, and a second context with a schema.org @vocab on the record inside @graph, where description stands for documentation."
+    },
+    {
+      "id": "jsonld-nest",
+      "file": "invalid/jsonld-nest.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J3",
+      "reason": "The FHR context, with documentation moved into @nest, where a JSON reader does not see it but JSON-LD expansion reads it as the record's documentation."
+    },
+    {
+      "id": "jsonld-remote-context",
+      "file": "invalid/jsonld-remote-context.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J3",
+      "reason": "The context is a remote URL that is not a bundled FHR context; nothing may be fetched."
+    },
+    {
+      "id": "jsonld-unknown-term",
+      "file": "invalid/jsonld-unknown-term.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J4",
+      "reason": "http://schema.org/keywords has no FHR field (it is export metadata only)."
+    },
+    {
+      "id": "jsonld-two-nodes",
+      "file": "invalid/jsonld-two-nodes.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J4",
+      "reason": "@graph holds two records."
+    },
+    {
+      "id": "jsonld-two-genome-values",
+      "file": "invalid/jsonld-two-genome-values.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J5",
+      "reason": "Expanded form with two values for genome (schema.org name), a single-valued field."
+    },
+    {
+      "id": "jsonld-flattened",
+      "file": "invalid/jsonld-flattened.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J5",
+      "reason": "The taxon is given only by its @id, as in flattened form; its name is not in the document."
+    },
+    {
+      "id": "jsonld-datetime-datecreated",
+      "file": "invalid/jsonld-datetime-datecreated.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J5",
+      "reason": "dateCreated is typed xsd:dateTime; only xsd:date or no type is allowed."
+    },
+    {
+      "id": "jsonld-root-id",
+      "file": "invalid/jsonld-root-id.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J4",
+      "reason": "Expanded form with a root @id, which no FHR field holds."
+    },
+    {
+      "id": "fhp-fasta-sequence-tampered",
+      "file": "invalid/fhp-fasta-sequence-tampered.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "A residue changed after the checksum was computed (checksum mismatch)."
+    },
+    {
+      "id": "fhp-fasta-stop-normalized-checksum",
+      "file": "invalid/fhp-fasta-stop-normalized-checksum.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R1",
+      "reason": "Checksum computed after removing terminal stop symbols."
+    },
+    {
+      "id": "fhp-fasta-case-normalized-checksum",
+      "file": "invalid/fhp-fasta-case-normalized-checksum.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R1",
+      "reason": "Checksum computed after upper-casing residues."
+    },
+    {
+      "id": "fhp-fasta-two-checksum-lines",
+      "file": "invalid/fhp-fasta-two-checksum-lines.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "Two root-level checksum lines with the same value."
+    },
+    {
+      "id": "fhp-fasta-header-after-record",
+      "file": "invalid/fhp-fasta-header-after-record.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R10",
+      "reason": "An FHP line after the first protein record."
+    },
+    {
+      "id": "fhp-fasta-missing-source-type",
+      "file": "invalid/fhp-fasta-missing-source-type.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "No sourceType.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "checksum": "j+ZpV9X7p9uL8K5fLvkuUK8FG60X1N13VCA5gy4hzZk="
+      }
+    },
+    {
+      "id": "fhp-fasta-curated-source-type",
+      "file": "invalid/fhp-fasta-curated-source-type.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "sourceType curated is not an FHP value (use database or mixed).",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "curated",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "checksum": "p/XCyF6xoVMcrT70s/47v7QKqTm7WBxF+ahKDBVMRY0="
+      }
+    },
+    {
+      "id": "fhp-fasta-genome-key",
+      "file": "invalid/fhp-fasta-genome-key.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "The FHR-only key genome.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "genome": "Synthetic genome",
+        "checksum": "NiPXCYWbTQiZ7wzsgHjTkmvbFM2KV994DnuD0CLLekk="
+      }
+    },
+    {
+      "id": "fhp-fasta-derived-from-no-checksum",
+      "file": "invalid/fhp-fasta-derived-from-no-checksum.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A derivedFrom entry without a checksum.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "checksum": "cLkl/RmS4ABWgnitGps1Oblxi0f8RUnKHzmYpGaXJJE="
+      }
+    },
+    {
+      "id": "fhp-fasta-derived-from-bad-relationship",
+      "file": "invalid/fhp-fasta-derived-from-bad-relationship.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A derivedFrom relationship outside the shared vocabulary.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "encodes"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "checksum": "XFGPUWfziH9IzVRkY/cPgehnjA1lSxB6rZUpnwpZNrQ="
+      }
+    },
+    {
+      "id": "fhp-fasta-source-without-name",
+      "file": "invalid/fhp-fasta-source-without-name.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A source entry without a name.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "source": [
+          {
+            "release": "2026_03"
+          }
+        ],
+        "checksum": "GQWVRXTM/OnYuIJEDz/WF0F/uWLDqSlm12b4AD533L0="
+      }
+    },
+    {
+      "id": "fhp-fasta-unused-genetic-code",
+      "file": "invalid/fhp-fasta-unused-genetic-code.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "geneticCode 7 is not an NCBI translation table.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "geneticCode": 7,
+        "checksum": "NFdUemfmAGbr+X2cfmNTNQXwQhi2nd+9C86O1OdLL3A="
+      }
+    },
+    {
+      "id": "fhp-fasta-busco-no-lineage-version",
+      "file": "invalid/fhp-fasta-busco-no-lineage-version.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A BUSCO lineage dataset without its version suffix (_odbNN).",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "completeness": {
+          "lineageDataset": "primates",
+          "completeSingle": 1,
+          "completeDuplicated": 0,
+          "fragmented": 0,
+          "missing": 1,
+          "total": 2
+        },
+        "checksum": "Fxt2rd3kRIik/sIw47RQg4wKds/A9jsmWnC7jp5w7NA="
+      }
+    },
+    {
+      "id": "fhp-fasta-busco-lineage-trailing-dot",
+      "file": "invalid/fhp-fasta-busco-lineage-trailing-dot.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A malformed dotted BUSCO dataset version: the last dot has no digits after it.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "completeness": {
+          "lineageDataset": "primates_odb12.",
+          "completeSingle": 1,
+          "completeDuplicated": 0,
+          "fragmented": 0,
+          "missing": 1,
+          "total": 2
+        },
+        "checksum": "1Zp2Kx4KR1XBVGFN01i33aIQ8gTPuoMXjG4WzKfcUA8="
+      }
+    },
+    {
+      "id": "fhp-fasta-busco-lineage-leading-dot",
+      "file": "invalid/fhp-fasta-busco-lineage-leading-dot.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A malformed dotted BUSCO dataset version: _odb is followed by a dot, not a digit.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "completeness": {
+          "lineageDataset": "primates_odb.12",
+          "completeSingle": 1,
+          "completeDuplicated": 0,
+          "fragmented": 0,
+          "missing": 1,
+          "total": 2
+        },
+        "checksum": "CklOeVn8zHmCRKoSJTxNYsvrSo7X3bd7hmIKJ7sWGV4="
+      }
+    },
+    {
+      "id": "fhp-fasta-busco-lineage-letter-component",
+      "file": "invalid/fhp-fasta-busco-lineage-letter-component.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A malformed dotted BUSCO dataset version: a version component is not all digits.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "completeness": {
+          "lineageDataset": "primates_odb12.2b",
+          "completeSingle": 1,
+          "completeDuplicated": 0,
+          "fragmented": 0,
+          "missing": 1,
+          "total": 2
+        },
+        "checksum": "DnT5hTGfmhWe4uPNzAnz67VG2fcuwdvMr2NPmVr4LVk="
+      }
+    },
+    {
+      "id": "fhp-fasta-busco-lineage-uppercase",
+      "file": "invalid/fhp-fasta-busco-lineage-uppercase.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P1",
+      "reason": "A malformed dotted BUSCO dataset version: dataset names are lower case.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhp/v0.4.0",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "completeness": {
+          "lineageDataset": "Primates_odb12.2",
+          "completeSingle": 1,
+          "completeDuplicated": 0,
+          "fragmented": 0,
+          "missing": 1,
+          "total": 2
+        },
+        "checksum": "UBb8RwJ0v0iw/C5Xxdw5BdL/aVWISV5z0SKtnq+8mn0="
+      }
+    },
+    {
+      "id": "fhp-fasta-cites-fhr-schema",
+      "file": "invalid/fhp-fasta-cites-fhr-schema.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "P2",
+      "reason": "Protein metadata citing fhr.json is validated as FHR, and fails it.",
+      "metadata": {
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+        "schemaVersion": "1.0",
+        "proteome": "Synthetic FHP conformance protein set",
+        "sourceType": "predicted",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-11",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "translatedFrom"
+          }
+        ],
+        "documentation": "Synthetic FHP conformance vector; the parent checksum is a placeholder.",
+        "checksum": "Y4Mv2iolMZ54Wk/Qw3290fkCov6/BJqLIbRnSYkn3dM="
+      }
+    },
+    {
+      "id": "fhgff3-fasta-tampered",
+      "file": "invalid/fhgff3-fasta-tampered.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R3",
+      "reason": "A residue of the ##FASTA section changed after the checksum was computed."
+    },
+    {
+      "id": "fhgff3-two-checksum-lines",
+      "file": "invalid/fhgff3-two-checksum-lines.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R2",
+      "reason": "Two root-level checksum lines with the same value."
+    },
+    {
+      "id": "fhgff3-header-after-feature",
+      "file": "invalid/fhgff3-header-after-feature.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R10",
+      "reason": "A #~ line after the first feature."
+    },
+    {
+      "id": "fhgff3-header-after-fasta",
+      "file": "invalid/fhgff3-header-after-fasta.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G1",
+      "reason": "A #~ line after ##FASTA, before the first sequence line."
+    },
+    {
+      "id": "fhgff3-concatenated",
+      "file": "invalid/fhgff3-concatenated.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R10",
+      "reason": "Two FHGFF3 files concatenated: the second #~ block follows features."
+    },
+    {
+      "id": "fhgff3-header-before-version",
+      "file": "invalid/fhgff3-header-before-version.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G1",
+      "reason": "A #~ line on line 1, before ##gff-version 3."
+    },
+    {
+      "id": "fhgff3-version-30",
+      "file": "invalid/fhgff3-version-30.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G1",
+      "reason": "##gff-version 30 on line 1: G1 allows only 3 or 3.x.y."
+    },
+    {
+      "id": "fhgff3-version-3x",
+      "file": "invalid/fhgff3-version-3x.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G1",
+      "reason": "##gff-version 3x on line 1: G1 allows only 3 or 3.x.y."
+    },
+    {
+      "id": "fhgff3-version-3-1",
+      "file": "invalid/fhgff3-version-3-1.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G1",
+      "reason": "##gff-version 3.1 on line 1: G1 allows only 3 or 3.x.y."
+    },
+    {
+      "id": "fhgff3-no-genome-link",
+      "file": "invalid/fhgff3-no-genome-link.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G2",
+      "reason": "Neither an annotates link nor a genomeReference.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0",
+        "schemaVersion": "1.0",
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-13",
+        "documentation": "Synthetic FHGFF3 conformance vector; genome identifiers are placeholders.",
+        "checksum": "t1jKrhKpsf6Xf9PuyF/w7yxgSwKdU+87btPoA5/J0uc="
+      }
+    },
+    {
+      "id": "fhgff3-half-reference",
+      "file": "invalid/fhgff3-half-reference.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G2",
+      "reason": "A genomeReference without its SeqCol digest.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0",
+        "schemaVersion": "1.0",
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-13",
+        "documentation": "Synthetic FHGFF3 conformance vector; genome identifiers are placeholders.",
+        "genomeReference": {
+          "accession": "SYNTHETIC_ASSEMBLY.1"
+        },
+        "checksum": "1KAWMiMUhJvWNEKXCz7yLihsblfHJRyPWD5llVFTqLE="
+      }
+    },
+    {
+      "id": "fhgff3-two-annotates",
+      "file": "invalid/fhgff3-two-annotates.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G2",
+      "reason": "Two derivedFrom items with the relationship annotates.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0",
+        "schemaVersion": "1.0",
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-13",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "annotates"
+          },
+          {
+            "headerType": "FHR",
+            "checksum": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=",
+            "relationship": "annotates"
+          }
+        ],
+        "documentation": "Synthetic FHGFF3 conformance vector; genome identifiers are placeholders.",
+        "checksum": "5RJnR6hZfcHoGV0P/BDgvPuhuyJl3qF7eOSF18pH9P0="
+      }
+    },
+    {
+      "id": "fhgff3-annotates-fhp",
+      "file": "invalid/fhgff3-annotates-fhp.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G2",
+      "reason": "An annotates link whose parent is not an FHR genome.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0",
+        "schemaVersion": "1.0",
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-13",
+        "derivedFrom": [
+          {
+            "headerType": "FHP",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "annotates"
+          }
+        ],
+        "documentation": "Synthetic FHGFF3 conformance vector; genome identifiers are placeholders.",
+        "checksum": "sSehrjBnb+eKEGdRWSHVTGo2Qn3D3nUlh7HmxVv0kEQ="
+      }
+    },
+    {
+      "id": "fhgff3-fhr-only-key",
+      "file": "invalid/fhgff3-fhr-only-key.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G2",
+      "reason": "The FHR-only key genome.",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0",
+        "schemaVersion": "1.0",
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-13",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "annotates"
+          }
+        ],
+        "documentation": "Synthetic FHGFF3 conformance vector; genome identifiers are placeholders.",
+        "genome": "Synthetic genome",
+        "checksum": "cDPwAc7S9binhK7akmV4hM6G4NKYNbvC1OC+/X2y4Po="
+      }
+    },
+    {
+      "id": "fhgff3-busco-lineage-trailing-dot",
+      "file": "invalid/fhgff3-busco-lineage-trailing-dot.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G2",
+      "reason": "A malformed dotted BUSCO dataset version: the last dot has no digits after it (#170).",
+      "metadata": {
+        "schema": "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0",
+        "schemaVersion": "1.0",
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-13",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "annotates"
+          }
+        ],
+        "documentation": "Synthetic FHGFF3 conformance vector; genome identifiers are placeholders.",
+        "completeness": {
+          "lineageDataset": "primates_odb12.",
+          "completeSingle": 1,
+          "completeDuplicated": 0,
+          "fragmented": 0,
+          "missing": 1,
+          "total": 2
+        },
+        "checksum": "tO3QgsCjIOCY1+10PONFv+HGDS1zzqCSbZrQ0qQ6uNU="
+      }
+    },
+    {
+      "id": "fhgff3-cites-fhr-schema",
+      "file": "invalid/fhgff3-cites-fhr-schema.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "G3",
+      "reason": "Annotation metadata citing fhr.json is validated as FHR, and fails it.",
+      "metadata": {
+        "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+        "schemaVersion": "1.0",
+        "annotation": "Synthetic FHGFF3 conformance annotation",
+        "taxon": {
+          "name": "Homo sapiens",
+          "uri": "https://identifiers.org/taxonomy:9606"
+        },
+        "version": "1.0.0",
+        "metadataAuthor": [
+          {
+            "name": "Synthetic metadata author (placeholder)"
+          }
+        ],
+        "dateCreated": "2026-10-13",
+        "derivedFrom": [
+          {
+            "headerType": "FHR",
+            "checksum": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            "relationship": "annotates"
+          }
+        ],
+        "documentation": "Synthetic FHGFF3 conformance vector; genome identifiers are placeholders.",
+        "checksum": "RB/a6AKH0CbOstr5y6ovdm/ML1X3DTULG2Y1KyILPfA="
+      }
+    },
+    {
+      "id": "fasta-schema-raw-main-version-1-invalid",
+      "file": "invalid/fasta-schema-raw-main-version-1-invalid.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V6",
+      "reason": "An FHR 1 record whose vitalStats.N50 is not an integer: the v0.3.1 schema it is checked against rejects it."
+    },
+    {
+      "id": "fasta-schema-raw-main-version-string-1",
+      "file": "invalid/fasta-schema-raw-main-version-string-1.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V1",
+      "reason": "schemaVersion is the string '1', not the number 1, so V6 does not apply: raw-main selects the current schema (2.0), which rejects it."
+    },
+    {
+      "id": "fasta-schema-raw-main-version-true",
+      "file": "invalid/fasta-schema-raw-main-version-true.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V1",
+      "reason": "schemaVersion is a boolean, not the number 1, so V6 does not apply: raw-main selects the current schema (2.0), which rejects it."
+    },
+    {
+      "id": "fasta-schema-raw-tag-version-1",
+      "file": "invalid/fasta-schema-raw-tag-version-1.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V2",
+      "reason": "The v0.4.0 schema requires schemaVersion '2.0', not 1."
+    },
+    {
+      "id": "fasta-schema-v0.3.1-version-2.0",
+      "file": "invalid/fasta-schema-v0.3.1-version-2.0.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V3",
+      "reason": "The v0.3.1 schema is selected, and it requires schemaVersion 1."
+    },
+    {
+      "id": "fasta-schema-unknown-release",
+      "file": "invalid/fasta-schema-unknown-release.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V4",
+      "reason": "v0.0.0 is not a release; the result is unsupported-version, not a check against another schema.",
+      "result": "unsupported-version"
+    },
+    {
+      "id": "fasta-schema-branch-ref",
+      "file": "invalid/fasta-schema-branch-ref.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V4",
+      "reason": "A raw URL whose ref is a branch, not main or a release tag, is unsupported-version.",
+      "result": "unsupported-version"
+    },
+    {
+      "id": "fasta-schema-other-value-version-1",
+      "file": "invalid/fasta-schema-other-value-version-1.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V5",
+      "reason": "Any other schema value is checked against the current FHR schema (2.0), so schemaVersion 1 fails."
+    },
+    {
+      "id": "fhp-fasta-schema-release-without-type",
+      "file": "invalid/fhp-fasta-schema-release-without-type.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V4",
+      "reason": "v0.3.1 published no FHP schema; the result is unsupported-version.",
+      "result": "unsupported-version"
+    },
+    {
+      "id": "fhgff3-schema-unknown-release",
+      "file": "invalid/fhgff3-schema-unknown-release.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "V4",
+      "reason": "v0.0.0 is not a release; the result is unsupported-version.",
+      "result": "unsupported-version"
+    },
+    {
+      "id": "fasta-unknown-key",
+      "file": "invalid/fasta-unknown-key.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "genomeName is not an FHR field and does not start with x-."
+    },
+    {
+      "id": "fasta-extension-key-uppercase-prefix",
+      "file": "invalid/fasta-extension-key-uppercase-prefix.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The prefix is X-, not x-."
+    },
+    {
+      "id": "fasta-extension-key-empty-name",
+      "file": "invalid/fasta-extension-key-empty-name.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "Nothing follows the x- prefix."
+    },
+    {
+      "id": "fasta-extension-key-punctuation-first",
+      "file": "invalid/fasta-extension-key-punctuation-first.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The name after x- starts with _, not a letter or digit."
+    },
+    {
+      "id": "fasta-extension-key-space",
+      "file": "invalid/fasta-extension-key-space.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The key contains a space."
+    },
+    {
+      "id": "fasta-extension-key-non-ascii",
+      "file": "invalid/fasta-extension-key-non-ascii.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The key contains a non-ASCII letter."
+    },
+    {
+      "id": "fasta-extension-key-trailing-line-feed",
+      "file": "invalid/fasta-extension-key-trailing-line-feed.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The key ends with a line feed. Python's $ would match before it; no key may contain one."
+    },
+    {
+      "id": "fasta-extension-nested",
+      "file": "invalid/fasta-extension-nested.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "An x- key inside taxon: nested objects stay closed."
+    },
+    {
+      "id": "fasta-extension-nested-author",
+      "file": "invalid/fasta-extension-nested-author.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "An x- key inside a metadataAuthor item: nested objects stay closed."
+    },
+    {
+      "id": "fasta-extension-older-version",
+      "file": "invalid/fasta-extension-older-version.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The record cites v0.5.0 but states schemaVersion '2.0', which has no extension fields."
+    },
+    {
+      "id": "fasta-extension-older-release",
+      "file": "invalid/fasta-extension-older-release.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The record cites v0.4.0, whose schema (FHR 2.0) has no extension fields."
+    },
+    {
+      "id": "fasta-extension-older-release-new-version",
+      "file": "invalid/fasta-extension-older-release-new-version.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The record cites v0.4.0, whose schema accepts only schemaVersion '2.0' and no extension fields."
+    },
+    {
+      "id": "gfa-extension-older-version",
+      "file": "invalid/gfa-extension-older-version.fhr.gfa",
+      "format": "gfa",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "A GFA header that cites v0.5.0 but states schemaVersion '2.0', which has no extension fields."
+    },
+    {
+      "id": "fasta-extension-older-version-raw-main",
+      "file": "invalid/fasta-extension-older-version-raw-main.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "Raw-main selects the current schema (2.1), but the record states schemaVersion '2.0', which has no extension fields."
+    },
+    {
+      "id": "fasta-extension-yaml-boolean-word",
+      "file": "invalid/fasta-extension-yaml-boolean-word.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R12",
+      "reason": "An extension value written as plain yes, a boolean in YAML 1.1 and a string in YAML 1.2."
+    },
+    {
+      "id": "fasta-extension-nan",
+      "file": "invalid/fasta-extension-nan.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R13",
+      "reason": "An extension value is NaN."
+    },
+    {
+      "id": "fasta-extension-duplicate-key",
+      "file": "invalid/fasta-extension-duplicate-key.fhr.fasta",
+      "format": "fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R8",
+      "reason": "The extension key x-refget-commonName appears twice."
+    },
+    {
+      "id": "fhp-fasta-extension-older-version",
+      "file": "invalid/fhp-fasta-extension-older-version.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The record cites v0.5.0 but states schemaVersion '1.0', which has no extension fields."
+    },
+    {
+      "id": "fhgff3-extension-older-version",
+      "file": "invalid/fhgff3-extension-older-version.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The record cites v0.5.0 but states schemaVersion '1.0', which has no extension fields."
+    },
+    {
+      "id": "fhp-fasta-extension-older-release",
+      "file": "invalid/fhp-fasta-extension-older-release.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The record cites v0.4.0, whose schema (1.0) has no extension fields."
+    },
+    {
+      "id": "fhgff3-extension-older-release",
+      "file": "invalid/fhgff3-extension-older-release.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "The record cites v0.4.0, whose schema (1.0) has no extension fields."
+    },
+    {
+      "id": "fhp-fasta-extension-nested",
+      "file": "invalid/fhp-fasta-extension-nested.fhp.fasta",
+      "format": "fhp-fasta",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "An x- key inside a derivedFrom item: nested objects stay closed."
+    },
+    {
+      "id": "fhgff3-extension-nested",
+      "file": "invalid/fhgff3-extension-nested.fhgff3.gff3",
+      "format": "fhgff3",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "R15",
+      "reason": "An x- key inside a derivedFrom item: nested objects stay closed."
+    },
+    {
+      "id": "jsonld-extension-field",
+      "file": "invalid/jsonld-extension-field.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J9",
+      "reason": "A canonical document with the root key x-refget-commonName, which a JSON reader would keep and a JSON-LD processor would drop."
+    },
+    {
+      "id": "jsonld-extension-field-general",
+      "file": "invalid/jsonld-extension-field-general.fhr.jsonld",
+      "format": "jsonld",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "J9",
+      "reason": "The FHR context as the only item of an array, so the document is read by expansion, with the root key x-refget-commonName: the context has no term for it (J4)."
+    },
+    {
+      "id": "microdata-extension-field",
+      "file": "invalid/microdata-extension-field.fhr.html",
+      "format": "microdata",
+      "compressed": false,
+      "expected": "invalid",
+      "rule": "M5",
+      "reason": "The FHR item has the property x-refget-commonName, although the selected schema (FHR 2.1) would accept it in JSON or YAML."
+    }
+  ],
+  "retired": [
+    {
+      "id": "fasta-schema-raw-main-version-1",
+      "expected": "invalid",
+      "rule": "V1",
+      "replacedBy": "fasta-schema-raw-main-version-1-0",
+      "reason": "Rule V6 made the FHR 1 record it carries (raw-main with schemaVersion 1.0) valid, so its expected outcome changed; the same bytes are now the valid vector fasta-schema-raw-main-version-1-0."
+    }
+  ]
+}

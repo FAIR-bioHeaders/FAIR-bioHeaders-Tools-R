@@ -1,0 +1,6 @@
+.rlib/
+*.o
+*.so
+.Rhistory
+*.tar.gz
+*.Rcheck/
