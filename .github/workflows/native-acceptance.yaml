@@ -44,7 +44,7 @@ jobs:
           use-public-rspm: true
 
       - name: Install the declared dependencies only
-        run: install.packages(c("jsonlite", "testthat"))
+        run: install.packages(c("digest", "jsonlite", "jsonvalidate", "yaml", "testthat", "withr"))
         shell: Rscript {0}
 
       - name: Assert the package is native, structurally

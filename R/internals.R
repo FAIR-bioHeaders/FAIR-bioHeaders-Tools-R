@@ -23,13 +23,6 @@ NULL
   readBin(con, what = "raw", n = size)
 }
 
-.bh_is_gzip_file <- function(path) {
-  con <- file(path, "rb")
-  on.exit(close(con), add = TRUE)
-  b <- readBin(con, what = "raw", n = 2L)
-  length(b) == 2L && identical(b, as.raw(c(0x1f, 0x8b)))
-}
-
 #' Conditions and diagnostics
 #'
 #' Failures are classed conditions. Every error this package raises carries `bh_error` plus

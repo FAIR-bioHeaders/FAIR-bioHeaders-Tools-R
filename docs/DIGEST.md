@@ -1,156 +1,98 @@
-# The SHA-512/256 route: decision, evidence, and what was rejected
+# Digest decision: how this package obtains SHA-512/256
 
-Decided **2026-11-14**. Owner: FAIR-bioHeaders-Tools-R, under
-[issue #4](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools-R/issues/4) and
-[#3](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools-R/issues/3), following the
-native-first direction recorded in
-[FAIR-bioHeaders-Specification#211](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/211)
-(Round 10), which names R specifically: *"Resolve R's real SHA-512/256 route explicitly
-under this native-first direction; do not silently choose Python delegation, truncated
-SHA-512 or a quietly incorrect schema engine."*
+Date: **2026-11-14**. Host of measurement: macOS 14 arm64, R 4.6.1. This record
+implements the instruction that the R real SHA-512/256 route be resolved
+**explicitly** under the native-first direction, with no silent Python delegation,
+no truncated SHA-512, and no quietly wrong schema engine.
 
-## The requirement
+## The constraint
 
-`docs/FORMAT.md` rule R4: the checksum is **SHA-512/256** - the FIPS 180-4 algorithm of
-that name - over the file's exact bytes except the root-level checksum line and its
-terminator (R1-R3), encoded as canonical padded standard base64 (44 characters, the
-character before `=` one of `AEIMQUYcgkosw048`), compared as exact strings.
+The FAIR-bioHeaders file checksum is **SHA-512/256** - the 32-byte member of the
+SHA-512 family defined in FIPS 180-4 section 5.3.8, written as canonical padded
+base64 (docs/FORMAT.md rule R4). It is not SHA-512 truncated to 32 bytes. Truncating
+a SHA-512 digest is a *different algorithm* with a different initial hash value, and
+it produces a plausible 44-character base64 string for every file:
 
-SHA-512/256 is not SHA-512 truncated. It is the SHA-512 compression function run from a
-different initial hash value (FIPS 180-4 5.3.8) with the first four state words returned.
-That difference is why a wrong choice here is invisible: every candidate produces a
-well-formed 44-character string.
+    SHA-512("abc")   = ddaf35a193617aba...   (64 bytes, FIPS 180-4 example)
+    SHA-512/256("abc") = 53048e2681941ef9...  (32 bytes, NIST CVL 512/256 example)
 
-## Decision
+A wrong route therefore fails *closed-looking*: every checksum silently mismatches
+live files, and every fixture built the same wrong way still passes. This is the
+failure mode the design below exists to make impossible.
 
-**Vendor FIPS 180-4 SHA-512/256 in C under `src/`, with no external library.**
+## What the R ecosystem provides (measured, docs/CAPABILITY.md, re-verified 2026-11-14)
 
-* `src/sha512.c` - the SHA-512 core, configured as SHA-512/256 and as SHA-512.
-* `src/scan.c` - the rule R1 line scanner that lets rule R10 be checked over a file the
-  caller never loads into R memory.
-* `src/entry.c` - `.Call` bindings, canonical base64, and a load-time self-test.
-* `R/digest.R` - the R API: `bh_sha512_256()`, `bh_sha512_256_file()`, `bh_digest_stream()`.
-
-Cost accepted: compiled code, so a C compiler is needed to build from source
-(`SystemRequirements: C99`, `NeedsCompilation: yes`).
-
-Capability gained: **no runtime dependency outside R and the three imported R packages**,
-and no external process, so the primary acceptance job needs nothing but an R
-installation.
-
-The load-time self-test is the guard against the one failure mode this choice introduces -
-a miscompiled core. `.onLoad()` runs the published sample messages through the compiled
-code and **refuses to load the package** if they do not match
-(`src/entry.c`, `bh_selftest()`). There is no fallback anywhere in the digest path:
-`bh_sha512_256_available()` is `TRUE` exactly when the package loaded, and if the shared
-object is missing, the calls error naming that fact rather than substituting something.
-
-## Evidence
-
-### 1. Published vectors, from a source that is not this package
-
-The NIST CVL worked example *"Secure Hash Algorithm, Message Digest Length = 512/256"* was
-retrieved on 2026-11-14 from
-
-```
-https://csrc.nist.gov/csrc/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/SHA512_256.pdf
-```
-
-(HTTP 200, `application/pdf`, 86,756 bytes, 8 pages; positive control - the nonsense URL
-`https://csrc.nist.gov/definitely-not-a-page-xyz123` returned 404, so a 200 here means
-something.) It states the SHA-512/256 initial hash value and works through two sample
-messages:
-
-| input | published 512/256 digest | this package |
+| candidate | SHA-512/256? | finding |
 | --- | --- | --- |
-| `"abc"` | `53048E26 81941EF9 9B2E29B7 6B4C7DAB E4C2D0C6 34FC6D46 E0E2F131 07E7AF23` | identical |
-| the 112-character two-block sample | `3928E184 FB8690F8 40DA3988 121D31BE 65CB9D3E F83EE614 6FEAC861 E19B563A` | identical |
+| `digest` 0.6.39 (current CRAN) | **no** | not even `sha384`; `sha512` only. Truncation is not this algorithm |
+| R `openssl` 2.4.2 / 2.5.0 | **no** | `digest_create()` exposes md5/sha1/sha256/sha512-family names without SHA-512/256 |
+| system `openssl dgst -sha512-256` | yes | proven byte-exact three ways over all 87 valid sequence vectors in the capability study, but: a PATH dependency on a specific CLI and its flag spelling, behaviour verified on one macOS host, and a package that shells out for its central guarantee |
+| Python delegation (subprocess to the reference toolkit) | yes | rejected outright by the native-first direction of issues #3/#4 and by the primary acceptance job installing no Python at all |
+| `jsonvalidate`'s V8 engine (hash inside V8) | possible | rejected: couples the file checksum to the lifetime and internals of a transitive hard dependency, untestable apart from the schema layer, and V8's `crypto.subtle` support is async - it does not fit `.Call`-style sync use or streaming |
+| **vendored FIPS 180-4 core in `src/`** | yes | **chosen** |
 
-Those two values are the constants inside `bh_selftest()`, so they are checked on every
-load as well as in `tests/testthat/test-digest-vectors.R`. The eight initial words in
-`src/sha512.c` are the eight the same document lists under "Initial hash value".
+## The chosen route: vendored C core (`src/sha512.c`, `src/entry.c`, `src/scan.c`)
 
-The FIPS 180-4 message 3 sample (1,000,000 × `'a'`) is **not** in that document; its
-expected value here (`9a59a052930187a97038cae692f30708aa6491923ef5194394dc68d56c74fb21`)
-comes from two independent implementations on this host - `openssl dgst -sha512-256`
-(OpenSSL 4.1.0) and CPython `hashlib.new("sha512_256")`, which agreed - and the test file
-labels it as locally generated rather than published. The same is true of the
-length-boundary corpus (0, 1, 2, 55, 56, 57, 63, 64, 65, 111, 112, 113, 119, 120, 121, 127,
-128, 129, 200, 1000 bytes), which pins the padding-boundary behaviour.
+Reasons, against the alternatives in the same table:
 
-The 80 round constants were derived from the definition rather than copied from memory
-(first 64 bits of the fractional parts of the cube roots of the first 80 primes) and then
-confirmed by the vectors; the shared SHA-512 path in the same core is checked against the
-published SHA-512 of `"abc"` (`ddaf35a193617aba...`), which is what distinguishes "the
-compression function is right" from "one value came out right by luck".
+1. **No new external dependency.** `Imports:` stays `digest, jsonlite, jsonvalidate,
+   yaml` (digest for SHA-256 provenance pins only, never for the file checksum). A C
+   compiler is already required by `SystemRequirements` and is present on CRAN and
+   Bioconductor CI images. No PATH assumptions, no libcrypto symbol-name roulette.
+2. **It is self-testing at load time.** `.onLoad` runs `bh_selftest()`
+   (`src/entry.c`), which recomputes the published sample digests through the
+   *compiled* code: SHA-512/256 of `"abc"` = `53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23`
+   and of the FIPS 180-4 112-character two-block message =
+   `3928e184fb8690f840da3988121d31be65cb9d3ef83ee6146feac861e19b563a`
+   (NIST CVL worked example "Secure Hash Algorithm, Message Digest Length = 512/256",
+   retrieved 2026-11-14), plus SHA-512("abc") = `ddaf35a193617aba...` through the
+   same core with the 5.3.1 IV, and the 112-char message fed **one byte at a time**
+   to prove the streaming path equals the one-shot path exactly at the length where
+   padding needs a second block. A build that hashes differently **refuses to load**.
+3. **The initial values are the published constants** (FIPS 180-4 5.3.8), carried in
+   the source with their section numbers, and the SHA-512 IV is also present so the
+   shared compression function can be proven correct independently of the 512/256
+   truncation-by-design - the thing that distinguishes "right algorithm" from
+   "reproduced one value by luck".
 
-### 2. The reference implementation, through the shared suite
+### Evidence the route rests on
 
-(Scope note for this revision: the digest layer and its published-vector tests land here; the
-comparison against the suite's own stated checksums
-(`tests/testthat/test-digest-fixtures.R`) and the supplemental client differential
-(`tools/differential_digest.R`) land with the reader in the next PR of this stack. Every
-number quoted below was executed locally on the combined work before the split, and each PR's
-status comment reports the run it makes reproducible.)
+- **Published constants:** the two NIST CVL 512/256 digests and the IV above, pinned
+  in `tests/testthat/test-digest-vectors.R` and re-checked at every load.
+- **Independent implementations, same bytes:** all **87** valid sequence-format
+  vectors of the shared v0.6.0 suite - whose `checksum:` lines were produced by the
+  reference Python toolkit and reviewed upstream - are reproduced exactly by the
+  vendored core through the full R3 rule path (decompress, exclude the checksum line
+  and its terminator, hash the rest) in `test-digest-fixtures.R`; and whole decompressed
+  files (without the R3 exclusion) match CPython `hashlib.new("sha512_256")` **87/87**
+  plus the three FIPS sample messages, measured on this host 2026-11-14 and reproducible
+  with `tools/differential_hashlib.py` plus `tools/differential_hashlib.R` (a labelled,
+  non-gating supplemental CI job; acceptance itself is native and the primary job
+  installs no Python).
+- **The trap is pinned, not just described:** `test-digest-vectors.R` records what
+  truncated SHA-512 *would have written* for several fixture inputs and asserts the
+  package writes the SHA-512/256 value instead.
 
-The strongest evidence is not a hash of `"abc"`: it is that the shared suite states the
-checksum of its own bytes. For **all 87 valid sequence-format vectors** at the v0.6.0
-baseline, the digest this code computes over the rule R3 coverage equals the checksum line
-inside the file equals the manifest's declared checksum
-(`tests/testthat/test-digest-fixtures.R`, which prints the count it compared). Those 87
-values were produced by the reference Python toolkit and reviewed upstream. They are
-pinned data, not a live Python call: no test in this package invokes Python.
+### Accepted cost
 
-Across the whole suite the native run agrees with the manifest on **228 of 228**
-sequence-format vectors, and the acceptance job reports all **291** as pass, fail or
-not-run-with-reason.
+Compiled code in a scientific R package (a C compiler at install; platform CI coverage
+becomes meaningful). Mitigations: the load-time self-test, the pinned vectors, and
+`R CMD check` "checking compiled code" in CI on two OSes.
 
-### 3. The negative control, asserted rather than assumed
+## The schema-engine decision (companion constraint)
 
-`tests/testthat/test-digest-vectors.R` (and `test-digest-fixtures.R`, with the reader) assert that
-base64(SHA-512(bytes)[0:32]) differs from SHA-512/256 - on `"abc"` (`ddaf35a1...` against
-`53048e26...`) and on a byte range taken from a real vector. If the initial hash value in
-`src/sha512.c` were ever replaced by SHA-512's, those tests fail and the load self-test
-fails first.
+The released contracts declare JSON Schema **draft/2020-12**. `jsonvalidate` 1.5.0
+validates that dialect correctly only with `engine = "ajv"`; its *default* engine
+`"imjv"` was measured wrong on 8/32 dialect probes (docs/CAPABILITY.md), mis-verifying
+in **both** directions. This package therefore:
 
-## Routes measured and rejected
+- names the engine once (`.bh_engine <- "ajv"`, `R/validate.R`) and exposes no argument to change it;
+- runs `bh_dialect_probe()` (version-gated `if`/`then`, `contains`+`minContains`,
+  `prefixItems`, asserted `format`) before every validation and refuses to report a
+  verdict if any probe stops firing;
+- pins the contrast in `test-engine-pin.R` against **released vector records** whose
+  expected verdicts are the shared manifest's, with the live measurement
+  `ajv 17/17; imjv mis-verifies 5/17 (2 silent accepts, 3 false rejects)` printed on
+  every run, so the regression test fails if the engines ever converge or drift.
 
-| route | measured result | why rejected |
-| --- | --- | --- |
-| `digest` 0.6.39 (CRAN) | no SHA-512/256. Accepted `algo` values are md5, sha1, crc32, sha256, sha512, xxhash32/64, murmur32, spookyhash, blake3, crc32c, xxh3_64, xxh3_128 - not even sha384 | cannot do it; the trap is that `digest(x, "sha512")` then half-cutting looks like an answer |
-| R `openssl` 2.4.2 / 2.5.0 | no SHA-512/256: exports `sha1 sha2 sha224 sha256 sha3 sha384 sha512 multihash`, and `sha2(x, size)` takes 224/256/384/512 only | cannot do it |
-| truncated SHA-512 | different algorithm, plausible output | rejected by rule R4 and by the direction quoted above; now asserted against in tests |
-| (b) `Rcpp` + libcrypto `EVP_get_digestbyname("SHA512/256")` | not implemented; the capability study's own wording applies: it "adds a system-library build requirement, i.e. the same class of problem as the CLI, moved to build time" | rejected: a build-time dependency on a system libcrypto whose availability and version differ across CRAN/Bioconductor images, plus an `Rcpp` LinkingTo dependency, to obtain a function that fits in one C file we already test against published vectors |
-| (c) system `openssl dgst -sha512-256` CLI | **proven byte-exact**: re-run here on 106 inputs (31 pinned vectors plus the 87 valid sequence vectors' stated checksums) against OpenSSL 4.1.0, 0 disagreements | rejected as the *primary* route: one `system2()` per file, a `PATH` dependency, quoting and temp-file handling, and the class of external-process dependency that `R CMD check` portability expectations and Bioconductor deployment dislike. Kept as a **supplemental** differential (`tools/differential_digest.R`, landing with the reader in this stack), which is skipped - visibly - where no client is installed, and is not part of acceptance |
-| (d) hash inside the V8 engine `jsonvalidate` already imports | not implemented; the study records it as "an option to price, not a result" | rejected: it does not remove a dependency, it relocates the problem into a JavaScript engine we pull in for schema validation, and it makes the checksum depend on how `jsonvalidate` chooses to bundle V8 in a future version. `V8` is also the least portable build in the stack (Linux source builds need `libv8`), and the checksum must not inherit that |
-| Python delegation | available on this host (`hashlib`, and `fair-bioheaders` 0.11.0) | rejected by the native-first direction, and on the merits: an R library that cannot compute its own checksum cannot verify that a header still matches its bytes, which is the property the family exists for |
-
-## Portability, stated as it stands
-
-Verified on this revision: macOS 14 arm64 (aarch64-apple-darwin23), R 4.6.1, Apple clang 21 -
-`R CMD check --no-manual` Status OK, 44 check steps, 202 testthat assertions, 0 skips,
-0 warnings, 0 notes. The standalone C harness (31 vectors x 16 chunkings = 496 checks, all
-passing) was run against `src/sha512.c` outside R during development and is not committed as a
-package test; the same vectors are covered by `tests/testthat/test-digest-vectors.R`.
-
-**Not verified**: Linux and Windows builds of the vendored core. The CI matrix runs
-`ubuntu-latest` and `macos-latest`; `windows-latest` is not claimed, and the R-specific
-constraint that `V8` (a `jsonvalidate` dependency) must build there is unresolved and
-independent of this decision. `bh_ctx_init()` refuses to run if the platform's 64-bit type
-is not exactly 64 bits, so an unsuitable platform errors rather than hashing wrongly, but
-that path has been exercised only on this host. Before any CRAN or Bioconductor submission
-the digest route needs a portability proof on Linux and Windows - see
-`docs/CAPABILITY.md` item 5.
-
-## Schema engine, decided in the same breath (implemented with the reader)
-
-The other "quietly incorrect" risk the direction names. `jsonvalidate` 1.5.0 validates
-draft/2020-12 correctly **only** with `engine = "ajv"`; its default `"imjv"` engine
-mis-verifies in both directions. `engine` is therefore a package-internal constant
-(`.bh_engine`), never an argument - `tests/testthat/test-engine-pin.R` asserts that no
-function in the namespace takes one - and it asserts the contrast on upstream data: on the
-17 contract-layer vectors chosen to exercise version-gated `if`/`then`,
-`contains`/`minContains` and `$defs` references, ajv matches the manifest on 17/17 while
-imjv is wrong on 5 (2 silent accepts, 3 false rejects). `bh_dialect_probe()` re-runs the
-2020-12-only constructs before every validation and raises rather than reporting a verdict
-from a wrong engine. A contract that does not declare `draft/2020-12` is refused outright.
+`format` is asserted, as `docs/SCHEMA-VERSIONS.md` requires of a conforming validator.

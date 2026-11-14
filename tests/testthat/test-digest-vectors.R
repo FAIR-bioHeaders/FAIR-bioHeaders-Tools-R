@@ -218,7 +218,10 @@ test_that("the rule R10 line scan counts header lines after the block, across ch
 })
 
 test_that("the load-time self-test is wired, and the API rejects nonsense", {
-  expect_identical(.bh_call("selftest"), 0L)
+  # the same registered routine object .onLoad uses; a nonzero code means the compiled
+  # core does not reproduce the published digests and the package refuses to load
+  selftest <- getFromNamespace("C_selftest", "FAIRbioHeadersTools")
+  expect_identical(.Call(selftest), 0L)
   expect_true(bh_sha512_256_available())
   expect_error(bh_sha512_256("not raw"), "raw vector")
   expect_error(.bh_algo_number("md5"), "sha512-256")

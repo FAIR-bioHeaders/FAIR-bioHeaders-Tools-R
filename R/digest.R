@@ -44,24 +44,10 @@ NULL
   )
 }
 
-# Resolves C_<suffix>. A build without the compiled routines fails here naming the real
-# problem; nothing in this package substitutes another hash function.
-.bh_native_sym <- function(suffix) {
-  nm <- paste0("C_", suffix)
-  sym <- get0(nm, envir = asNamespace("FAIRbioHeadersTools"), inherits = FALSE)
-  if (is.null(sym)) {
-    stop(
-      "The compiled digest routine ", nm, " of this package is unavailable. Reinstall ",
-      "the package from source (it needs a C compiler). Do not work around this by ",
-      "substituting another hash function: a different algorithm yields a plausible ",
-      "checksum that is wrong for every file (docs/FORMAT.md R4).",
-      call. = FALSE
-    )
-  }
-  sym
-}
-
-.bh_call <- function(suffix, ...) .Call(.bh_native_sym(suffix), ...)
+# R CMD check inspects .Call() sites statically, so each call names its registered
+# routine object directly (C_digest and friends, from useDynLib .fixes = "C_"). The
+# existence of those objects is verified in .onLoad; a build that is missing one
+# refuses to load rather than failing later inside a hash.
 
 .onLoad <- function(libname, pkgname) {
   dll <- getLoadedDLLs()[[pkgname]]
@@ -74,10 +60,16 @@ NULL
   }
   for (nm in .bh_native) {
     if (is.null(get0(paste0("C_", nm), envir = asNamespace(pkgname), inherits = FALSE))) {
-      stop("native routine C_", nm, " is not registered in this build", call. = FALSE)
+      stop(
+        "The compiled digest routine C_", nm, " of this package is not registered in ",
+        "this build. Reinstall the package from source (it needs a C compiler). Do not ",
+        "work around this by substituting another hash function: a different algorithm ",
+        "yields a plausible checksum that is wrong for every file (docs/FORMAT.md R4).",
+        call. = FALSE
+      )
     }
   }
-  code <- .bh_call("selftest")
+  code <- .Call(C_selftest)
   if (!identical(as.integer(code), 0L)) {
     stop(
       "The vendored SHA-512/256 core failed its built-in check against the published ",
@@ -107,7 +99,7 @@ NULL
 bh_sha512_256 <- function(bytes, encoding = c("raw", "hex", "b64")) {
   encoding <- match.arg(encoding)
   if (!is.raw(bytes)) stop("`bytes` must be a raw vector", call. = FALSE)
-  .bh_call("digest", bytes, .bh_algo_number("sha512-256"), encoding)
+  .Call(C_digest, bytes, .bh_algo_number("sha512-256"), encoding)
 }
 
 #' @rdname bh_sha512_256
@@ -115,7 +107,7 @@ bh_sha512_256 <- function(bytes, encoding = c("raw", "hex", "b64")) {
 bh_sha512 <- function(bytes, encoding = c("raw", "hex", "b64")) {
   encoding <- match.arg(encoding)
   if (!is.raw(bytes)) stop("`bytes` must be a raw vector", call. = FALSE)
-  .bh_call("digest", bytes, .bh_algo_number("sha512"), encoding)
+  .Call(C_digest, bytes, .bh_algo_number("sha512"), encoding)
 }
 
 #' @rdname bh_sha512_256
@@ -129,7 +121,7 @@ bh_sha512_256_b64 <- function(bytes) bh_sha512_256(bytes, encoding = "b64")
 #' @export
 bh_digest_bytes <- function(algo = c("sha512-256", "sha512")) {
   algo <- match.arg(algo)
-  as.integer(.bh_call("digest_len", .bh_algo_number(algo)))
+  as.integer(.Call(C_digest_len, .bh_algo_number(algo)))
 }
 
 #' An incremental SHA-512/256 hasher
@@ -166,7 +158,7 @@ bh_digest_bytes <- function(algo = c("sha512-256", "sha512")) {
 #' @export
 bh_digest_stream <- function(algo = c("sha512-256", "sha512")) {
   algo <- match.arg(algo)
-  structure(list(ptr = .bh_call("stream_new", .bh_algo_number(algo))),
+  structure(list(ptr = .Call(C_stream_new, .bh_algo_number(algo))),
     class = "bh_digest_stream"
   )
 }
@@ -183,7 +175,7 @@ bh_stream_scan <- function(stream, prefix, after) {
   if (!is.numeric(after) || length(after) != 1L || !is.finite(after) || after < 1) {
     stop("`after` must be a single finite number >= 1", call. = FALSE)
   }
-  invisible(.bh_call("stream_scan", .bh_stream_ptr(stream), prefix, as.double(after)))
+  invisible(.Call(C_stream_scan, .bh_stream_ptr(stream), prefix, as.double(after)))
 }
 
 #' @rdname bh_digest_stream
@@ -196,7 +188,7 @@ bh_stream_update <- function(stream, bytes, hashed = TRUE) {
   if (!is.logical(hashed) || length(hashed) != 1L || is.na(hashed)) {
     stop("`hashed` must be TRUE or FALSE", call. = FALSE)
   }
-  invisible(.bh_call("stream_update", .bh_stream_ptr(stream), bytes, hashed))
+  invisible(.Call(C_stream_update, .bh_stream_ptr(stream), bytes, hashed))
 }
 
 #' @rdname bh_digest_stream
@@ -206,7 +198,7 @@ bh_stream_value <- function(stream, encoding = c("b64", "raw", "hex")) {
   if (!inherits(stream, "bh_digest_stream")) {
     stop("`stream` must come from bh_digest_stream()", call. = FALSE)
   }
-  res <- .bh_call("stream_value", .bh_stream_ptr(stream), encoding)
+  res <- .Call(C_stream_value, .bh_stream_ptr(stream), encoding)
   late <- res$late_header_lines
   list(
     digest = res$digest, hex = res$hex, b64 = res$b64,
@@ -292,13 +284,6 @@ bh_sha512_256_file <- function(path, skip = NULL, compressed = NA, scan = NULL,
     digest = res$digest, hex = res$hex, bytes = res$bytes,
     late_header_lines = res$late_header_lines
   )
-}
-
-.bh_is_gzip_file <- function(path) {
-  con <- file(path, open = "rb")
-  on.exit(close(con), add = TRUE)
-  b <- readBin(con, what = "raw", n = 2L)
-  length(b) == 2L && identical(b, as.raw(c(0x1f, 0x8b)))
 }
 
 #' Whether a correct SHA-512/256 is available in this build

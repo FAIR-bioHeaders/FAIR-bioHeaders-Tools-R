@@ -1,21 +1,26 @@
 Package: FAIRbioHeadersTools
-Title: Native SHA-512/256 Checksums for FAIR-bioHeaders Files
+Title: Native R Reader, Checksum Verifier and Contract Validator for FAIR-bioHeaders
 Version: 0.1.0
 Authors@R: person("FAIR-bioHeaders-Tools contributors", email = "molik@fhref.org",
     role = c("aut", "cre"))
-Description: Computes the FAIR-bioHeaders file checksum - SHA-512/256 over the
-    exact bytes a file covers, per docs/FORMAT.md rules R1 to R4 - natively in R,
-    from a vendored FIPS 180-4 implementation with no external library and no
-    foreign-language runtime. Streams files of any size, excludes the checksum
-    line from its own value, counts header lines outside the leading block, and
-    refuses to load when its compiled core disagrees with the published sample
-    digests. Header reading, contract validation and the shared conformance run
-    build on this layer.
+Description: Reads, verifies and validates FAIR-bioHeaders file-bound metadata
+    (docs/FORMAT.md) in R with no foreign-language runtime: a vendored FIPS 180-4
+    SHA-512/256 implementation produces the file checksum, header YAML is parsed
+    with rule-exact byte-line semantics, and the released FHR, FHP and FHGFF3
+    contracts are validated as JSON Schema draft/2020-12 with asserted formats.
+    Ships the pinned contract copies and their provenance, an opt-in lane for
+    unreleased draft contracts under rule V7, and a runner for the shared
+    language-neutral conformance vectors.
 License: MPL-2.0 | file LICENSE
 Encoding: UTF-8
-Suggests:
+Imports:
+    digest,
     jsonlite,
-    testthat (>= 3.0.0)
+    jsonvalidate (>= 1.5.0),
+    yaml (>= 2.3.7)
+Suggests:
+    testthat (>= 3.0.0),
+    withr
 SystemRequirements: C99 (the vendored SHA-512/256 core in src/);
     a C compiler is required to build this package from source
 NeedsCompilation: yes
