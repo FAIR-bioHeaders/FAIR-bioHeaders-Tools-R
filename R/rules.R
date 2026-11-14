@@ -2,9 +2,11 @@
 #'
 #' A vector's `rules` field names every rule it is evidence about. Reporting only the
 #' valid/invalid verdict would hide the case where a file reaches the expected verdict for a
-#' reason this package does not check. So the rule labels of every vector that runs
-#' are matched against the tables below, and anything the run cannot check is reported
-#' per vector and in aggregate.
+#' reason this package does not check. The clearest instance is the FHT development suite's
+#' rule C3, which asks for a *parent* file's checksum to be recomputed and compared - an
+#' operation [bh_capability()] declares not implemented. So the rule labels of every vector
+#' that runs are matched against the tables below, and anything the run cannot check is
+#' reported per vector and in aggregate.
 #'
 #' This is a declaration of coverage, not a claim of correctness: the correctness evidence
 #' is the vector verdicts in [bh_conformance()].
@@ -15,12 +17,22 @@ NULL
 # Rules this package checks natively, for the serializations it reads.
 .bh_rules_checked <- c(
   "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R10", "R12", "R13", "R14", "R15",
-  "P1", "P2", "G1", "G2", "G3", "V1", "V2", "V3", "V4", "V5", "V6"
+  "P1", "P2", "G1", "G2", "G3", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "C1", "C3"
 )
 
 # Rules whose check needs an operation this package does not implement, with the reason the
 # runner reports them as gaps.
 .bh_rules_unverified <- list(
+  C2 = paste0(
+    "the FHT development rule C2 covers which schema citations the draft accepts; the ",
+    "native lane recognises only the raw-main citation, as V7 allows"
+  ),
+  K1 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
+  K2 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
+  K3 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
+  K4 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
+  K5 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
+  K6 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
   R9 = "the microdata reader is not implemented",
   J1 = "the JSON-LD reader is not implemented",
   J2 = "the JSON-LD reader is not implemented",

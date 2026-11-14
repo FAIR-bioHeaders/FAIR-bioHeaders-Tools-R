@@ -21,10 +21,7 @@ unconstrained \code{schema} field has always had. This is where a made-up
 number is invented for it and the lane never reads it as a draft.
 \item V6 raw-main plus the \emph{number} 1 is an FHR 1 record, checked against v0.3.1's schema
 and warned about as deprecated, not invalid.
+\item V7 an unreleased draft, recognised only when the caller asked for the lane, read
+against the bytes this package was built with and warned about on every record.
 }
-
-Rule V7 (opt-in recognition of unreleased draft contracts) is not implemented in
-this revision of the package; it arrives with the draft lane. Until then there is
-no draft form of any kind here: an FHT citation behaves like any other value under
-V5, exactly as the released rules have always specified.
 }

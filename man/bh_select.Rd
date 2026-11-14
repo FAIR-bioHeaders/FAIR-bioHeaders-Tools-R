@@ -4,16 +4,20 @@
 \alias{bh_select}
 \title{Chooses the contract for a \code{schema} value.}
 \usage{
-bh_select(value, schema_version = NULL)
+bh_select(value, schema_version = NULL, draft = FALSE)
 }
 \arguments{
 \item{value}{The record's \code{schema} value.}
 
 \item{schema_version}{The record's \code{schemaVersion}, when known (rule V6 needs it).}
+
+\item{draft}{Draft-lane request: \code{FALSE} (default) or a character vector of draft
+types to recognise, for example \code{"FHT"}. Only the raw-main URL of the development
+repository that owns the type is in the lane.}
 }
 \value{
 A list with \code{rule}, \code{header_type}, \code{release}, \code{file}, \code{schema_version},
-\code{status} (\code{released}, \code{fhr1} or \code{unsupported}), \code{message} and \code{warnings}.
+\code{status} (\code{released}, \code{fhr1}, \code{draft} or \code{unsupported}), \code{message} and \code{warnings}.
 }
 \description{
 Chooses the contract for a \code{schema} value.

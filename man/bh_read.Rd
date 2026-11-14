@@ -9,12 +9,19 @@ bh_read(
   path,
   format = NULL,
   compressed = NA,
+  draft = getOption("bh.draft_lane", FALSE),
   verify_checksum = TRUE,
   validate_contract = TRUE,
   ...
 )
 
-bh_validate(path, format = NULL, compressed = NA, ...)
+bh_validate(
+  path,
+  format = NULL,
+  compressed = NA,
+  draft = getOption("bh.draft_lane", FALSE),
+  ...
+)
 }
 \arguments{
 \item{path}{A FASTA, GFA or GFF3 file carrying a FAIR-bioHeaders header.}
@@ -23,6 +30,10 @@ bh_validate(path, format = NULL, compressed = NA, ...)
 the name does not say.}
 
 \item{compressed}{\code{TRUE}, \code{FALSE} or \code{NA} to detect a gzip member.}
+
+\item{draft}{Draft lane: \code{FALSE} (default), \code{TRUE}, or draft type names such as
+\code{"FHT"}. With the lane closed, a draft citation is selected under V5 exactly as
+before the lane existed.}
 
 \item{verify_checksum, validate_contract}{Do the byte verification and the contract
 validation. Turning either off narrows the answer, and the result records that.}

@@ -30,13 +30,13 @@ number mean something:
    stay visible with reasons.
 3. **The supported subset cannot shrink silently.** The declared supported total
    is the constant 228 (fasta 98 + gfa 56 + fhp-fasta 36 + fhgff3 38); if the
-   suite's format tally moves, the capability matrix (published with the draft-lane revision) and this guard must be updated
+   suite's format tally moves, this guard and `bh_capability()` must be updated
    together, deliberately, in review.
 4. **Missing fixtures and zero-vector runs are errors.** `.bh_suite_dir()`
    refuses to fall through: no suite, no run.
 5. **Declared warnings must be reported.** Vectors whose manifest declares a
-   `warnings` expectation (two shared `R14` vectors in the released suite at this
-   baseline) fail the run if the reader stays silent about them.
+   `warnings` expectation (three at this baseline: two shared `R14`, one FHT
+   draft `R14`) fail the run if the reader stays silent about them.
 6. **Rule accounting.** Each vector's rule labels are matched against
    `bh_rule_coverage()`; verdicts that leave a rule unverifiable (C2, C3
    breadth, J1-J9, M1-M5, R9) are reported per vector (`rule_gaps`) instead of
@@ -55,14 +55,20 @@ The baseline ledger, produced identically by the R runner and the Java runner:
 
 `tests/testthat/reference/default-behavior-v0.6.0.json` (SHA-256
 `055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525`) fingerprints
-the default reading over all 291 vectors - verdict, computed
+the default reading (`draft = FALSE`) over all 291 vectors - verdict, computed
 checksum, hashed-byte count, selection outcome, issue/warning rule codes, and the
 SHA-256 of the exact JSON the contract validator received - plus 32 V1-V6
-selection probes including the V5 landing of the FHT raw-main URL, which is what an
-unregistered type must get from a released-only reader.
+selection probes including the lane-closed V5 landing of the FHT raw-main URL.
 `test-default-golden.R` compares the live computation against it and a positive
 control shows the comparator bites. `tools/golden_dump.R` regenerates only by
 explicit, reviewed invocation.
+
+Cross-revision evidence: this golden file is byte-identical to the one generated in
+the released-core revision (`pr1/native-core`). The draft lane landed on top of it and
+`goldenDifferences=0` in this revision's acceptance run is what proves the lane is
+strictly additive over the default path - the same argument the Java library made with
+a golden generated from its pre-registry commit, made here with a golden generated from
+the pre-lane commit.
 
 Honest limitation, stated rather than papered over: the Java library's golden was
 generated from its pre-refactor commit (237da6c), proving that its registry
@@ -72,18 +78,23 @@ anchors the accepted-at-v0.6.0 behaviour so that later changes (draft lane, link
 refactors) must pass through it unchanged, and it makes the *next* refactor
 provably additive.
 
-## The rule V7 draft lane is a separate, later revision
+## The rule V7 draft lane is separate, labelled, and never acceptance
 
-The FHT development suite (66 vectors) and the pinned draft bytes are handled by the
-draft-lane revision stacked on this one. At this revision nothing reads a draft:
-selection has no V7 branch, `inst/` bundles no draft bytes, and an FHT citation lands
-on rule V5 exactly as it would in a reader that never heard of V7. The default-behavior
-golden below is what proves the lane, when it lands, changes nothing by default.
+`bh_draft_vectors()` runs the **66 FHT development vectors** published by
+FHT-Specification (vendored at the pinned suite commit, re-digested before use)
+through the native reader with the lane open. A pass is draft evidence against
+pinned unreleased bytes, not support for FHT; the label says so; the shared
+ledger's numbers do not include them; CI runs them in a separate, labelled job
+whose receipt pins contract commit `226f923c...`, SHA-256 `59ad9641...`, suite
+commit `156bda63...`. The advisory `draft-pin-freshness` job compares the pins
+with the owning repositories' live default branches and reports drift without
+gating released acceptance.
 
 ## Receipts
 
-CI asserts *receipts*, not greens: `tools/acceptance_native.R` writes key=value property files (paths from
-`BH_ACCEPTANCE_RECEIPT`, `BH_GOLDEN_RECEIPT`) whose literal
+CI asserts *receipts*, not greens: `tools/acceptance_native.R` and
+`tools/acceptance_draft.R` write key=value property files (paths from
+`BH_ACCEPTANCE_RECEIPT`, `BH_GOLDEN_RECEIPT`, `BH_DRAFT_RECEIPT`) whose literal
 lines the workflow compares with fixed strings (counted the same way Java's
 `build.yml` does). `tools/run_tests.R` fails the build on any testthat failure,
 **any skip**, or a test count below the current floor. A quiet skip is a red CI.

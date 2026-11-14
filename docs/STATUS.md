@@ -15,9 +15,9 @@ are the first real ones for this repository.
 | measure | stub (main, `4b975bd`) | this work |
 | --- | --- | --- |
 | `R CMD check --as-cran --no-manual` | 39 checks, 0 notes, Status OK | 66 checks, **0 errors, 0 warnings, 1 NOTE** ("New submission", unavoidable for a first package; running with the manual adds only the host-dependent "HTML Tidy not recent enough" skip-NOTE on this macOS) |
-| testthat assertions | 0 | **543, 0 failed, 0 errors, 0 skipped** |
+| testthat assertions | 0 | **561, 0 failed, 0 errors, 0 skipped** (428 at the core revision; the lane revision adds 133) |
 | shared v0.6.0 vectors | not run | **291 accounted: 228 pass natively, 63 not-run with reasons, 0 fail** |
-| FHT development suite (draft lane) | not run | not read at this revision: the lane is the next stacked change |
+| FHT development suite (draft lane only) | not run | **66/66 pass** against pinned bytes, in the separate labelled job |
 | compiled digest self-test | none | runs at every package load; refuses to load on any mismatch |
 
 ## What is implemented (native, released types)
@@ -30,15 +30,24 @@ are the first real ones for this repository.
   (`bh_verify_links`), gzip/BGZF transport, the five-type registry
   (`bh_types`/`bh_contracts`/`bh_capability`).
 - The 291-vector native runner with the seven guards in
-  docs/NATIVE-ACCEPTANCE.md, the default-behavior golden, receipts.
+  docs/NATIVE-ACCEPTANCE.md, the default-behavior golden, receipts. The golden is
+  byte-identical between the core revision and this one: the lane changed nothing
+  by default (`goldenDifferences=0` both sides).
 
-## Draft state (rule V7) at this revision
+## Draft state (rule V7; never a support claim)
 
-None. This revision registers and reads the three released types only: no draft
-bytes are bundled, there is no V7 selection branch, and `bh_select()` sends every
-FHT citation to rule V5 - the documented behaviour for unregistered values. The
-pinned rule V7 lane for FHT (and the FHGM candidate bytes) lands in the stacked
-draft-lane revision; until it does, no FHT or FHGM claim of any kind is made here.
+- FHT: opt-in lane, pinned contract `226f923c28b680edb3c546e99a751482d06aef1a`
+  (SHA-256 `59ad9641...`), suite `156bda63...` (manifest `9b071794...`), 66/66
+  pass; warns on every read; release-shaped FHT URLs stay V5. FHT publishes as
+  specification v0.7.0 (FHT-Specification #8/#9/#10).
+- FHGM: **not a header type**; candidate bytes registered and digest-pinned
+  (`ac3d37b3...`, `bf1553ca...`); `read_model_records`/`validate_model_records`
+  are `not-supported-yet` because the upstream acceptance suite (31 vectors,
+  K1-K6) is checker-based and 18/19 of its invalid vectors pass the base schema
+  and checksum — porting the checker is the gate. Tracked in #3; FHGM publishes
+  as specification v0.8.0.
+- Freshness of both draft pins was verified 2026-11-14 against the owning
+  repositories' live default branches (advisory CI job `draft-pin-freshness`).
 
 ## Ledger (v0.6.0 baseline; identical figures from the Java library)
 
@@ -57,8 +66,8 @@ draft-lane revision; until it does, no FHT or FHGM claim of any kind is made her
 2. **Large-file behaviour.** The streaming path is proven byte-correct on the
    suite (largest vector is small) and the head-reading path refuses oversized
    header blocks; no gigabyte-scale reference genome was hashed in this session.
-3. **Any draft-type behaviour.** FHT and FHGM are not read at this revision; nothing
-   is claimed about them beyond the V5 landing rule, which is tested.
+3. **`selfChecksum`/`parentLink` draft semantics** beyond what the FHT suite's
+   C1/C3 vectors state; they finalize at FHT release (FHT-Specification #10).
 4. **Any performance claim.** No benchmarks were run.
 5. **Bioconductor/CRAN acceptance.** Out of scope for these PRs by instruction;
    submission is a maintainer action.

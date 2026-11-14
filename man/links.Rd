@@ -2,10 +2,10 @@
 % Please edit documentation in R/links.R
 \name{links}
 \alias{links}
-\title{Parent-link verification (recomputing the checksums a header cites for its parents)}
+\title{Parent-link verification (the rule the FHT development suite calls C3)}
 \description{
 A header may cite a parent file: FHGFF3 through \verb{derivedFrom[].genome.checksum} (and the
-\code{annotates} form) and FHP through its own \code{derivedFrom} entries. The cited value is
+\code{annotates} form), FHT and FHP through their own \code{derivedFrom} entries. The cited value is
 the SHA-512/256 of the parent's bytes, so verifying a link means recomputing it over the
 parent the caller names. Nothing about that is inferable from the child alone: two
 assemblies can share an accession, and a file name is not provenance. So the parent paths

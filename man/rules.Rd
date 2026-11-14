@@ -6,9 +6,11 @@
 \description{
 A vector's \code{rules} field names every rule it is evidence about. Reporting only the
 valid/invalid verdict would hide the case where a file reaches the expected verdict for a
-reason this package does not check. So the rule labels of every vector that runs
-are matched against the tables below, and anything the run cannot check is reported
-per vector and in aggregate.
+reason this package does not check. The clearest instance is the FHT development suite's
+rule C3, which asks for a \emph{parent} file's checksum to be recomputed and compared - an
+operation \code{\link[=bh_capability]{bh_capability()}} declares not implemented. So the rule labels of every vector
+that runs are matched against the tables below, and anything the run cannot check is
+reported per vector and in aggregate.
 }
 \details{
 This is a declaration of coverage, not a claim of correctness: the correctness evidence

@@ -5,12 +5,15 @@
 #' * [bh_contracts()] lists the frozen contract copies under `inst/schemas/`, one per
 #'   header type per version, with the release, the commit of the source tag and the
 #'   SHA-256 of the bytes. Selection rules V1 to V6 name these.
-#' * [bh_types()] lists the header types this revision reads: FHR, FHP and FHGFF3,
-#'   all released. The family has five type names; FHT and FHGM have no released
-#'   contract - no `schemaVersion`, no registry row and no w3id URL - and drafts take
-#'   no release form (docs/SCHEMA-VERSIONS.md V7). Neither is registered, bundled or
-#'   read at this revision; rule V7 recognition arrives with the draft lane, and until
-#'   then an FHT citation is selected under V5 exactly as the released rules specify.
+#' * [bh_types()] lists the family: FHR, FHP and FHGFF3 as released, FHT as a draft with
+#'   no released contract, and FHGM as a draft *model* type that is not a header type at
+#'   all - its records ride inside an FHGFF3 header under `x-fhgm-models`, so they carry
+#'   no `schema` field to select on and no serialization of their own.
+#'
+#' Neither table is a support claim beyond what [bh_capability()] states operation by
+#' operation. FHT and FHGM get no `schemaVersion`, no registry row and no w3id URL here,
+#' and they stay out of `inst/schemas/versions.json`: rule V7, drafts take no release
+#' form.
 #'
 #' @name registry
 NULL
@@ -92,20 +95,45 @@ bh_releases <- function(header_type = "FHR") {
 #'   `serializations`, `schema_versions` and `note`.
 #' @export
 bh_types <- function() {
+  reg <- .bh_registry()
   cs <- bh_contracts()
   versions <- function(t) {
     v <- cs$schema_version[cs$header_type == t]
     paste(sort(unique(v)), collapse = ",")
   }
+  drafts <- vapply(c("FHT", "FHGM"), function(t) {
+    r <- Filter(function(x) identical(x$header_type, t), .bh_vendored()$files)
+    if (!length(r)) NA_character_ else r[[1]]$citation
+  }, "")
   data.frame(
-    header_type = c("FHR", "FHP", "FHGFF3"),
-    status = c("released", "released", "released"),
-    is_header_type = c(TRUE, TRUE, TRUE),
-    contract = c(versions("FHR"), versions("FHP"), versions("FHGFF3")),
-    serializations = c("fasta,gfa", "fhp-fasta", "fhgff3"),
-    schema_versions = c(versions("FHR"), versions("FHP"), versions("FHGFF3")),
-    note = rep("released in the v0.6.0 baseline", 3L),
-
+    header_type = c("FHR", "FHP", "FHGFF3", "FHT", "FHGM"),
+    status = c("released", "released", "released", "draft", "draft"),
+    is_header_type = c(TRUE, TRUE, TRUE, TRUE, FALSE),
+    contract = c(
+      versions("FHR"), versions("FHP"), versions("FHGFF3"),
+      paste0("draft only: ", drafts[["FHT"]]),
+      paste0("draft model contract only: ", drafts[["FHGM"]])
+    ),
+    serializations = c(
+      "fasta,gfa", "fhp-fasta", "fhgff3", "fasta (draft)",
+      "none: nested records inside an FHGFF3 header"
+    ),
+    schema_versions = c(
+      versions("FHR"), versions("FHP"), versions("FHGFF3"), NA_character_, NA_character_
+    ),
+    note = c(
+      rep("released in the v0.6.0 baseline", 3),
+      paste0(
+        "no released contract: readable only through the rule V7 draft lane, ",
+        "pinned by commit and SHA-256, warns on every read"
+      ),
+      paste0(
+        "not a header type: model records transported inside an FHGFF3 header under ",
+        "x-fhgm-models; draft, candidate bytes registered and digest-pinned only - ",
+        "the lane operation waits on a port of the K1-K6 model checker (its upstream ",
+        "acceptance suite is checker-based, not schema-vector-based)"
+      )
+    ),
     stringsAsFactors = FALSE
   )
 }

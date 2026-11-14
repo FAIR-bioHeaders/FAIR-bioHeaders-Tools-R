@@ -34,7 +34,7 @@ test_that("the run checks the rules it claims to check", {
     cov$checked))
   # the rules whose verdict a run cannot establish are named, with a reason
   expect_true(all(names(cov$unverified) %in% c(
-    "R9",
+    "C2", "K1", "K2", "K3", "K4", "K5", "K6", "R9",
     "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9",
     "M1", "M2", "M3", "M4", "M5"
   )))

@@ -65,7 +65,10 @@ Reasons, against the alternatives in the same table:
   vendored core through the full R3 rule path (decompress, exclude the checksum line
   and its terminator, hash the rest) in `test-digest-fixtures.R`; and whole decompressed
   files (without the R3 exclusion) match CPython `hashlib.new("sha512_256")` **87/87**
-  plus the three FIPS sample messages, measured on this host 2026-11-14.
+  plus the three FIPS sample messages, measured on this host 2026-11-14 and reproducible
+  with `tools/differential_hashlib.py` plus `tools/differential_hashlib.R` (a labelled,
+  non-gating supplemental CI job; acceptance itself is native and the primary job
+  installs no Python).
 - **The trap is pinned, not just described:** `test-digest-vectors.R` records what
   truncated SHA-512 *would have written* for several fixture inputs and asserts the
   package writes the SHA-512/256 value instead.

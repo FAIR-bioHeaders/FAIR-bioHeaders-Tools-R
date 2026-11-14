@@ -4,12 +4,17 @@
 \alias{bh_parent_links}
 \title{The parent links a header cites}
 \usage{
-bh_parent_links(path, format = NULL, compressed = NA)
+bh_parent_links(
+  path,
+  format = NULL,
+  compressed = NA,
+  draft = getOption("bh.draft_lane", FALSE)
+)
 }
 \arguments{
 \item{path}{A file carrying a header with \code{derivedFrom} entries.}
 
-\item{format, compressed}{Passed to the reader.}
+\item{format, compressed, draft}{Passed to the reader.}
 }
 \value{
 A data frame with one row per cited link: \code{index}, \code{header_type},

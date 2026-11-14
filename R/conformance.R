@@ -20,8 +20,9 @@
 #' 4. Each vector's rule labels are checked against [bh_rule_coverage()], so a verdict that
 #'    agrees for a reason this package does not verify is reported as a gap.
 #'
-#' The rule V7 draft lane, and the FHT development suite it runs separately, arrive
-#' with the draft-lane revision; nothing about this runner reads draft bytes.
+#' [bh_draft_vectors()] runs the FHT development suite, which is separate published material
+#' from a different repository: it runs only with the rule V7 lane open, its results are
+#' labelled draft evidence, and it is never counted toward the 291.
 #'
 #' @name conformance
 NULL
@@ -61,11 +62,35 @@ NULL
   ))
 }
 
-# Runs one suite. `pinned` is the provenance
+.bh_draft_suite_dir <- function(suite = NULL) {
+  root <- {
+    if (!requireNamespace("testthat", quietly = TRUE)) NULL else
+      tryCatch(testthat::test_path(), error = function(e) NULL)
+  }
+  cands <- c(
+    suite,
+    getOption("bh.draft_dir"),
+    Sys.getenv("FAIRBH_DRAFT_DIR", unset = NA_character_),
+    if (!is.null(root)) file.path(root, "..", "draft", "fht"),
+    "tests/draft/fht",
+    file.path("tests", "draft", "fht")
+  )
+  cands <- cands[!is.na(cands) & nzchar(cands)]
+  for (c in unique(c(cands, file.path(cands, "fht")))) {
+    if (file.exists(file.path(c, "manifest.json"))) return(normalizePath(c))
+  }
+  bh_abort("conformance", paste0(
+    "the FHT development suite was not found. It is vendored at ",
+    "tests/draft/fht from FHT-Specification; re-create it with ",
+    "tools/vendor_upstream.R."
+  ))
+}
+
+# Runs one suite. `lane` is the draft argument passed through, `pinned` is the provenance
 # block the digests are checked against, `label` prefixes the accounting so a draft run
 # can never be mistaken for the shared one, and `run_formats` are the formats this runner
 # claims to read; anything else is not-run with a reason rather than a verdict.
-.bh_run_suite <- function(dir, pinned, formats, limit, label, run_formats) {
+.bh_run_suite <- function(dir, pinned, lane, formats, limit, label, run_formats) {
   man_path <- file.path(dir, "manifest.json")
   man_bytes <- .bh_read_all(man_path)
   got_sha <- .bh_sha256_hex(man_bytes)
@@ -110,7 +135,7 @@ NULL
         paste0("not-run: beyond the limit of ", limit, " vectors per format"))
       next
     }
-    res <- .bh_capture(.bh_analyze(path, format = fmt))
+    res <- .bh_capture(.bh_analyze(path, format = fmt, draft = lane))
     if (!is.null(res$error)) {
       rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "error",
         paste0("native reader errored: ", res$error))
@@ -118,6 +143,27 @@ NULL
     }
     a <- res$value
     observed <- if (isTRUE(a$valid)) "valid" else "invalid"
+    # Rule C3: a cited parent checksum that does not recompute makes the child invalid even
+    # though its own bytes and metadata are fine. The suite states which parent file each
+    # link points at; without that, the link is unchecked and the verdict is not the
+    # suite's business. See R/links.R.
+    if (!is.null(v$parentLink) && length(v$parentLink)) {
+      files <- vapply(v$parentLink, function(pl) {
+        f <- pl$file
+        if (is.null(f) || is.na(f)) NA_character_ else file.path(dir, f)
+      }, "")
+      lv <- .bh_capture(bh_verify_links(path, parent = files[!is.na(files)],
+        format = fmt, draft = lane
+      ))
+      if (!is.null(lv$error)) {
+        rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "error",
+          paste0("link verification errored: ", lv$error))
+        next
+      }
+      if (lv$value$mismatched > 0L || any(lv$value$links$verdict == "missing-parent-file")) {
+        observed <- "invalid"
+      }
+    }
     agree <- identical(observed, v$expected)
     # a vector that declares expected warnings must get them: the manifest's `warnings`
     # field is upstream's claim, and silently not reporting them is a real gap
@@ -218,6 +264,8 @@ NULL
 #'   vendored copy under `tests/conformance/`.
 #' @param formats Restrict the run to these formats. The accounting still covers all 291,
 #'   and the count guards are skipped, because a partial run is not an acceptance run.
+#' @param draft Passed to the reader; `FALSE` (the default) runs the released vectors exactly
+#'   as they were before the draft lane existed.
 #' @param limit Run only the first N vectors per format, for a quick local pass.
 #' @return A `bh_conformance` object: `results`, `summary`, `ok`, `vectors`, `failures` and
 #'   `gap_vectors`.
@@ -228,12 +276,36 @@ NULL
 #' bh_conformance_report(x, "conformance.json")
 #' }
 #' @export
-bh_conformance <- function(suite = NULL, formats = NULL, limit = NULL) {
+bh_conformance <- function(suite = NULL, formats = NULL, draft = FALSE, limit = NULL) {
   pinned <- .bh_vendored()$conformance
   pinned$expected_supported <- .bh_expected_supported # fasta 98 + gfa 56 + fhp-fasta 36 + fhgff3 38
-  .bh_run_suite(.bh_suite_dir(suite), pinned, formats = formats,
+  .bh_run_suite(.bh_suite_dir(suite), pinned, lane = draft, formats = formats,
     limit = limit, label = "shared v0.6.0 suite (291 vectors)",
     run_formats = .bh_supported_formats
+  )
+}
+
+#' Runs the FHT development suite through the draft lane
+#'
+#' These 66 vectors are published by FHT-Specification, not by the shared specification, and
+#' their manifest says its expectations are "derived from the rule text, never from an
+#' implementation under test". They are therefore reported separately, under the rule V7 lane
+#' with the pinned draft bytes, and they never join the 291. A result here is draft evidence:
+#' it says what this build does with an unreleased contract, not that FHT is supported.
+#'
+#' @param formats Restrict the run; the default runs the whole draft suite.
+#' @inheritParams bh_conformance
+#' @return A `bh_conformance` object, labelled as draft evidence.
+#' @export
+bh_draft_vectors <- function(suite = NULL, formats = NULL, limit = NULL) {
+  pinned <- .bh_vendored()$draft_vectors
+  if (is.null(pinned)) {
+    bh_abort("conformance", "no draft vectors are vendored in this build")
+  }
+  .bh_run_suite(.bh_draft_suite_dir(suite), pinned, lane = "FHT",
+    formats = if (identical(formats, "fht-fasta")) NULL else formats, limit = limit,
+    label = "FHT development suite (draft evidence, rule V7 - not part of the 291)",
+    run_formats = "fht-fasta"
   )
 }
 

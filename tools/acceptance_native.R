@@ -66,6 +66,18 @@ if (length(diffs)) {
   fails <- fails + 1L
 }
 
+# 4. The capability matrix exists and keeps its invariants: five types, FHT/FHGM drafts
+#    with no released form, every non-native cell carrying a reason.
+m <- bh_capability()
+inv <- all(
+  nrow(m) > 0L,
+  setequal(unique(m$header_type), c("FHR", "FHP", "FHGFF3", "FHT", "FHGM")),
+  all(m$type_status[m$header_type %in% c("FHT", "FHGM")] == "draft"),
+  all(nzchar(m$blocker[m$support != "native"]))
+)
+say("capabilityMatrixRows=", nrow(m), " invariantsOk=", tolower(as.character(inv)))
+if (!inv) fails <- fails + 1L
+
 if (fails > 0L) {
   say("native acceptance: FAIL (", fails, " problem group(s))")
   quit(status = 1L, save = "no")

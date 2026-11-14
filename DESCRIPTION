@@ -8,9 +8,9 @@ Description: Reads, verifies and validates FAIR-bioHeaders file-bound metadata
     SHA-512/256 implementation produces the file checksum, header YAML is parsed
     with rule-exact byte-line semantics, and the released FHR, FHP and FHGFF3
     contracts are validated as JSON Schema draft/2020-12 with asserted formats.
-    Ships the pinned contract copies and their provenance and a runner for the
-    shared language-neutral conformance vectors. Draft types (rule V7) are not
-    read at this revision.
+    Ships the pinned contract copies and their provenance, an opt-in lane for
+    unreleased draft contracts under rule V7, and a runner for the shared
+    language-neutral conformance vectors.
 License: MPL-2.0 | file LICENSE
 Encoding: UTF-8
 Imports:

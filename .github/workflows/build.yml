@@ -67,7 +67,7 @@ jobs:
         run: |
           # Any failure, any error, ANY skip, or fewer than the floor of assertions
           # fails the build (docs/NATIVE-ACCEPTANCE.md).
-          BH_MIN_TESTS=400 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
+          BH_MIN_TESTS=500 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
           cat tests.properties
           for line in failed=0 errors=0 skipped=0; do
             grep -qxF "$line" tests.properties || { echo "expected $line" >&2; exit 1; }
@@ -75,6 +75,18 @@ jobs:
 
       - name: R CMD check (the spine)
         run: R CMD check --as-cran --no-manual FAIRbioHeadersTools_*.tar.gz
+
+      - name: Assert the capability docs match the code
+        run: |
+          # docs/CAPABILITY-MATRIX.md is generated from bh_capability(); regenerate
+          # and require no drift.
+          set -e
+          cp docs/CAPABILITY-MATRIX.md /tmp/matrix-committed.md
+          Rscript tools/render_capability_matrix.R
+          cmp /tmp/matrix-committed.md docs/CAPABILITY-MATRIX.md || {
+            echo "docs/CAPABILITY-MATRIX.md is stale - re-run tools/render_capability_matrix.R" >&2
+            exit 1
+          }
 
       - name: Native acceptance (291-vector ledger + default-behavior golden)
         run: |
@@ -148,3 +160,123 @@ jobs:
             default-behavior-golden.properties
           if-no-files-found: error
 
+  # Rule V7 evidence, separate and labelled: the pinned FHT development contract and
+  # its own 66-vector suite. Still native (R only, no Python). A pass here is "the
+  # pinned draft bytes behave as their own suite expects through this reader", never
+  # "FHT is supported": FHT has no released contract, no schemaVersion, no registry
+  # row and no w3id URL (docs/CAPABILITY-MATRIX.md).
+  draft-vectors:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::jsonvalidate
+          needs: check
+      - name: Install
+        run: |
+          R CMD build .
+          R CMD INSTALL FAIRbioHeadersTools_*.tar.gz
+      - name: Test the rule V7 draft lane
+        run: |
+          BH_DRAFT_RECEIPT=fht-draft-vectors.properties Rscript tools/acceptance_draft.R
+      - name: Assert the draft suite ran in full, against the pinned bytes
+        run: |
+          # The receipt's counts and the identity of what was measured (contract
+          # commit + digest, suite commit + manifest digest) are written by the R
+          # run itself, which re-digests the vendored bytes against the registry pin
+          # before reading a single vector (bh_draft_pins() / the runner's manifest
+          # check). The literals below are a SECOND, independent statement of the
+          # same pins: drift in either place fails the job.
+          set -e
+          receipt=fht-draft-vectors.properties
+          if [ ! -s "$receipt" ]; then
+            echo "missing $receipt - acceptance_draft.R did not write it" >&2
+            exit 1
+          fi
+          cat "$receipt"
+          grep -qx 'vectorsInManifest=66' "$receipt" || { echo "expected 66 vectors in the manifest" >&2; exit 1; }
+          grep -qx 'vectorsRan=66' "$receipt" || { echo "expected 66 draft vectors to run" >&2; exit 1; }
+          grep -qx 'vectorsPassed=66' "$receipt" || { echo "expected 66 draft vectors to pass" >&2; exit 1; }
+          grep -qx 'contractCommit=226f923c28b680edb3c546e99a751482d06aef1a' "$receipt" \
+            || { echo "the draft suite did not run against the pinned contract commit" >&2; exit 1; }
+          grep -qx 'contractSha256=59ad9641adcb0e5591045c2d894c066d1adc9984cca84c5ff6502f8dad88487e' "$receipt" \
+            || { echo "the draft suite did not run against the pinned contract digest" >&2; exit 1; }
+          grep -qx 'suiteCommit=156bda63bd6bbe0322bc6c5b8dcccdfad380655a' "$receipt" \
+            || { echo "the suite is not the pinned revision" >&2; exit 1; }
+          grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; exit 1; }
+
+  # Draft-pin freshness, the check that earns its keep: the recorded commit and
+  # SHA-256 against the owning repository's live default branch. Advisory by design -
+  # a moved draft must be re-pinned deliberately, and released acceptance never
+  # depends on it - so this job reports drift loudly without gating.
+  draft-pin-freshness:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare the pinned draft bytes with live raw main
+        run: |
+          set -e
+          # Values are read with grep -oE (no BRE interval escapes) from
+          # inst/VENDORED.json and compared with curl'd live bytes. No -f/-F to any
+          # gh call; plain GETs only.
+          check() { # $1 label, $2 pinned sha, $3 url
+            got=$(curl -sS "$3" | shasum -a 256 | cut -d' ' -f1)
+            if [ "$got" = "$2" ]; then
+              echo "$1: pin unchanged ($2)"
+            else
+              echo "::warning::$1: PIN MOVED - pinned $2, live main $got ($3)"
+              false
+            fi
+          }
+          moved=0
+          pins=inst/VENDORED.json
+          fht_sha=$(grep -oE '"file": "inst/drafts/fht-draft.json"[^}]*"sha256": "[0-9a-f]{64}"' "$pins" | grep -oE '[0-9a-f]{64}' | tail -1)
+          fhgm_sha=$(grep -oE '"file": "inst/drafts/fhgm-model-draft.schema.json"[^}]*"sha256": "[0-9a-f]{64}"' "$pins" | grep -oE '[0-9a-f]{64}' | tail -1)
+          suite_sha=$(grep -oE '"manifest_sha256": "[0-9a-f]{64}"' "$pins" | sed -n '1p' | grep -oE '[0-9a-f]{64}')
+          check FHT "$fht_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/fht.json || moved=1
+          check FHGM "$fhgm_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHGM-Specification/main/development/model/fhgm-model.schema.json || moved=1
+          check FHT-suite-manifest "$suite_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/conformance/manifest.json || moved=1
+          [ "$moved" = 0 ] || echo "draft pins are stale: re-vendor deliberately (tools/vendor_upstream.R), never as a drive-by"
+
+  # Supplemental differential, labelled and never the gate: the vendored digest core
+  # against CPython hashlib. The PRIMARY job above installs no Python; this job
+  # exists so the cross-implementation evidence recorded in docs/DIGEST.md is
+  # reproducible in CI as well as on the study host.
+  differential-supplemental:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::jsonlite
+          needs: check
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Hash the suite both ways and compare
+        run: |
+          # NOT an acceptance job: a pass here is agreement between two independent
+          # standard implementations, recorded as supplemental evidence for the
+          # digest decision (docs/DIGEST.md). Acceptance is the native ledger.
+          set -e
+          R CMD build . >/dev/null
+          R CMD INSTALL FAIRbioHeadersTools_*.tar.gz >/dev/null
+          python3 tools/differential_hashlib.py
+          Rscript tools/differential_hashlib.R

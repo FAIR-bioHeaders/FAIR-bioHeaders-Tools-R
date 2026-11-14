@@ -4,7 +4,13 @@
 \alias{bh_verify_links}
 \title{Verifies the parent links of one file against the parent files the caller supplies}
 \usage{
-bh_verify_links(path, parent = NULL, format = NULL, compressed = NA)
+bh_verify_links(
+  path,
+  parent = NULL,
+  format = NULL,
+  compressed = NA,
+  draft = getOption("bh.draft_lane", FALSE)
+)
 }
 \arguments{
 \item{path}{The child file.}
@@ -13,7 +19,7 @@ bh_verify_links(path, parent = NULL, format = NULL, compressed = NA)
 (\code{c(FHR = "genome.fhr.fasta")}) matches by the cited \code{headerType} instead; entries no
 name covers stay \code{unchecked}.}
 
-\item{format, compressed}{Passed to the reader.}
+\item{format, compressed, draft}{Passed to the reader.}
 }
 \value{
 A list with \code{links} (the cited links plus \code{parent}, \code{computed}, \code{verdict} -
