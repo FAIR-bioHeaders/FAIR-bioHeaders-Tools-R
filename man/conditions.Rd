@@ -2,20 +2,7 @@
 % Please edit documentation in R/conditions.R
 \name{conditions}
 \alias{conditions}
-\alias{bh_abort}
 \title{Conditions and diagnostics}
-\usage{
-bh_abort(class, message, ...)
-}
-\arguments{
-\item{class}{the condition subclass, without the \code{bh_} prefix.}
-
-\item{message}{ONE format string; the continuation lines of a long message must be
-joined with \code{paste0()} inside the argument, because \code{sprintf} cannot tell a format
-fragment from a value.}
-
-\item{...}{Values substituted into \code{message}.}
-}
 \description{
 Failures are classed conditions. Every error this package raises carries \code{bh_error}
 plus a specific subclass, so a caller can catch the family or one kind of failure with
@@ -24,4 +11,11 @@ subclass. A rule that reports rather than rejects - R11 and R14 (writer and link
 advice), the empty-required-value guidance in docs/SCHEMA-VERSIONS.md, the rule V6
 deprecation, and the rule V7 draft notice - is a warning by design and never changes
 validity.
+}
+\details{
+The helpers that raise these conditions, \code{bh_abort()} and \code{bh_warn()}, are documented on
+one page only: see \code{\link[=internals]{internals()}}.
+}
+\seealso{
+\code{\link[=internals]{internals()}}
 }

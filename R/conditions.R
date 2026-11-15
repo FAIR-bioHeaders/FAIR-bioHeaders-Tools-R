@@ -8,15 +8,24 @@
 #' deprecation, and the rule V7 draft notice - is a warning by design and never changes
 #' validity.
 #'
+#' The helpers that raise these conditions, `bh_abort()` and `bh_warn()`, are documented on
+#' one page only: see [internals()].
+#'
 #' @name conditions
+#' @seealso [internals()]
 NULL
 
-#' @param class the condition subclass, without the `bh_` prefix.
-#' @param message ONE format string; the continuation lines of a long message must be
-#'   joined with `paste0()` inside the argument, because `sprintf` cannot tell a format
-#'   fragment from a value.
-#' @param ... Values substituted into `message`.
-#' @rdname conditions
+# `bh_abort()` and `bh_warn()` are each defined twice on `main`: here, and again in
+# `R/internals.R`, together with duplicate copies of `.bh_read_all()` and `.bh_capture()`.
+# They are documented in `R/internals.R` only, on purpose: that file is collated after this
+# one, so its assignments overwrite the bindings below and its copies are the ones the package
+# actually runs, and documenting the same topic twice is what produced the
+# `Rd files with duplicated alias 'bh_abort'` WARNING that #10 is about. The duplicates are
+# the seam left by the two PR chains merged into `main` on 2026-11-14. Deleting them is a
+# code decision, not a documentation one: `bh_abort()` and `.bh_read_all()` are identical in
+# both files, but the two `bh_warn()` copies differ - here a failed `sprintf()` yields
+# `message`, in `R/internals.R` it yields the arguments pasted together - and only the
+# latter is in effect. Recorded with #10; nothing here changes behaviour.
 bh_abort <- function(class, message, ...) {
   text <- tryCatch(sprintf(message, ...), error = function(e) {
     paste(c(message, ...), collapse = "")
