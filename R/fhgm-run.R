@@ -89,7 +89,7 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
       "reject"
     }
     model_rules <- c("K1", "K2", "R3", "R15")
-    beyond <- setdiff(rules, model_rules)
+    beyond <- character() # PROBE: judge every vector at the model layer
     comparable <- !length(beyond)
     status <- if (!identical(got_base, v$layers$base) ||
       !identical(got_sum, v$layers$checksum)) {
