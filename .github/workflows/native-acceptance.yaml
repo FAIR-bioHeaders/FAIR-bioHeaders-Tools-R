@@ -47,6 +47,15 @@ jobs:
         run: install.packages(c("digest", "jsonlite", "jsonvalidate", "yaml", "testthat", "withr"))
         shell: Rscript {0}
 
+      - name: Assert no name is defined twice in R/
+        run: |
+          # Issue #12: R overwrites a duplicate namespace binding silently and `R CMD check`
+          # does not mention it, so main carried five dead duplicate definitions while every
+          # leg stayed green. Parsed from the sources; no install needed. A duplicate fails
+          # the job.
+          set -e
+          Rscript tools/check_duplicate_defs.R --verbose
+
       - name: Assert the package is native, structurally
         run: Rscript tools/assert_native.R
 
@@ -83,6 +92,18 @@ jobs:
             echo "::error::R CMD check failed with status $status"
             exit "$status"
           fi
+          # Issue #12: the status test above is not a guard against warnings. R exits 0 while
+          # the log carries them - #11 measured `Status: 1 WARNING, 1 NOTE` at exit 0 - so a
+          # WARNING here would have gone by unnoticed, which is exactly how the duplicate-alias
+          # WARNING survived on main with every leg green. A WARNING now fails the step. NOTEs
+          # are printed, not gated: they are the unavoidable "New submission" note, plus a
+          # pandoc note on the macOS legs.
+          if grep -nE '^(\*|\*\*\*) .*WARNING|^Status:.*WARNING' "$RUNNER_TEMP/check-reports/check.log"; then
+            echo "::error::R CMD check reported a WARNING while exiting with status $status"
+            exit 1
+          fi
+          echo "R CMD check: no WARNING in check.log (exit status $status)"
+          grep -nE '^(\*|\*\*\*) .*NOTE|^Status:' "$RUNNER_TEMP/check-reports/check.log" || true
 
       - name: Upload the check log
         if: always()

@@ -58,6 +58,19 @@ jobs:
           # and the vendored suite the run depends on is audited against its pins
           Rscript tools/check_vendoring.R
 
+      - name: Assert no name is defined twice in R/
+        run: |
+          # Issue #12. Six names were defined twice on main - once in R/conditions.R or
+          # R/framing.R, once in R/internals.R - and the earlier copies were dead code: with no
+          # Collate: field R loads the alphabetically later file last, and that binding wins.
+          # R reports nothing when a namespace binding is overwritten and `R CMD check` says
+          # nothing about the duplication either (measured on a two-file control package: exit
+          # 0, and the word "duplicate" appears nowhere in its log), so this static check is the
+          # only thing between a merge and unreachable definitions. It parses the sources, so it
+          # needs neither the install nor the compiled core. A duplicate fails the job.
+          set -e
+          Rscript tools/check_duplicate_defs.R --verbose
+
       - name: Install
         run: |
           R CMD build .
@@ -76,7 +89,29 @@ jobs:
           done
 
       - name: R CMD check (the spine)
-        run: R CMD check --as-cran --no-manual FAIRbioHeadersTools_*.tar.gz
+        run: |
+          # Issue #12, second half of the guard. `R CMD check` exits 0 while its own log carries
+          # warnings: measured on main at 4611c2c (`Status: 1 NOTE`, exit 0) and by #11 at
+          # 9827944f (`Status: 1 WARNING, 1 NOTE`, exit 0). Testing the exit status alone - which
+          # is what the other leg in native-acceptance.yaml did - therefore cannot go red here,
+          # so the log is kept and searched. A WARNING is a build failure.
+          # NOTEs are printed, not gated: `--as-cran` always emits the "New submission" NOTE
+          # until this package is actually submitted, and the macOS legs add a NOTE about pandoc
+          # not being installed on the runner. Failing on those would be a permanently red button.
+          set -e
+          log="${RUNNER_TEMP:-.}/build-check.log"
+          R CMD check --as-cran --no-manual FAIRbioHeadersTools_*.tar.gz 2>&1 | tee "$log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "::error::R CMD check failed with status $status"
+            exit "$status"
+          fi
+          if grep -nE '^(\*|\*\*\*) .*WARNING|^Status:.*WARNING' "$log"; then
+            echo "::error::R CMD check reported a WARNING while exiting with status $status - see $log"
+            exit 1
+          fi
+          echo "R CMD check: no WARNING in $log"
+          grep -nE '^(\*|\*\*\*) .*NOTE|^Status:' "$log" || true
 
       - name: Assert the capability docs match the code
         run: |
