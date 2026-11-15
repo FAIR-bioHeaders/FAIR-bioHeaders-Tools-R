@@ -109,12 +109,25 @@ read `->=` where `->>` was meant; R normalizes right-assignment before the scrip
 (`parse(text = "(f) ->> a")` gives `<<-(a, f)`), so nothing was missed on the forms this package
 uses, and `->`, `->>`, `assign()` and non-function duplicates are each now tested to exit 1.
 
+**CI on this branch.** `build` and `Native acceptance` are green at `6bff0b5` (runs 43751103290,
+43751103350) and at `601eba6` (43751582981, 43751582983). The guard step runs on all three `Native
+acceptance` legs — including `oldrel-3` on **R 4.3.3**, job 132926503619 — and every leg then prints
+`R CMD check: no WARNING in check.log (exit status 0)`; the `build` legs print the same for
+`build-check.log`. At `2ca8f76` one duplicate was put back deliberately, its bytes proven (`R/framing.R`
+sha256 `79c44686f516…` → `2046b18a58b8…`, `cmp` reporting `EOF`), and **both workflows fail**
+(43751638775, 43751638779) with `Assert no name is defined twice in R/` as the only failed step in
+each job — the `build` jobs also fail `Upload native reports`, because the job aborted before the
+receipts it uploads were ever written. The `oldrel-3` leg fails the same way (job 132926683363), so
+the gate is proven on R 4.3.3 as well as on 4.6. `6ef9ea3` reverts the probe and both workflows are
+green again (43751655760, 43751655787). The `oldrel-3` attribution uses the REST per-job logs
+endpoint (`actions/jobs/{id}/logs`), because `Native acceptance` has two jobs named
+`R CMD check (ubuntu-latest)` and the name-keyed `gh run view --log --job=` route returns
+byte-identical logs for both — the trap #11 recorded.
+
 *Supersedes* the "**Found while doing this, deliberately not changed**" paragraph in the #10 section
 below, which recorded these duplicates as left in place on purpose. That was the right call for a
 documentation-only PR; #12 is the code change it deferred, so that paragraph is kept as the record of
 what #10 measured and should not be read as the current state.
-
-## 2026-11-15 — the `R CMD check --as-cran` WARNING is gone (#10)
 
 ## Baseline comparison, honestly framed
 
