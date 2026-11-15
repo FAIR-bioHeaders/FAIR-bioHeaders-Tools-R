@@ -4,8 +4,8 @@
 # released FHGFF3 citation, its checksum covers its own bytes, and the extension key
 # is rule R15 data the base schema cannot see inside. Nothing in the released lane may
 # interpret it, and nothing may give FHGM a schemaVersion, a registry row or a w3id URL
-# (rule V7). This tests the transport half - the model-level checker is a separate,
-# unimplemented capability, declared so in bh_capability().
+# (rule V7). This tests the transport half; the model layer is tested in
+# test-fhgm-lane.R, against the suite FHGM publishes for it.
 
 test_that("an FHGFF3 1.1 header carries x-fhgm-models through as uninterpreted data", {
   # a released minimal FHGFF3 record, extended in memory only: no fixture is invented
@@ -27,16 +27,29 @@ test_that("an FHGFF3 1.1 header carries x-fhgm-models through as uninterpreted d
   expect_identical(back[["x-fhgm-models"]], payload)
 })
 
-test_that("the model-level checker is declared absent, not silently partial", {
+test_that("the model layer is claimed only for K1/K2, and the rest is still a gap", {
   m <- bh_capability()
-  cells <- m[m$header_type == "FHGM" &
+  done <- m[m$header_type == "FHGM" &
     m$operation %in% c("read_model_records", "validate_model_records"), ]
-  expect_equal(nrow(cells), 2L)
-  expect_true(all(cells$support == "not-supported-yet"))
-  # each names the concrete gate: the K1-K6 checker port
-  expect_true(all(grepl("K1-K6", cells$blocker)))
-  # and the blocker states the measured reason, not a vague one
-  expect_true(all(grepl("31 vectors", cells$blocker, fixed = TRUE)))
+  expect_equal(nrow(done), 2L)
+  expect_true(all(done$support == "draft-lane"))
+  # a draft-lane cell is not a native one, and its blocker states the boundary it stops at
+  expect_false(any(m$support == "native" & m$header_type == "FHGM"))
+  val <- done$blocker[done$operation == "validate_model_records"]
+  expect_match(val, "K1")
+  expect_match(val, "K2")
+  expect_match(val, "not-run")
+  expect_match(val, "31", fixed = TRUE)
+  # the rules the run cannot evaluate are named operations with their own reason, not
+  # folded into the cells above
+  gaps <- m[m$header_type == "FHGM" & m$support == "not-supported-yet", ]
+  expect_setequal(gaps$operation, c(
+    "check_model_id_uniqueness", "resolve_feature_target",
+    "check_reference_agreement", "resolve_revision_pointer"
+  ))
+  expect_true(all(nzchar(gaps$blocker)))
+  expect_true(all(nzchar(gaps$tracker)))
+  expect_true(all(grepl("K[3-6]", gaps$blocker)))
 })
 
 test_that("FHGM keeps no released form anywhere a reader could mistake for one", {
