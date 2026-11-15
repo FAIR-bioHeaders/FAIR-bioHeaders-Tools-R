@@ -124,15 +124,18 @@ endpoint (`actions/jobs/{id}/logs`), because `Native acceptance` has two jobs na
 `R CMD check (ubuntu-latest)` and the name-keyed `gh run view --log --job=` route returns
 byte-identical logs for both — the trap #11 recorded.
 
-**What each CI leg reports for `R CMD check` on the head of this branch:** `Status: 1 NOTE` on
-`build (ubuntu-latest)` (R 4.6.2, job 132926735825) and `Status: 2 NOTEs` on `build (macos-latest)`
-(job 132926735874) — the unavoidable "New submission" NOTE, plus the known pandoc NOTE on macOS —
-and `Status: OK` on the `Native acceptance` legs, which do not pass `--as-cran`. Both `build` legs
-then print `R CMD check: no WARNING in …-check.log`, so the new gate is green on NOTEs it
-deliberately does not treat as failures. One caution, because it bit the extraction: the string
-`Status: 1 WARNING` also appears in those job logs as **echoed step text**, since the workflow
-comments quote #11's measurements. Only bare `Status: …` output lines are results, and the counts
-above come from those.
+**What each CI leg reports for `R CMD check` on the head of this branch (`6267975`)**, each value
+taken from that job's own REST log rather than from the run-wide log: `Status: 1 NOTE` on
+`build (ubuntu-latest)` (R 4.6.2, job 132931336686) and `Status: 2 NOTEs` on `build (macos-latest)`
+(R 4.6.2, job 132931336287) — "New submission", plus the known pandoc NOTE under
+`checking top-level files` — and `Status: OK` on all three `Native acceptance` legs: R 4.3.3
+(`r-version: oldrel-3`, job 132931336408), ubuntu release (job 132931336532) and macOS (job
+132931336141), none of which pass `--as-cran`. Every one of those five legs also prints
+`R CMD check: no WARNING in …-check.log` and `check_duplicate_defs: OK - every top-level name in R/
+is defined once`, so the new gate is green on the NOTEs it deliberately does not treat as failures.
+One caution, because it bit the extraction: the string `Status: 1 WARNING` also appears in these job
+logs as **echoed step text**, since the workflow comments quote #11's measurements. Only a bare
+`Status: …` output line is a result, and the counts above are from those.
 
 *Supersedes* the "**Found while doing this, deliberately not changed**" paragraph in the #10 section
 below, which recorded these duplicates as left in place on purpose. That was the right call for a
