@@ -48,6 +48,32 @@ calls `do_exit(1L)` only when `Log$errors > 0L`, and the run on the unmodified t
 spine job has been printing it — the step is just not wired to fail on one. Turning a
 WARNING red is a CI change and belongs with #4, so it is not done here.
 
+**The same two workflows, read out of CI's own logs, `main` vs this branch.** Each row is
+the `checking Rd metadata` line and the `Status:` line of one job, taken from that job's own
+log (`actions/jobs/{id}/logs`; note that `gh run view --log --job=` keys on the job *name*,
+and `Native acceptance` has two jobs called `R CMD check (ubuntu-latest)` whose logs came
+back byte-identical under that route — `cmp` proved it, so the per-job endpoint is what the
+figures below come from).
+
+| leg | flag | R | `main` at `9827944` | this branch at `e858b31` |
+| --- | --- | --- | --- | --- |
+| `build.yml` / `build (ubuntu-latest)` | `--as-cran` | 4.6.2 | WARNING, `Status: 1 WARNING, 1 NOTE` | OK, `Status: 1 NOTE` |
+| `build.yml` / `build (macos-latest)` | `--as-cran` | 4.6.2 | WARNING, `Status: 1 WARNING, 2 NOTEs` | OK, `Status: 2 NOTEs` |
+| `native-acceptance.yaml` / ubuntu release | no `--as-cran` | 4.6.2 | WARNING, `Status: 1 WARNING` | OK, `Status: OK` |
+| `native-acceptance.yaml` / macOS | no `--as-cran` | 4.6.2 | WARNING, `Status: 1 WARNING` | OK, `Status: OK` |
+| `native-acceptance.yaml` / ubuntu oldrel-3 | no `--as-cran` | **4.3.3** | WARNING, `Status: 1 WARNING` | OK, `Status: OK` |
+
+Both runs on this branch are green end to end: `build` run 43728815985 (8 jobs, all
+`success`, including the ledger and golden literal assertions) and `Native acceptance` run
+43728815989 (3 jobs, all `success`).
+
+Two corrections come out of this. The NOTE count on every leg is unchanged before and after
+(the macOS legs carry the documented pandoc NOTE, the `--as-cran` ubuntu leg carries
+"New submission", the legs without `--as-cran` carry neither), and **#10's assumption that
+`--as-cran` is what surfaces the WARNING is wrong**: `Rd metadata` printed it on all five
+legs above, including the three that never pass `--as-cran`, on R 4.6.2 and R 4.3.3 alike.
+The WARNING was always printed, everywhere, and acted on nowhere.
+
 **Which module owns the documented topic.** `R/internals.R` now documents
 `bh_abort()`/`bh_warn()` alone (#10's option 1). `R/conditions.R` keeps the `conditions`
 topic — the classed error/warning surface — and points at the helpers with `@seealso`; its
