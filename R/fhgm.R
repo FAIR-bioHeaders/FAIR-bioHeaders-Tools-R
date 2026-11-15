@@ -40,13 +40,14 @@ NULL
 # top-level YAML keys does not look inside. Nothing is coerced from the contract: a key
 # is re-wrapped only because the bytes of this file wrote it as an array.
 .bh_fhgm_flow_scalar_keys <- function(txt) {
-  # \\K resets where the match starts, so the match IS the key name; the lookahead keeps
+  # \K resets where the match starts, so the match IS the key name; the lookahead keeps
   # the shape test (a flow array with one comma-free, bracket-free item) out of the result
   pats <- c(
     '"\\K[^"]+(?="\\s*:\\s*\\[[^\\]\\[{,}]*\\])', # "deposit":["doi:..."]
     '(^|[{,[:space:]])\\K[A-Za-z0-9_-]+(?=\\s*:\\s*\\[[^\\]\\[{,}]*\\])' # deposit: [doi:...]
   )
-  hits <- unlist(lapply(pats, function(p) regmatches(txt, gregexpr(p, txt, perl = TRUE))[[1L]]))
+  hits <- unlist(lapply(pats, function(p) regmatches(txt, gregexpr(p, txt, perl = TRUE))))
+  hits <- unlist(hits)
   if (!length(hits)) return(character())
   unique(hits[nzchar(hits)])
 }
@@ -71,16 +72,16 @@ NULL
   out
 }
 
-.bh_fhgm_shape_repair <- function(record, lines) {
-  sub <- .bh_fhgm_value_lines(lines)
-  if (!length(sub) || !is.list(record)) return(record)
-  keys <- unique(c(
-    .bh_fhgm_flow_scalar_keys(paste(sub, collapse = "\n")),
-    .bh_sequence_keys(sub)
-  ))
-  keys <- setdiff(keys, .bh_fhgm_key)
-  if (!length(keys)) return(record)
-  .bh_repair_shape(record, keys)
+# The key names to re-wrap, taken from the transport value's own text. The transport key
+# itself is excluded: `.bh_fhgm_records()` already resolves whether the value holds one
+# record or several.
+.bh_fhgm_shape_keys <- function(lines) {
+  vlines <- .bh_fhgm_value_lines(lines)
+  if (!length(vlines)) return(character())
+  setdiff(unique(c(
+    .bh_fhgm_flow_scalar_keys(paste(vlines, collapse = "\n")),
+    .bh_sequence_keys(vlines)
+  )), .bh_fhgm_key)
 }
 
 # Extracts the transported model records from a parsed header. The single-item case is the
@@ -110,18 +111,23 @@ bh_fhgm_models <- function(path, format = "fhgff3", compressed = NA,
   ))
   if (!is.null(a$error)) bh_abort("input", "the file could not be read: %s", a$error)
   # the header text again, to recover the sequence shapes the YAML parse flattened; the
-  # framing rules are the released path's own, so no second implementation is introduced
+  # framing rules are the released path's own, so no second implementation is introduced,
+  # and the repair is applied to the transported records only - never to the header the
+  # released verdict was computed on
   lines <- character()
   h <- .bh_capture(.bh_head(path, compressed = compressed))
   if (is.null(h$error)) {
     fr <- .bh_capture(.bh_frame(h$value$bytes, format, complete = h$value$complete))
     if (is.null(fr$error)) lines <- .bh_header_lines(fr$value)
   }
-  record <- .bh_fhgm_shape_repair(a$value$record, lines)
-  recs <- .bh_fhgm_records(record)
+  recs <- .bh_fhgm_records(a$value$record)
+  keys <- .bh_fhgm_shape_keys(lines)
+  if (length(keys)) {
+    recs <- lapply(recs, function(r) .bh_repair_shape(r, keys))
+  }
   list(
-    present = !is.null(record[[.bh_fhgm_key]]), records = recs,
-    count = length(recs), header = record, header_issues = a$value$issues
+    present = !is.null(a$value$record[[.bh_fhgm_key]]), records = recs,
+    count = length(recs), header = a$value$record, header_issues = a$value$issues
   )
 }
 
