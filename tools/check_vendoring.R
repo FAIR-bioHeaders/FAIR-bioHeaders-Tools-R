@@ -25,6 +25,9 @@ arg <- function(name, default = NULL) {
 if (!requireNamespace("digest", quietly = TRUE) || !requireNamespace("jsonlite", quietly = TRUE)) {
   stop("digest and jsonlite are required to audit the vendored copies")
 }
+# Same reason the package keeps its own: base R gained %||% in 4.4 and this script must
+# still report drift on an older R rather than dying on an operator it does not know.
+`%||%` <- function(a, b) if (is.null(a)) b else a
 here <- normalizePath(".")
 prov <- jsonlite::fromJSON(file.path(here, "inst/VENDORED.json"), simplifyVector = FALSE)
 sha256_file <- function(path) {
@@ -98,6 +101,32 @@ if (!is.null(prov$draft_vectors)) {
     file.path(here, sub("^tests/", "tests/", prov$draft_vectors$dest)),
     prov$draft_vectors
   )
+}
+if (!is.null(prov$draft_fhgm_vectors)) {
+  audit_suite("FHGM development suite (draft evidence)",
+    file.path(here, prov$draft_fhgm_vectors$dest), prov$draft_fhgm_vectors
+  )
+  # FHGM vectors cite example files one directory up (../examples/...), so those bytes are
+  # vendored as well. They are audited here rather than left to the runner: a missing
+  # example would otherwise show up only as a not-run row in a labelled draft run.
+  ex <- prov$draft_fhgm_vectors
+  ex_dir <- file.path(here, ex$examples_dir)
+  listed <- setdiff(list.files(ex_dir, recursive = TRUE, all.files = TRUE, no.. = TRUE),
+    "pax_global_header"
+  )
+  report(identical(sort(listed), sort(names(ex$examples_sha256))), paste0(
+    "FHGM example files present (", length(listed), " of ", ex$examples, ")"
+  ))
+  bad <- character()
+  for (nm in names(ex$examples_sha256)) {
+    if (!identical(sha256_file(file.path(ex_dir, nm)), ex$examples_sha256[[nm]])) {
+      bad <- c(bad, nm)
+    }
+  }
+  report(length(bad) == 0L, paste0("FHGM example digests",
+    if (length(bad)) paste0(" drifted: ", paste(head(bad, 5), collapse = ", ")) else ""
+  ))
+  report(!any(grepl("[.]py$", listed)), "FHGM examples carry no upstream scripts")
 }
 
 if (flag("--fresh")) {

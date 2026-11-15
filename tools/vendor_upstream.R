@@ -206,6 +206,72 @@ cat(sprintf("  %d files, manifest %s, %d vectors (status: %s)\n", length(dper),
             substr(unname(dper[["manifest.json"]]), 1, 16), length(dman$vectors),
             substr(unlist(dman$status), 1, 40)))
 
+cat("FHGM draft vectors (FHGM-Specification development suite, layered expectations)\n")
+# Published by the FHGM development repository, not by the shared specification: 31 vectors
+# whose manifest records what four independent checks report (base schema, checksum, gff3
+# feature layer, model layer). They are draft evidence and are never counted toward the 291.
+# The bytes come from `git archive origin/main` of the owning repository, so a revision is
+# vendored rather than whatever a working tree happens to hold.
+fhgm_conformance_path <- "development/conformance"
+fhgm_examples_path <- "development/examples"
+gdest <- file.path(here, "tests", "draft", "fhgm")
+edest <- file.path(here, "tests", "draft", "examples")
+unlink(gdest, recursive = TRUE)
+unlink(edest, recursive = TRUE)
+
+archive_subtree <- function(sub, target) {
+  t <- tempfile(fileext = ".tar")
+  c1 <- paste("git", shQuote("-C"), shQuote(fhgm_repo),
+              "archive --format=tar origin/main", sub, ">", shQuote(t))
+  s1 <- system2("/bin/sh", c("-c", shQuote(c1)), stdout = TRUE, stderr = TRUE)
+  if (!is.null(attr(s1, "status")) && attr(s1, "status") != 0) {
+    stop("git archive of FHGM ", sub, " failed: ", paste(s1, collapse = " "))
+  }
+  u <- tempfile("fhgmr")
+  dir.create(u)
+  system2("tar", c("-xf", shQuote(t), "-C", shQuote(u)))
+  unlink(t)
+  if (!dir.exists(file.path(u, sub))) stop("unexpected FHGM archive layout for ", sub)
+  dir.create(dirname(target), showWarnings = FALSE, recursive = TRUE)
+  file.rename(file.path(u, sub), target)
+  unlink(u, recursive = TRUE)
+  invisible(target)
+}
+archive_subtree(fhgm_conformance_path, gdest)
+# Several vectors cite example files one level up (../examples/model/snapshot-v1.fhgff3.gff3
+# and friends), so those bytes are vendored alongside, at the path the citations resolve to.
+archive_subtree(fhgm_examples_path, edest)
+if (!file.exists(file.path(gdest, "manifest.json"))) stop("the FHGM suite did not land at ", gdest)
+
+# The owning repository's generator and checker scripts are not data this package reads;
+# they stay upstream rather than being carried here to be run or edited.
+drop_scripts <- function(dir) {
+  py <- list.files(dir, pattern = "[.]py$", recursive = TRUE)
+  unlink(file.path(dir, py))
+  py
+}
+dropped_g <- paste0("conformance/", drop_scripts(gdest))
+dropped_e <- paste0("examples/", drop_scripts(edest))
+
+sha_tree <- function(dir) {
+  fs <- list.files(dir, recursive = TRUE, all.files = TRUE, no.. = TRUE)
+  szs <- file.info(file.path(dir, fs))$size
+  out <- vapply(seq_along(fs), function(i) {
+    sha256_bytes(readBin(file.path(dir, fs[[i]]), what = "raw", n = szs[[i]]))
+  }, "")
+  names(out) <- fs
+  out[order(names(out))]
+}
+gper <- sha_tree(gdest)
+esper <- sha_tree(edest)
+gman <- jsonlite::fromJSON(file.path(gdest, "manifest.json"), simplifyVector = FALSE)
+# the revision of the data that was vendored, which is not necessarily the tip of main
+gcommit <- git_out(fhgm_repo, c("log", "-1", "--format=%H", "origin/main", "--",
+                                paste0(fhgm_conformance_path, "/manifest.json")))
+cat(sprintf("  %d suite files + %d example files, %d upstream scripts left behind, manifest %s, %d vectors\n",
+            length(gper), length(esper), length(dropped_g) + length(dropped_e),
+            substr(unname(gper[["manifest.json"]]), 1, 16), length(gman$vectors)))
+
 cat("shared conformance suite\n")
 unlink(file.path(here, "tests/conformance"), recursive = TRUE)
 # The archive goes through a shell redirect: R replaces an unusable system2 stdout
@@ -265,6 +331,34 @@ prov <- list(
     vectors = length(dman$vectors), status = dman$status,
     note = "development vectors, not part of the 291; expectations derived from rule text upstream",
     per_file = setNames(as.list(unname(dper)), names(dper))
+  ),
+  draft_fhgm_vectors = list(
+    header_type = "FHGM", transport_type = "FHGFF3",
+    repository = git_out(fhgm_repo, c("remote", "get-url", "origin")),
+    ref = "origin/main",
+    commit = gcommit,
+    head_at_retrieval = git_out(fhgm_repo, c("rev-parse", "origin/main")),
+    path = fhgm_conformance_path, dest = "tests/draft/fhgm", files = length(gper),
+    not_vendored = c(dropped_g, dropped_e),
+    not_vendored_note = paste0(
+      "paths relative to development/ in the owning repository: the upstream generator and ",
+      "checker scripts stay there, this package vendors data only"
+    ),
+    manifest_sha256 = unname(gper[["manifest.json"]]),
+    combined_sha256 = sha256_bytes(charToRaw(paste(sprintf("%s %s", names(gper), unname(gper)),
+                                                   collapse = "\n"))),
+    vectors = length(gman$vectors), status = gman$status,
+    examples_dir = "tests/draft/examples", examples = length(esper),
+    examples_sha256 = setNames(as.list(unname(esper)), names(esper)),
+    note = paste0(
+      "draft evidence, not part of the 291. Layers are recorded per vector: base (the ",
+      "released fhgff3.json contract over the parsed header), checksum, gff3 (a separate ",
+      "tool; every vector is recorded as accept) and model (the draft checker). This ",
+      "package reports base, checksum and the K1/K2 model layer natively; the checker's ",
+      "cross-record rules K3-K6 and the gff3 layer are not implemented here and their ",
+      "vectors are reported not-run with the rule named."
+    ),
+    per_file = setNames(as.list(unname(gper)), names(gper))
   ),
   conformance = list(
     repository = git_out(spec, c("remote", "get-url", "origin")),
