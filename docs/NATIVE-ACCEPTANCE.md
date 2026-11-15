@@ -137,6 +137,15 @@ The same refusal is tested for the locators of all three suites
 (`test-conformance.R`, `test-fhgm-lane.R`): a named directory without a
 `manifest.json` is an error, never a fallback.
 
+A fourth control is not in this package's source at all: it is the shape of a record.
+`.bh_record_json()` hands the validator the JSON of what the YAML parse produced, and R's
+`yaml` flattens a one-item sequence to an atomic vector, so `"deposit":["doi:..."]` would
+arrive as a scalar and be rejected as a type error. The lane repairs the shape from the
+file's own text (`.bh_fhgm_flow_scalar_keys()`), and two tests hold it honest: the suite's
+`s6k` fixture must validate with its array intact, and the same bytes with the two brackets
+deleted (2 bytes fewer, asserted on the file) must still be rejected. Coercing from the
+contract instead would accept a genuinely scalar `deposit`, which is the dangerous direction.
+
 ## Receipts
 
 CI asserts *receipts*, not greens: `tools/acceptance_native.R`,

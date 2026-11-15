@@ -67,7 +67,7 @@ jobs:
         run: |
           # Any failure, any error, ANY skip, or fewer than the floor of assertions
           # fails the build (docs/NATIVE-ACCEPTANCE.md). Floor raised 500 -> 700 with
-          # the FHGM model lane: the revision measures 755 assertions locally, and the
+          # the FHGM model lane: the revision measures 770 assertions locally, and the
           # floor is the current real count rounded down, never a number nothing reaches.
           BH_MIN_TESTS=700 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
           cat tests.properties

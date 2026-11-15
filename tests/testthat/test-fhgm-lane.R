@@ -328,6 +328,59 @@ test_that("a model checker that accepts everything is caught, not thanked", {
   expect_equal(sum(bad$got_checksum == bad$expected_checksum), nrow(bad))
 })
 
+test_that("a one-item sequence inside a record keeps the shape its bytes gave it", {
+  # R's yaml returns an atomic vector for a single-item sequence, which would reach the
+  # pinned record contract as a scalar and reject a record whose bytes say array. This is
+  # not a hypothetical: the suite's own s6k fixture writes "deposit":["doi:..."] and the
+  # record contract declares deposit an array, so an unrepaired read is a false rejection.
+  f <- file.path(dirname(.bh_fhgm_suite_dir()), "examples", "s6k",
+    "DanaCAF1_S6k.fhgm-models.fhgff3.gff3"
+  )
+  expect_true(file.exists(f))
+  d <- suppressWarnings(bh_fhgm_models(f, draft = "FHGM"))
+  expect_equal(d$count, 1L)
+  txt <- FAIRbioHeadersTools:::.bh_record_json(d$records[[1]])
+  expect_match(txt, '"deposit":\\["doi:10.22002/e86gh-a7p16"\\]', perl = TRUE)
+  v <- suppressWarnings(bh_validate_fhgm(f))
+  expect_true(v$all_valid)
+  expect_equal(v$n_records, 1L)
+  # and the flow scanner is what did it, reading the text rather than the contract
+  keys <- FAIRbioHeadersTools:::.bh_fhgm_flow_scalar_keys(
+    'x-fhgm-models: [{"publication":{"article":"10.1","deposit":["doi:x"]}}]'
+  )
+  expect_equal(keys, "deposit")
+  expect_equal(FAIRbioHeadersTools:::.bh_fhgm_flow_scalar_keys(
+    'x-fhgm-models: [{"publication":{"article":"10.1","deposit":["doi:x","doi:y"]}}]'
+  ), character())
+})
+
+test_that("the repair never invents an array the bytes did not write", {
+  # the same fixture with the brackets removed: a genuine scalar must still be rejected by
+  # K2, or the shape repair would be contract-driven coercion wearing a different name.
+  src <- file.path(dirname(.bh_fhgm_suite_dir()), "examples", "s6k",
+    "DanaCAF1_S6k.fhgm-models.fhgff3.gff3"
+  )
+  tmp <- tempfile(fileext = ".fhgff3.gff3")
+  on.exit(unlink(tmp), add = TRUE)
+  l <- readLines(src)
+  hit <- grep("x-fhgm-models", l, fixed = TRUE)
+  expect_length(hit, 1L)
+  l[hit] <- sub('"deposit":\\["doi:10.22002/e86gh-a7p16"\\]',
+    '"deposit":"doi:10.22002/e86gh-a7p16"', l[hit], perl = TRUE
+  )
+  writeLines(l, tmp)
+  # the mutation, proven on bytes: two characters gone (the bracket pair), the scalar form
+  # present, the array form absent
+  before <- .bh_read_all(src)
+  after <- .bh_read_all(tmp)
+  expect_equal(length(after), length(before) - 2L)
+  expect_true(grepl('"deposit":"doi:10.22002/e86gh-a7p16"', rawToChar(after), fixed = TRUE))
+  expect_false(grepl('"deposit":[', rawToChar(after), fixed = TRUE))
+  v <- suppressWarnings(bh_validate_fhgm(tmp))
+  expect_false(v$all_valid)
+  expect_match(v$records$errors[[1]], "rejected|additionalProperties|type")
+})
+
 test_that("a rule label this build has no note for is still reported as a gap", {
   # upstream may add a rule to its vocabulary; the runner must not crash and must not
   # read an unmapped label as covered

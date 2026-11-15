@@ -26,6 +26,17 @@
 #' contract would be over-wrapped, and the result would be a rejection of a valid file - a
 #' visible failure that the vector suite would catch, never a silent pass.
 #'
+#' The scan is line-oriented, so it sees a key whose value is a sequence on its own line or
+#' in flow brackets at the top level of a line; it does not look *inside* a flow value. That
+#' was harmless while every array-typed property in the released contracts was a top-level
+#' key (measured over fhr-2.1, fhp-1.2 and fhgff3-1.2: it is still true there). The FHGM
+#' draft record contract is the first in the family with an array nested inside an object -
+#' `publication.deposit` and `methods.limitations`, both arrays of scalars - so a record
+#' written as one JSON flow value on one line loses exactly that shape here. The FHGM lane
+#' repairs it from the same text, in its own module
+#' (`FAIRbioHeadersTools:::.bh_fhgm_flow_scalar_keys()`), and nothing about the released
+#' path changes.
+#'
 #' @name yaml-shape
 NULL
 

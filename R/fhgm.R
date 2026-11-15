@@ -29,6 +29,60 @@ NULL
 
 .bh_fhgm_key <- "x-fhgm-models"
 
+# A flow array holding exactly one scalar - `"deposit":["doi:10.22002/x"]` - is the shape
+# R's yaml hands back as an atomic vector, after which it is indistinguishable from a
+# scalar. `.bh_record_json` then writes a scalar and the pinned record contract rejects a
+# record whose bytes say array (measured on the suite's own s6k fixture). The released
+# header path repairs this shape from the text, where it is still recorded
+# (R/yaml-shape.R), and the FHGM records get the same treatment here, with two
+# differences: the scan is confined to the x-fhgm-models value, and it reads the
+# JSON-in-YAML flow style the draft records are written in, which the line scanner for
+# top-level YAML keys does not look inside. Nothing is coerced from the contract: a key
+# is re-wrapped only because the bytes of this file wrote it as an array.
+.bh_fhgm_flow_scalar_keys <- function(txt) {
+  # \\K resets where the match starts, so the match IS the key name; the lookahead keeps
+  # the shape test (a flow array with one comma-free, bracket-free item) out of the result
+  pats <- c(
+    '"\\K[^"]+(?="\\s*:\\s*\\[[^\\]\\[{,}]*\\])', # "deposit":["doi:..."]
+    '(^|[{,[:space:]])\\K[A-Za-z0-9_-]+(?=\\s*:\\s*\\[[^\\]\\[{,}]*\\])' # deposit: [doi:...]
+  )
+  hits <- unlist(lapply(pats, function(p) regmatches(txt, gregexpr(p, txt, perl = TRUE))[[1L]]))
+  if (!length(hits)) return(character())
+  unique(hits[nzchar(hits)])
+}
+
+# The lines that carry the x-fhgm-models value: its own line plus every following line
+# indented deeper than the key, which is how a block-style extension value continues.
+.bh_fhgm_value_lines <- function(lines) {
+  if (!length(lines)) return(character())
+  at <- grep(paste0("^", .bh_fhgm_key, "[ \t]*:"), lines)
+  if (!length(at)) return(character())
+  i <- at[[1L]]
+  ind <- nchar(sub("[^ ].*$", "", lines[[i]]))
+  out <- lines[[i]]
+  if (i < length(lines)) {
+    for (j in (i + 1L):length(lines)) {
+      l <- lines[[j]]
+      if (!nzchar(trimws(l))) next
+      if (nchar(sub("[^ ].*$", "", l)) <= ind) break
+      out <- c(out, l)
+    }
+  }
+  out
+}
+
+.bh_fhgm_shape_repair <- function(record, lines) {
+  sub <- .bh_fhgm_value_lines(lines)
+  if (!length(sub) || !is.list(record)) return(record)
+  keys <- unique(c(
+    .bh_fhgm_flow_scalar_keys(paste(sub, collapse = "\n")),
+    .bh_sequence_keys(sub)
+  ))
+  keys <- setdiff(keys, .bh_fhgm_key)
+  if (!length(keys)) return(record)
+  .bh_repair_shape(record, keys)
+}
+
 # Extracts the transported model records from a parsed header. The single-item case is the
 # one to watch: R's yaml hands back the flow sequence as a list, and a one-record file must
 # still read as one record rather than as its fields.
@@ -55,10 +109,19 @@ bh_fhgm_models <- function(path, format = "fhgff3", compressed = NA,
     draft = draft, validate_contract = FALSE
   ))
   if (!is.null(a$error)) bh_abort("input", "the file could not be read: %s", a$error)
-  recs <- .bh_fhgm_records(a$value$record)
+  # the header text again, to recover the sequence shapes the YAML parse flattened; the
+  # framing rules are the released path's own, so no second implementation is introduced
+  lines <- character()
+  h <- .bh_capture(.bh_head(path, compressed = compressed))
+  if (is.null(h$error)) {
+    fr <- .bh_capture(.bh_frame(h$value$bytes, format, complete = h$value$complete))
+    if (is.null(fr$error)) lines <- .bh_header_lines(fr$value)
+  }
+  record <- .bh_fhgm_shape_repair(a$value$record, lines)
+  recs <- .bh_fhgm_records(record)
   list(
-    present = !is.null(a$value$record[[.bh_fhgm_key]]), records = recs,
-    count = length(recs), header = a$value$record, header_issues = a$value$issues
+    present = !is.null(record[[.bh_fhgm_key]]), records = recs,
+    count = length(recs), header = record, header_issues = a$value$issues
   )
 }
 

@@ -14,8 +14,8 @@ are the first real ones for this repository.
 
 | measure | stub (main, `4b975bd`) | v0.6.0 core + lane (main, `8957f4f`) | this work (FHGM model lane) |
 | --- | --- | --- | --- |
-| `R CMD check --as-cran --no-manual` | 39 checks, 0 notes, Status OK | recorded by that revision as "66 checks, 0 errors, 0 warnings, 1 NOTE"; **not reproducible in this session** — the same commit `8957f4f`, checked here with the toolchain above, reports 1 WARNING and 1 NOTE | **0 errors, 1 WARNING, 1 NOTE** (66 check lines, 53 `checking` steps; `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 755 ]` inside the check). The NOTE is the unavoidable "New submission"; the WARNING is `Rd files with duplicated alias 'bh_abort'` (`man/conditions.Rd` and `man/internals.Rd`), present at `8957f4f` as well, so nothing here introduces it. Removing the duplicate roxygen block is a separate cleanup. |
-| testthat assertions | 0 | **561, 0 failed, 0 errors, 0 skipped** (re-measured locally at `8957f4f`) | **755, 0 failed, 0 errors, 0 skipped** |
+| `R CMD check --as-cran --no-manual` | 39 checks, 0 notes, Status OK | recorded by that revision as "66 checks, 0 errors, 0 warnings, 1 NOTE"; **not reproducible in this session** — the same commit `8957f4f`, checked here with the toolchain above, reports 1 WARNING and 1 NOTE | **0 errors, 1 WARNING, 1 NOTE** (66 check lines, 53 `checking` steps; `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 770 ]` inside the check). The NOTE is the unavoidable "New submission"; the WARNING is `Rd files with duplicated alias 'bh_abort'` (`man/conditions.Rd` and `man/internals.Rd`), present at `8957f4f` as well, so nothing here introduces it. Removing the duplicate roxygen block is a separate cleanup. |
+| testthat assertions | 0 | **561, 0 failed, 0 errors, 0 skipped** (re-measured locally at `8957f4f`) | **770, 0 failed, 0 errors, 0 skipped** |
 | shared v0.6.0 vectors | not run | **291 accounted: 228 pass natively, 63 not-run with reasons, 0 fail** | unchanged: the receipt is byte-identical to the one produced at `8957f4f` |
 | default-behavior golden | none | `goldenDifferences=0` | `goldenDifferences=0`; the golden file is still SHA-256 `055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525` |
 | FHT development suite (draft lane only) | not run | **66/66 pass** against pinned bytes, in the separate labelled job | unchanged, same job |
@@ -83,6 +83,24 @@ same blob on both chains (`131f49cd58b9...`) and was not touched.
 What is *newly* claimed, and what is not: the two FHGM cells move from `not-supported-yet`
 to `draft-lane` for K1/K2 only, four named gap rows (K3-K6) are added, the shared ledger is
 untouched at 291/228/63, and the default path is unchanged (golden identical).
+
+**A defect the deliberate-failure probe caught.** With the not-run policy temporarily
+removed, `s6k-derived-record-fixture` disagreed with its published expectation in the other
+direction: this package's K2 layer *rejected* a record the suite records as `pass`. The cause
+is not the contract and not the fixture. R's `yaml` returns an atomic vector for a
+one-item sequence, so the fixture's `"deposit":["doi:10.22002/e86gh-a7p16"]` reaches
+`.bh_record_json()` as a scalar, and the pinned record contract - which declares
+`publication.deposit` an array - rejects it. The released header path already repairs that
+shape from the text (`R/yaml-shape.R`), but its scanner is line-oriented and cannot see
+inside a flow value; that was harmless while every array-typed property in the released
+contracts was a top-level key (measured over `fhr-2.1`, `fhp-1.2`, `fhgff3-1.2`: still true).
+The FHGM record contract is the first in the family with an array nested inside an object
+(`publication.deposit`, `methods.limitations`), so the lane needed its own text-derived scan
+(`.bh_fhgm_flow_scalar_keys()`, `R/fhgm.R`). Nothing is coerced from the contract: a key is
+re-wrapped only because this file's bytes wrote brackets around it, and the standing test
+asserts both halves - the fixture's array survives, and the same bytes with the brackets
+removed are still rejected (2 bytes fewer, proven on the file). The repair lives in the draft
+lane only; the released path and the golden do not move.
 
 ## Ledger (v0.6.0 baseline; identical figures from the Java library)
 
