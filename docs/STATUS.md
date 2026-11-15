@@ -1,9 +1,10 @@
 # STATUS — measured state of the R library
 
-Date: **2026-11-14**. Everything below was measured on the commit this document
-accompanies, on macOS 14 arm64 with R 4.6.1, `jsonvalidate` 1.5.0 (V8 8.2.1),
-`digest` 0.6.39, `yaml` 2.3.12, `jsonlite` 2.0.0, `roxygen2` 8.1.0,
-`testthat` 3.3.2. CI re-measures the same spine on ubuntu-latest and macos-latest.
+Date: **2026-11-14**, with the 2026-11-15 section below added for #10. Everything in
+the table was measured on the commit this document accompanied, on macOS 14 arm64 with
+R 4.6.1, `jsonvalidate` 1.5.0 (V8 8.2.1), `digest` 0.6.39, `yaml` 2.3.12,
+`jsonlite` 2.0.0, `roxygen2` 8.1.0, `testthat` 3.3.2. CI re-measures the same spine on
+ubuntu-latest and macos-latest.
 
 ## Baseline comparison, honestly framed
 
@@ -21,6 +22,72 @@ are the first real ones for this repository.
 | FHT development suite (draft lane only) | not run | **66/66 pass** against pinned bytes, in the separate labelled job | unchanged, same job |
 | FHGM development suite (draft lane only) | not run | not run (the checker was not on `main`; see below) | **31 evaluated: base 31/31, checksum 31/31; model layer compared on the 7 K1/K2 vectors, all agreeing; 24 `not-run` naming K3-K6/B1** |
 | compiled digest self-test | none | runs at every package load; refuses to load on any mismatch | unchanged |
+
+## 2026-11-15 — the `R CMD check --as-cran` WARNING is gone (#10)
+
+Re-measured on this commit, macOS arm64, R 4.6.1, `roxygen2` 8.1.0:
+
+| measure | before (`9827944`) | after (this commit) |
+| --- | --- | --- |
+| `R CMD check --as-cran --no-manual` | `Status: 1 WARNING, 1 NOTE`, from `checking Rd metadata ... WARNING` / `Rd files with duplicated alias 'bh_abort': 'conditions.Rd' 'internals.Rd'` | `Status: 1 NOTE`, from `checking Rd metadata ... OK` |
+| `checking` steps | 53 | 53 |
+| testthat inside the check | `[ FAIL 0 \| WARN 0 \| SKIP 0 \| PASS 770 ]` | `[ FAIL 0 \| WARN 0 \| SKIP 0 \| PASS 770 ]` |
+
+The one remaining NOTE is the same unavoidable "New submission" under `checking CRAN
+incoming feasibility`. The two `00check.log` files differ in exactly three places — the
+`Rd metadata` block, the test timings, and the `Status:` line — verified with `diff` after
+writing each log to its own file and stripping only the log-directory and timestamp lines.
+
+**Why CI stayed green with a WARNING on `main`.** `.github/workflows/build.yml` does use
+`--as-cran`: its `R CMD check (the spine)` step is
+`R CMD check --as-cran --no-manual FAIRbioHeadersTools_*.tar.gz`.
+`.github/workflows/native-acceptance.yaml` runs the check with `--no-manual` and *without*
+`--as-cran`. Neither step can fail on a warning: `tools:::.check_packages()` in R 4.6.1
+calls `do_exit(1L)` only when `Log$errors > 0L`, and the run on the unmodified tree exited
+0 while reporting `Status: 1 WARNING, 1 NOTE`. So no flag suppressed the warning — the
+spine job has been printing it — the step is just not wired to fail on one. Turning a
+WARNING red is a CI change and belongs with #4, so it is not done here.
+
+**Which module owns the documented topic.** `R/internals.R` now documents
+`bh_abort()`/`bh_warn()` alone (#10's option 1). `R/conditions.R` keeps the `conditions`
+topic — the classed error/warning surface — and points at the helpers with `@seealso`; its
+duplicate roxygen block is a plain comment. Reasons, in the order that decided it: the copy
+that actually runs is `R/internals.R`'s, because there is no `Collate:` field, so
+`R/conditions.R` is collated first and `R/internals.R` overwrites the shared bindings
+(confirmed by installing this tree and reading `bh_warn`'s body out of the namespace: it
+carries the `paste(c(message, ...), collapse = "")` handler from `R/internals.R`, not the
+`error = function(e) message` one from `R/conditions.R`); and `man/internals.Rd` documents
+the pair together with `@keywords internal`, while `man/conditions.Rd` documented
+`bh_abort()` only and never `bh_warn()`. #10's option 2 rests on callers meeting the helper
+through conditions; what a caller meets is the condition classes, which is what the
+`conditions` page describes, and that page stays where it was.
+
+**Found while doing this, deliberately not changed.** `bh_abort()`, `bh_warn()`,
+`.bh_read_all()` and `.bh_capture()` are each *defined* twice on `main`, once per module.
+`bh_abort()` and `.bh_read_all()` are byte-identical between the two files (verified with
+`cmp`); `bh_warn()` differs in its `sprintf()`-failure fallback. Only the `R/internals.R`
+copies are reachable. Removing the shadowed copies is a code change, and no test calls
+`bh_abort()` directly or exercises either fallback — its documented behaviour is covered
+only indirectly, by the `expect_error(..., class = "bh_*")` assertions in
+`test-conformance.R`, `test-draft-lane.R`, `test-engine-pin.R` and `test-fhgm-lane.R` — so
+it is left for its own decision. `R/conditions.R` now says this above the copies.
+
+**Unmoved, re-measured on this commit:** ledger `vectorsTotal=291 vectorsRun=228
+vectorsPassed=228 vectorsFailed=0 vectorsNotRun=63`; golden `goldenDifferences=0`, with
+`tests/testthat/reference/default-behavior-v0.6.0.json` still SHA-256
+`055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525`; `tests=770`,
+`skipped=0` from `tools/run_tests.R` against the CI floor of 700; FHT draft receipt 66/66
+and FHGM draft receipt 31 evaluated / 7 model-compared / 24 not-run, both against their
+pinned bytes and digests; `docs/CAPABILITY-MATRIX.md` byte-identical after re-running
+`tools/render_capability_matrix.R` (46 cells).
+
+**How `man/` was regenerated, and one thing reverted.** `Rscript -e
+'roxygen2::roxygenise()'` (roxygen2 8.1.0, `Roxygen: list(markdown = TRUE)`), not a hand
+edit. That run also appended a trailing blank line to `man/read.Rd` and
+`man/yaml-shape.Rd`, which is unrelated to #10 and was reverted rather than committed: no
+committed `man/*.Rd` ends with two LF bytes (checked across all 44), so this is an artifact
+of re-running roxygen here, not a content difference. Every other `man/` file regenerates
+byte-identical, so `man/conditions.Rd` is the only documentation page this change alters.
 
 ## What is implemented (native, released types)
 
