@@ -14,7 +14,7 @@ are the first real ones for this repository.
 
 | measure | stub (main, `4b975bd`) | v0.6.0 core + lane (main, `8957f4f`) | this work (FHGM model lane) |
 | --- | --- | --- | --- |
-| `R CMD check --as-cran --no-manual` | 39 checks, 0 notes, Status OK | not re-measured in this session (CI `build` and `Native acceptance` were green at `8957f4f`, runs 43650065003 / 43650064926) | CHECKROW |
+| `R CMD check --as-cran --no-manual` | 39 checks, 0 notes, Status OK | recorded by that revision as "66 checks, 0 errors, 0 warnings, 1 NOTE"; **not reproducible in this session** — the same commit `8957f4f`, checked here with the toolchain above, reports 1 WARNING and 1 NOTE | **0 errors, 1 WARNING, 1 NOTE** (66 check lines, 53 `checking` steps; `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 755 ]` inside the check). The NOTE is the unavoidable "New submission"; the WARNING is `Rd files with duplicated alias 'bh_abort'` (`man/conditions.Rd` and `man/internals.Rd`), present at `8957f4f` as well, so nothing here introduces it. Removing the duplicate roxygen block is a separate cleanup. |
 | testthat assertions | 0 | **561, 0 failed, 0 errors, 0 skipped** (re-measured locally at `8957f4f`) | **755, 0 failed, 0 errors, 0 skipped** |
 | shared v0.6.0 vectors | not run | **291 accounted: 228 pass natively, 63 not-run with reasons, 0 fail** | unchanged: the receipt is byte-identical to the one produced at `8957f4f` |
 | default-behavior golden | none | `goldenDifferences=0` | `goldenDifferences=0`; the golden file is still SHA-256 `055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525` |
@@ -137,7 +137,16 @@ untouched at 291/228/63, and the default path is unchanged (golden identical).
   `31f14f02...`, combined `3ab6118f...`, contract `bf1553ca...` of 9,564 bytes at
   commit `ac3d37b3`) independently reproduced the values the lost branch had
   recorded. The 7 upstream generator/checker `.py` files are recorded as
-  `not_vendored` and stay upstream.
+  `not_vendored` and stay upstream. The ported `tools/vendor_upstream.R` step was then
+  run end-to-end in a scratch clone against that same fresh FHGM clone: it wrote 17 + 23
+  files byte-identical to what is committed (`diff -r`, empty) and a block identical in
+  every digest-bearing field. Two residual differences are prose, not digests, and both
+  are pre-existing in kind: `repository` is taken from the given checkout's own `origin`
+  (the tool writes the HTTPS `FHGM-Specification` URL where the committed rows, including
+  `main`'s FHGM contract row, name the SSH redirect `git@github.com:FAIR-bioHeaders/FHGM.git`),
+  and the tool's `commit_field` sentence is older than the refined text in the committed
+  file, so a full re-vendor would revert it. Neither is settled here; the shared and FHT
+  blocks reproduce exactly.
 - What the FHGM lane does **not** vendor: the transport overlay contract
   (`development/model/fhgm-draft.schema.json`, the FHGFF3-with-`x-fhgm-models`
   shape) and the reference checker (`development/model/validate_fhgm.py`). This
