@@ -100,3 +100,35 @@ test_that("the report serialises the accounting", {
     names(parsed$by_format)))
   expect_true(length(parsed$by_format$jsonld$not_run_reasons) >= 1L)
 })
+
+# The locators, in both directions. A suite path that resolves by accident is worse than one
+# that fails: "missing fixtures must fail" is only a real guarantee if nothing downstream can
+# substitute other data for the missing ones. docs/NATIVE-ACCEPTANCE.md guard 4 states this
+# refusal; these tests are what make it a statement about the code.
+test_that("a named suite location is authoritative and never falls back", {
+  real <- .bh_suite_dir()
+  bogus <- file.path(tempdir(), "bh-no-suite-here")
+  dir.create(bogus, showWarnings = FALSE)
+  withr::with_options(list(bh.conformance_dir = bogus), {
+    expect_error(.bh_suite_dir(), "holds no manifest.json", class = "bh_conformance")
+    expect_error(bh_conformance(), "holds no manifest.json", class = "bh_conformance")
+  })
+  withr::with_options(list(bh.conformance_dir = real), {
+    expect_equal(.bh_suite_dir(), real)
+  })
+  # nothing named -> the search finds the vendored copy
+  expect_equal(.bh_suite_dir(), real)
+  expect_error(.bh_search("definitely-not-here", "shared suite"), "Looked in",
+    class = "bh_conformance"
+  )
+})
+
+test_that("the FHT development suite locator follows the same rule", {
+  bogus <- file.path(tempdir(), "bh-no-draft-here")
+  dir.create(bogus, showWarnings = FALSE)
+  withr::with_options(list(bh.draft_dir = bogus), {
+    expect_error(.bh_draft_suite_dir(), "holds no manifest.json", class = "bh_conformance")
+    expect_error(bh_draft_vectors(), "holds no manifest.json", class = "bh_conformance")
+  })
+  expect_true(nzchar(.bh_draft_suite_dir()))
+})

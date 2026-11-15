@@ -14,10 +14,14 @@
 #' @name rules
 NULL
 
-# Rules this package checks natively, for the serializations it reads.
+# Rules this package checks natively, for the serializations it reads. K1 and K2 are the
+# FHGM transport and record-contract rules: they are evaluated by bh_validate_fhgm() and
+# reported by bh_draft_fhgm_vectors(), on FHGFF3 files read through the draft lane. No
+# released-path reader evaluates them, and no FHGM verdict exists outside that lane.
 .bh_rules_checked <- c(
   "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R10", "R12", "R13", "R14", "R15",
-  "P1", "P2", "G1", "G2", "G3", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "C1", "C3"
+  "P1", "P2", "G1", "G2", "G3", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "C1", "C3",
+  "K1", "K2"
 )
 
 # Rules whose check needs an operation this package does not implement, with the reason the
@@ -27,12 +31,22 @@ NULL
     "the FHT development rule C2 covers which schema citations the draft accepts; the ",
     "native lane recognises only the raw-main citation, as V7 allows"
   ),
-  K1 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
-  K2 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
-  K3 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
-  K4 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
-  K5 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
-  K6 = "the FHGM model-level checker (K1-K6) is not ported; see bh_capability()",
+  K3 = paste0(
+    "FHGM modelId uniqueness within one snapshot needs the draft checker's cross-record ",
+    "pass; see bh_draft_fhgm_vectors() and bh_capability()"
+  ),
+  K4 = paste0(
+    "FHGM feature-target resolution needs the GFF3 feature layer, which belongs to ",
+    "gff3-validator, not this package; see bh_capability()"
+  ),
+  K5 = paste0(
+    "FHGM record/file reference comparability is a cross-record checker rule; ",
+    "see bh_draft_fhgm_vectors() and bh_capability()"
+  ),
+  K6 = paste0(
+    "FHGM predecessor-pointer resolution against supplied prior snapshots is not ",
+    "implemented; see bh_capability(), operation resolve_revision_pointer"
+  ),
   R9 = "the microdata reader is not implemented",
   J1 = "the JSON-LD reader is not implemented",
   J2 = "the JSON-LD reader is not implemented",

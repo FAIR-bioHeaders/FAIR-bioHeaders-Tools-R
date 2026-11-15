@@ -129,9 +129,10 @@ bh_types <- function() {
       ),
       paste0(
         "not a header type: model records transported inside an FHGFF3 header under ",
-        "x-fhgm-models; draft, candidate bytes registered and digest-pinned only - ",
-        "the lane operation waits on a port of the K1-K6 model checker (its upstream ",
-        "acceptance suite is checker-based, not schema-vector-based)"
+        "x-fhgm-models; draft, lane-only, no schema field of its own. The lane reads the ",
+        "records (K1 transport) and validates each one against the pinned draft record ",
+        "contract (K2); the checker's cross-record rules K3-K6 are not ported - see ",
+        "bh_capability() and bh_draft_fhgm_vectors()"
       )
     ),
     stringsAsFactors = FALSE

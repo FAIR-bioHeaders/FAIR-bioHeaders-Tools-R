@@ -12,7 +12,11 @@ have no `schemaVersion`, no entry in the version registry, no w3id URL, and no
 released form here. They are reachable only through the explicit, digest-pinned,
 warning-emitting opt-in lane. FHGM is additionally **not a header type at all**:
 its records are model records transported inside an FHGFF3 header under
-`x-fhgm-models`, carrying no `schema` field of their own.
+`x-fhgm-models`, carrying no `schema` field of their own. FHGM's two `draft-lane`
+cells cover the transport rule (K1) and the per-record contract (K2); the
+checker's cross-record rules K3-K6 stay `not-supported-yet` with their own rows,
+and 24 of the 31 vectors in FHGM's own suite are reported `not-run` rather than
+passed.
 
 Cell vocabulary:
 

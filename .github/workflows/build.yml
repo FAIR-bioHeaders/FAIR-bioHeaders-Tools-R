@@ -66,8 +66,10 @@ jobs:
       - name: Test (unit + integration + shared vectors, with skip and count guards)
         run: |
           # Any failure, any error, ANY skip, or fewer than the floor of assertions
-          # fails the build (docs/NATIVE-ACCEPTANCE.md).
-          BH_MIN_TESTS=500 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
+          # fails the build (docs/NATIVE-ACCEPTANCE.md). Floor raised 500 -> 700 with
+          # the FHGM model lane: the revision measures 770 assertions locally, and the
+          # floor is the current real count rounded down, never a number nothing reaches.
+          BH_MIN_TESTS=700 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
           cat tests.properties
           for line in failed=0 errors=0 skipped=0; do
             grep -qxF "$line" tests.properties || { echo "expected $line" >&2; exit 1; }
@@ -216,6 +218,92 @@ jobs:
             || { echo "the suite is not the pinned revision" >&2; exit 1; }
           grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; exit 1; }
 
+  # Rule V7 evidence, separate and labelled: the FHGM development suite. FHGM is not a
+  # header type - its records are transported inside an FHGFF3 header under x-fhgm-models -
+  # so this job compares the layers that suite publishes per vector (base, checksum, model)
+  # and asserts that the model layer is compared only where the vector's own rule labels
+  # are inside the scope this package evaluates (K1 transport, K2 record contract). A pass
+  # here is draft evidence about pinned bytes, never "FHGM is supported": no schemaVersion,
+  # no registry row, no w3id URL (docs/CAPABILITY-MATRIX.md).
+  fhgm-draft-vectors:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::jsonvalidate
+          needs: check
+      - name: Install
+        run: |
+          R CMD build .
+          R CMD INSTALL FAIRbioHeadersTools_*.tar.gz
+      - name: Audit the vendored FHGM suite before running it
+        run: Rscript tools/check_vendoring.R
+      - name: Test the FHGM draft lane
+        run: |
+          BH_FHGM_RECEIPT=fhgm-draft-vectors.properties Rscript tools/acceptance_fhgm.R
+      - name: Assert the FHGM suite ran in full, layer by layer
+        run: |
+          # As in the FHT job, the receipt is written by the R run itself, which re-digests
+          # the vendored bytes against the registry pin before reading a single vector. The
+          # literals below are a SECOND, independent statement of the same pins and counts:
+          # drift in either place fails the job. 24 of the 31 vectors are deliberately NOT
+          # run at the model layer - their verdicts turn on checker rules K3-K6/B1 that this
+          # package does not implement - and an empty or shrinking model layer fails here.
+          set -e
+          receipt=fhgm-draft-vectors.properties
+          if [ ! -s "$receipt" ]; then
+            echo "missing $receipt - acceptance_fhgm.R did not write it" >&2
+            exit 1
+          fi
+          cat "$receipt"
+          cat > "${RUNNER_TEMP:-.}/fhgm-expected.txt" <<'EXPECTED'
+          vectorsInManifest=31
+          vectorsEvaluated=31
+          vectorsRan=7
+          vectorsPassed=7
+          vectorsFailed=0
+          vectorsNotRun=24
+          vectorsNotRunWithReason=24
+          baseLayerAgreement=31/31
+          checksumLayerAgreement=31/31
+          modelLayerCompared=7
+          EXPECTED
+          missing=0
+          while IFS= read -r line; do
+            grep -qxF "$line" "$receipt" || { echo "FHGM ledger: no '$line' line" >&2; missing=1; }
+          done < "${RUNNER_TEMP:-.}/fhgm-expected.txt"
+          grep -qx 'contractCommit=ac3d37b3033312844fc3151217731928ae33aa54' "$receipt" \
+            || { echo "the FHGM lane did not run against the pinned contract commit" >&2; missing=1; }
+          grep -qx 'contractSha256=bf1553cac04dc88d8afaff1d39bc50360342e1ebedac4b73dfe3dff570ff410f' "$receipt" \
+            || { echo "the FHGM lane did not run against the pinned contract digest" >&2; missing=1; }
+          grep -qx 'suiteCommit=ac3d37b3033312844fc3151217731928ae33aa54' "$receipt" \
+            || { echo "the FHGM suite is not the pinned revision" >&2; missing=1; }
+          grep -qx 'suiteManifestSha256=31f14f022ff0858191170d1c8285bd83c7f943d88fd8cebc70f11712525617db' "$receipt" \
+            || { echo "the FHGM suite manifest is not the pinned digest" >&2; missing=1; }
+          grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; missing=1; }
+          if [ "$missing" -ne 0 ]; then
+            echo "the FHGM draft ledger does not match the pinned expectation" >&2
+            exit 1
+          fi
+      - name: Upload the FHGM draft receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fhgm-draft-vectors-${{ matrix.os }}
+          path: fhgm-draft-vectors.properties
+          if-no-files-found: error
+
   # Draft-pin freshness, the check that earns its keep: the recorded commit and
   # SHA-256 against the owning repository's live default branch. Advisory by design -
   # a moved draft must be re-pinned deliberately, and released acceptance never
@@ -245,9 +333,11 @@ jobs:
           fht_sha=$(grep -oE '"file": "inst/drafts/fht-draft.json"[^}]*"sha256": "[0-9a-f]{64}"' "$pins" | grep -oE '[0-9a-f]{64}' | tail -1)
           fhgm_sha=$(grep -oE '"file": "inst/drafts/fhgm-model-draft.schema.json"[^}]*"sha256": "[0-9a-f]{64}"' "$pins" | grep -oE '[0-9a-f]{64}' | tail -1)
           suite_sha=$(grep -oE '"manifest_sha256": "[0-9a-f]{64}"' "$pins" | sed -n '1p' | grep -oE '[0-9a-f]{64}')
+          fhgm_suite_sha=$(grep -oE '"manifest_sha256": "[0-9a-f]{64}"' "$pins" | sed -n '2p' | grep -oE '[0-9a-f]{64}')
           check FHT "$fht_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/fht.json || moved=1
           check FHGM "$fhgm_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHGM-Specification/main/development/model/fhgm-model.schema.json || moved=1
           check FHT-suite-manifest "$suite_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/conformance/manifest.json || moved=1
+          check FHGM-suite-manifest "$fhgm_suite_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHGM-Specification/main/development/conformance/manifest.json || moved=1
           [ "$moved" = 0 ] || echo "draft pins are stale: re-vendor deliberately (tools/vendor_upstream.R), never as a drive-by"
 
   # Supplemental differential, labelled and never the gate: the vendored digest core

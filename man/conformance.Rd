@@ -29,4 +29,7 @@ agrees for a reason this package does not verify is reported as a gap.
 \code{\link[=bh_draft_vectors]{bh_draft_vectors()}} runs the FHT development suite, which is separate published material
 from a different repository: it runs only with the rule V7 lane open, its results are
 labelled draft evidence, and it is never counted toward the 291.
+\code{\link[=bh_draft_fhgm_vectors]{bh_draft_fhgm_vectors()}} runs the FHGM development suite the same way - separate,
+labelled, never in the 291 - and reports it layer by layer, because that suite records
+four independent outcomes per vector and this package evaluates only some of them.
 }
