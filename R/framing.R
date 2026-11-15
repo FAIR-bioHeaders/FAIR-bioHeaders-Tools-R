@@ -29,9 +29,9 @@ NULL
   metadata_file_bytes = 64 * 1024 * 1024
 )
 
-# Base R has had %||% since 4.4; this package keeps its own so the null-coalescing
-# behaviour is the same on every R it claims to support.
-`%||%` <- function(a, b) if (is.null(a) || !length(a)) b else a
+# `%||%` and `.bh_c` were also defined here, duplicating R/internals.R. The copies in
+# R/internals.R are the ones the namespace binds (this file is collated first), so #12 removed
+# these duplicates; both were byte-identical to the retained definitions.
 
 .bh_is_gzip_file <- function(path) {
   con <- file(path, "rb")
@@ -77,8 +77,6 @@ NULL
   out <- suppressWarnings(iconv(s, "UTF-8", "UTF-8"))
   if (length(out) != 1L || is.na(out)) NA_character_ else out
 }
-
-.bh_c <- function(x, default) if (length(x) != 1L || is.na(x)) default else x
 
 #' Drops the terminator(s) at the end of a decoded line.
 #' @noRd

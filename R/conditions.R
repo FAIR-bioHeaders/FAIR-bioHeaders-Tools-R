@@ -15,71 +15,25 @@
 #' @seealso [internals()]
 NULL
 
-# `bh_abort()` and `bh_warn()` are each defined twice on `main`: here, and again in
-# `R/internals.R`, together with duplicate copies of `.bh_read_all()` and `.bh_capture()`.
-# They are documented in `R/internals.R` only, on purpose: that file is collated after this
-# one, so its assignments overwrite the bindings below and its copies are the ones the package
-# actually runs, and documenting the same topic twice is what produced the
-# `Rd files with duplicated alias 'bh_abort'` WARNING that #10 is about. The duplicates are
-# the seam left by the two PR chains merged into `main` on 2026-11-14. Deleting them is a
-# code decision, not a documentation one: `bh_abort()` and `.bh_read_all()` are identical in
-# both files, but the two `bh_warn()` copies differ - here a failed `sprintf()` yields
-# `message`, in `R/internals.R` it yields the arguments pasted together - and only the
-# latter is in effect. Recorded with #10; nothing here changes behaviour.
-bh_abort <- function(class, message, ...) {
-  text <- tryCatch(sprintf(message, ...), error = function(e) {
-    paste(c(message, ...), collapse = "")
-  })
-  cond <- structure(
-    class = c(paste0("bh_", class), "bh_error", "error", "condition"),
-    list(message = text, call = sys.call(-1L))
-  )
-  stop(cond)
-}
-
-bh_warn <- function(class, message, ...) {
-  text <- tryCatch(sprintf(message, ...), error = function(e) message)
-  cond <- structure(
-    class = c(paste0("bh_", class), "bh_warning", "warning", "condition"),
-    list(message = text, call = sys.call(-1L))
-  )
-  warning(cond)
-  invisible(NULL)
-}
-
-# Runs `expr` collecting the diagnostics it emits rather than stopping at the first one,
-# so one pass over a file can report every problem found in it.
+# `bh_abort()`, `bh_warn()`, `.bh_capture()` and `.bh_read_all()` were each defined twice on
+# `main`: once in this file and once in `R/internals.R`. `DESCRIPTION` declares no `Collate:`
+# field, so this file is collated first and its bindings were overwritten at load time - the
+# copies here were dead code, not a second implementation. #12 removed them, so
+# `R/internals.R` is now the only definition of each name. Which copy ran was established from
+# the installed namespace's bindings, not by reasoning about load order.
 #
-# @return A list with `value` (NULL when `expr` raised a bh_error), `error` (the message
-#   or NULL), and `warnings` (character).
-.bh_capture <- function(expr) {
-  warns <- character()
-  err <- NULL
-  val <- NULL
-  val <- withCallingHandlers(
-    tryCatch(
-      expr,
-      bh_error = function(e) {
-        err <<- conditionMessage(e)
-        NULL
-      }
-    ),
-    bh_warning = function(w) {
-      warns <<- c(warns, conditionMessage(w))
-      invokeRestart("muffleWarning")
-    }
-  )
-  list(value = val, error = err, warnings = warns)
-}
-
-# Reads a whole file as bytes; used for contracts, pins and suites alike.
-.bh_read_all <- function(path) {
-  size <- file.info(path)$size
-  if (is.na(size)) bh_abort("input", paste0("no such file: ", path))
-  con <- file(path, "rb")
-  on.exit(close(con), add = TRUE)
-  readBin(con, what = "raw", n = size)
-}
+# One of those deletions is not information-free, so it is recorded here rather than decided.
+# The `bh_warn()` copy this file held handled a failing `sprintf()` with `error = function(e)
+# message`, which reports the format string alone; the live `R/internals.R` copy handles it with
+# `paste(c(message, ...), collapse = "")`, which reports every part of the call. #12 keeps the
+# behaviour that already ran, because that is the behaviour-preserving choice. Whether the
+# format-string-only fallback was the intent is left open for the maintainers - see the comment
+# on FAIR-bioHeaders-Tools-R#12. Switching to it is a one-line change in `R/internals.R` plus a
+# test that calls `bh_warn()` with directives and values that do not match. No such test exists
+# for either copy, and no call site in `R/` reaches the fallback today: `R/fhgm.R` and `R/read.R`
+# both pass `bh_warn("draft", "%s", w)`, so `sprintf()` succeeds and the two handlers agree.
+#
+# `tools/check_duplicate_defs.R` fails the build if any top-level name is defined twice again.
 
 # SHA-256 for provenance and draft pins. This is the family's pinning digest, a
 # different job from the file checksum, which is SHA-512/256 and computed by the
