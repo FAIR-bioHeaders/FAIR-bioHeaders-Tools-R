@@ -50,7 +50,7 @@ jobs:
       - name: Assert no name is defined twice in R/
         run: |
           # Issue #12: R overwrites a duplicate namespace binding silently and `R CMD check`
-          # does not mention it, so main carried five dead duplicate definitions while every
+          # does not mention it, so main carried six dead duplicate definitions while every
           # leg stayed green. Parsed from the sources; no install needed. A duplicate fails
           # the job.
           set -e
