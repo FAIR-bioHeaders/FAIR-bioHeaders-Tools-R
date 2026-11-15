@@ -287,5 +287,3 @@ NULL
     substr(.bh_strip_term(.bh_c(frame$text[[i]], "")), k + 1L, .bhc_max)
   }, "")
 }
-.bh_c <- function(x, default) if (length(x) != 1L || is.na(x)) default else x
-
