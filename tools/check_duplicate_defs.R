@@ -13,10 +13,13 @@
 #' same tree finds 128 top-level function definitions and one more duplicated name, `%||%`,
 #' which is reported here because it is the same defect and the same seam.)
 #'
-#' What it checks: every top-level assignment in the package's R/ directory - the `<-`,
-#' `<<-`, `->`, `->>` and `=` forms, and `assign()` with a literal character name. A name
-#' bound more than once, across files or within one file, is a violation. Identical bodies
-#' are violations too: an exact duplicate is still dead code that can drift.
+#' What it checks: every top-level assignment in the package's R/ directory - the `<-` and
+#' `<<-` forms, `=`, and `assign()` with a literal character name. Right-assignment (`->`,
+#' `->>`) is included because R's parser normalizes it to the corresponding left form before
+#' this script sees it, which was verified rather than assumed: `parse(text = "(f) ->> a")`
+#' yields `<<-(a, f)`. A name bound more than once, across files or within one file, is a
+#' violation. Identical bodies are violations too: an exact duplicate is still dead code that
+#' can drift, and the guard does not try to decide which duplicates are "harmless".
 #'
 #' What it does not do: it does not load the package, and it does not need the compiled
 #' core or any dependency, so it runs before `R CMD build`. It compares the deparsed source
@@ -26,6 +29,13 @@
 #'
 #' Scope: R/ only. `tools/*.R` are standalone CI harness scripts, sourced one at a time, and
 #' never collated into a namespace, so a repeated name there cannot shadow anything.
+#'
+#' Load order: an explicit `Collate:` field is parsed (single- or double-quoted names, across
+#' continuation lines, with unlisted files placed first the way `R CMD INSTALL` puts them); a
+#' package without one is loaded in alphabetical order. The alphabetical sort uses R's `sort()`
+#' under the session locale, which agrees with C collation for this package's file names - all
+#' ASCII lower case - and is not claimed to agree in general. If a `Collate:` field exists but
+#' yields no file names, the script stops with exit 2 rather than guessing.
 #'
 #' Exit status: 0 when every top-level name is unique; 1 when a duplicate is found; 2 when
 #' the script cannot see the package sources at all. A run that finds nothing because it
@@ -67,26 +77,41 @@ if (!length(files)) {
 # wins; the duplicate itself is the violation either way.
 collate_files <- function(desc) {
   i <- grep("^Collate:", desc)
-  if (!length(i)) return(character())
+  if (!length(i)) return(list(order = character(), declared = FALSE))
   j <- i[[1L]]
-  # continuation lines of a Collate: field, until the next unindented field
+  # a Collate: field continues on the indented lines that follow it
   block <- desc[seq.int(j, length(desc))]
   if (length(block) > 1L) {
     nxt <- grep("^[^ \t]", block)[-1L]
     if (length(nxt)) block <- block[seq_len(nxt[[1L]] - 1L)]
   }
-  unlist(regmatches(paste(block, collapse = " "), gregexpr('"[^"]+[.]R"', paste(block, collapse = " "))))
+  joined <- paste(block, collapse = " ")
+  # DESCRIPTION quotes file names with single quotes; double quotes appear in some packages
+  quoted <- unlist(regmatches(joined, gregexpr("('[^']+[.]R')|(\"[^\"]+[.]R\")", joined)))
+  list(order = gsub("['\"]", "", quoted), declared = TRUE)
 }
 desc <- readLines(file.path(cand, "DESCRIPTION"), warn = FALSE)
-collated <- gsub('"', "", collate_files(desc), fixed = TRUE)
-load_order <- if (length(collated)) file.path(rdir, collated) else files
+coll <- collate_files(desc)
+if (coll$declared && !length(coll$order)) {
+  # Never fall back to alphabetical order behind a Collate: field that this script could not
+  # read: the order is exactly what the message below claims, so an unparsed field has to stop
+  # the run instead of quietly producing a confident wrong answer.
+  cat("VIOLATION: DESCRIPTION declares Collate: but no .R file names were parsed from it\n")
+  quit(status = 2L)
+}
+load_order <- if (coll$declared) file.path(rdir, coll$order) else files
+missing_from_collate <- setdiff(basename(files), coll$order)
+if (coll$declared && length(missing_from_collate)) {
+  # R loads unlisted files first, in alphabetical order; say so rather than hiding it
+  load_order <- c(file.path(rdir, missing_from_collate), load_order)
+}
 rank_of <- setNames(seq_along(load_order), basename(load_order))
 rank <- function(f) {
   r <- rank_of[[f]]
   if (is.null(r)) length(load_order) + 1L else as.integer(r)
 }
 
-ops <- c("<-", "<<-", "->", "->=", "=")
+ops <- c("<-", "<<-", "->", "->>", "=")
 name_of <- function(e) {
   if (!is.call(e)) return(NULL)
   op <- as.character(e[[1L]])

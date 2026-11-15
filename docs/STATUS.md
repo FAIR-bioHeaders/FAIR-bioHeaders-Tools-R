@@ -97,6 +97,18 @@ verified byte-identical. Separately, the `R CMD check` steps now keep their log 
 printed and not gated, because the "New submission" NOTE and the macOS pandoc NOTE are unavoidable
 and would make the leg permanently red.
 
+**A defect in the guard itself, caught by testing its own untested branch.** The first version
+parsed `Collate:` looking for double-quoted file names. DESCRIPTION fields quote with single
+quotes, so a package that declared `Collate:` fell through to alphabetical order while the
+violation line still asserted a load order — with `Collate: 'zzz.R' 'aaa.R'` it named `zzz.R:1` as
+live where the installed namespace binds `aaa.R`'s (`a(3)` returns `3`). Both quote forms now
+parse, continuation lines included, files the field omits are placed first as `R CMD INSTALL`
+does, and a `Collate:` field that yields no names stops the run with exit 2 instead of guessing:
+the order is what the message claims, so it is not a thing to fall back on. The operator list also
+read `->=` where `->>` was meant; R normalizes right-assignment before the script sees it
+(`parse(text = "(f) ->> a")` gives `<<-(a, f)`), so nothing was missed on the forms this package
+uses, and `->`, `->>`, `assign()` and non-function duplicates are each now tested to exit 1.
+
 *Supersedes* the "**Found while doing this, deliberately not changed**" paragraph in the #10 section
 below, which recorded these duplicates as left in place on purpose. That was the right call for a
 documentation-only PR; #12 is the code change it deferred, so that paragraph is kept as the record of
