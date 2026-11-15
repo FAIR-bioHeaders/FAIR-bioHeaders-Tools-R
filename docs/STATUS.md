@@ -124,8 +124,8 @@ endpoint (`actions/jobs/{id}/logs`), because `Native acceptance` has two jobs na
 `R CMD check (ubuntu-latest)` and the name-keyed `gh run view --log --job=` route returns
 byte-identical logs for both — the trap #11 recorded.
 
-**What each CI leg reports for `R CMD check` on the head of this branch (`6267975`)**, each value
-taken from that job's own REST log rather than from the run-wide log: `Status: 1 NOTE` on
+**What each CI leg reports for `R CMD check`, at `6267975` (runs 43753148520 and 43753148506)**, each
+value taken from that job's own REST log rather than from the run-wide log: `Status: 1 NOTE` on
 `build (ubuntu-latest)` (R 4.6.2, job 132931336686) and `Status: 2 NOTEs` on `build (macos-latest)`
 (R 4.6.2, job 132931336287) — "New submission", plus the known pandoc NOTE under
 `checking top-level files` — and `Status: OK` on all three `Native acceptance` legs: R 4.3.3
