@@ -12,13 +12,15 @@ The stub package on `main` before this work reported `Status: OK / 39 checks /
 placeholder, no tests. Those 39 checks are not a quality bar; the numbers below
 are the first real ones for this repository.
 
-| measure | stub (main, `4b975bd`) | this work |
-| --- | --- | --- |
-| `R CMD check --as-cran --no-manual` | 39 checks, 0 notes, Status OK | 66 checks, **0 errors, 0 warnings, 1 NOTE** ("New submission", unavoidable for a first package; running with the manual adds only the host-dependent "HTML Tidy not recent enough" skip-NOTE on this macOS) |
-| testthat assertions | 0 | **561, 0 failed, 0 errors, 0 skipped** (428 at the core revision; the lane revision adds 133) |
-| shared v0.6.0 vectors | not run | **291 accounted: 228 pass natively, 63 not-run with reasons, 0 fail** |
-| FHT development suite (draft lane only) | not run | **66/66 pass** against pinned bytes, in the separate labelled job |
-| compiled digest self-test | none | runs at every package load; refuses to load on any mismatch |
+| measure | stub (main, `4b975bd`) | v0.6.0 core + lane (main, `8957f4f`) | this work (FHGM model lane) |
+| --- | --- | --- | --- |
+| `R CMD check --as-cran --no-manual` | 39 checks, 0 notes, Status OK | not re-measured in this session (CI `build` and `Native acceptance` were green at `8957f4f`, runs 43650065003 / 43650064926) | CHECKROW |
+| testthat assertions | 0 | **561, 0 failed, 0 errors, 0 skipped** (re-measured locally at `8957f4f`) | **755, 0 failed, 0 errors, 0 skipped** |
+| shared v0.6.0 vectors | not run | **291 accounted: 228 pass natively, 63 not-run with reasons, 0 fail** | unchanged: the receipt is byte-identical to the one produced at `8957f4f` |
+| default-behavior golden | none | `goldenDifferences=0` | `goldenDifferences=0`; the golden file is still SHA-256 `055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525` |
+| FHT development suite (draft lane only) | not run | **66/66 pass** against pinned bytes, in the separate labelled job | unchanged, same job |
+| FHGM development suite (draft lane only) | not run | not run (the checker was not on `main`; see below) | **31 evaluated: base 31/31, checksum 31/31; model layer compared on the 7 K1/K2 vectors, all agreeing; 24 `not-run` naming K3-K6/B1** |
+| compiled digest self-test | none | runs at every package load; refuses to load on any mismatch | unchanged |
 
 ## What is implemented (native, released types)
 
@@ -40,14 +42,47 @@ are the first real ones for this repository.
   (SHA-256 `59ad9641...`), suite `156bda63...` (manifest `9b071794...`), 66/66
   pass; warns on every read; release-shaped FHT URLs stay V5. FHT publishes as
   specification v0.7.0 (FHT-Specification #8/#9/#10).
-- FHGM: **not a header type**; candidate bytes registered and digest-pinned
-  (`ac3d37b3...`, `bf1553ca...`); `read_model_records`/`validate_model_records`
-  are `not-supported-yet` because the upstream acceptance suite (31 vectors,
-  K1-K6) is checker-based and 18/19 of its invalid vectors pass the base schema
-  and checksum — porting the checker is the gate. Tracked in #3; FHGM publishes
-  as specification v0.8.0.
+- FHGM: **not a header type**. Its records are transported inside an FHGFF3 header under
+  `x-fhgm-models` and carry no `schema` field, so the lane selects only the contract applied
+  to the records. Contract bytes registered and digest-pinned (`ac3d37b3...`, SHA-256
+  `bf1553cac04dc88d...`, 9,564 bytes - re-verified 2026-11-14 against the owning
+  repository's live `main`, whose head is `52b07b7a...`, with a nonsense-path 404 control);
+  the suite bytes are vendored under `tests/draft/fhgm` plus the `tests/draft/examples`
+  files its vectors cite (17 + 23 files, manifest `31f14f02...`, 31 vectors).
+  `bh_fhgm_models()` / `bh_validate_fhgm()` / `bh_draft_fhgm_vectors()` are the lane: they
+  evaluate K1 (transport: one or more records, and no extension at all in an FHGFF3 1.0
+  header) and K2 (each record against the pinned draft contract) and report the model verdict
+  apart from the base FHGFF3 verdict. K3-K6 are **not** ported and stay named gaps with their
+  own matrix rows; 24 of the 31 vectors are `not-run` for exactly that reason. Opt-in only,
+  warns on every record read, and `schemaVersion`, registry row and w3id URL are all absent,
+  as rule V7 requires. Tracked in #3; FHGM publishes as specification v0.8.0.
 - Freshness of both draft pins was verified 2026-11-14 against the owning
-  repositories' live default branches (advisory CI job `draft-pin-freshness`).
+  repositories' live default branches (advisory CI job `draft-pin-freshness`, which now
+  covers both contracts and both suite manifests).
+
+## The FHGM re-land (2026-11-14): what this section replaces
+
+`docs/STATUS.md` at `8957f4f` said FHGM's checker was "not ported, not partial, not
+claimed", and `bh_capability()` held `read_model_records` / `validate_model_records` at
+`not-supported-yet`. Both were accurate for that commit, and both were the residue of a
+merge accident rather than a decision to drop the work: on 2026-11-14 two parallel R PR
+chains were merged minutes apart (#5 → #7 from `feat/native-sha512-256`, #6 → #8 from
+`pr1/native-core`/`pr2/v7-draft-lane`) and `main` resolved to the #6/#7 content, so the
+checker that the other chain carried - `R/fhgm.R`, `R/fhgm-run.R`, the vendored FHGM suite
+and its tests - landed on `feat/native-sha512-256` (merge `3418cb8`) and never reached
+`main`. Nothing on `main` was broken by that: `build` and `Native acceptance` were green at
+`8957f4f`, and no document claimed the missing code.
+
+This revision re-lands the checker onto `main` by port, not by re-merge, because the
+surrounding modules on `main` are the other chain's: `.bh_resolve_named()`/`.bh_search()`
+and the locator tests came over, `tools/run_conformance.R` did not (its role here is
+`tools/acceptance_fhgm.R`, in the shape of the existing `tools/acceptance_draft.R`), and the
+capability cells were rewritten for main's matrix rather than copied. `src/sha512.c` is the
+same blob on both chains (`131f49cd58b9...`) and was not touched.
+
+What is *newly* claimed, and what is not: the two FHGM cells move from `not-supported-yet`
+to `draft-lane` for K1/K2 only, four named gap rows (K3-K6) are added, the shared ledger is
+untouched at 291/228/63, and the default path is unchanged (golden identical).
 
 ## Ledger (v0.6.0 baseline; identical figures from the Java library)
 
@@ -74,8 +109,16 @@ are the first real ones for this repository.
 6. **Microdata and JSON-LD readers** do not exist here (63 not-run vectors,
    reasons declared per row) — their rules (M1-M5, J1-J9, R9) are not "almost"
    covered by anything in this package.
-7. **FHGM model-record checking** (K1-K6): not ported, not partial, not claimed.
-8. **Windows**: the package declares no OS restriction; not tested.
+7. **FHGM cross-record model rules** K3 (modelId uniqueness in a snapshot), K4
+   (feature-target resolution against the GFF3 feature layer), K5 (record/file
+   reference comparability) and K6 (predecessor-pointer resolution): not ported,
+   named as their own matrix rows, and their 24 vectors are reported `not-run`
+   rather than passed. The upstream checker (`validate_fhgm.py`) stays the
+   reference for them and is deliberately not vendored here.
+8. **FHGM revision/curator semantics.** A resolved pointer would only identify a
+   predecessor, never accept a revision; that is a curator decision (shared #204)
+   and nothing here claims it.
+9. **Windows**: the package declares no OS restriction; not tested.
 
 ## Provenance notes
 
@@ -86,7 +129,21 @@ are the first real ones for this repository.
   against `git show v0.6.0:<path>`, which dereferences the tag.
 - Every vendored byte was re-verified 2026-11-14 three ways: local file digest
   == recorded digest == upstream bytes at the pinned ref (293 shared-suite files,
-  69 FHT draft-suite files, 9 contracts, the registry, 2 draft schemas).
+  69 FHT draft-suite files, 9 contracts, the registry, 2 draft schemas). The FHGM
+  set was vendored again for this revision, from a fresh clone of FHGM-Specification
+  at `origin/main` = `52b07b7a`: 17 suite files and 23 example files, each written
+  with `git show origin/main:<path>` and hashed here, and every digest-bearing
+  field of the resulting `draft_fhgm_vectors` block (per-file SHA-256, manifest
+  `31f14f02...`, combined `3ab6118f...`, contract `bf1553ca...` of 9,564 bytes at
+  commit `ac3d37b3`) independently reproduced the values the lost branch had
+  recorded. The 7 upstream generator/checker `.py` files are recorded as
+  `not_vendored` and stay upstream.
+- What the FHGM lane does **not** vendor: the transport overlay contract
+  (`development/model/fhgm-draft.schema.json`, the FHGFF3-with-`x-fhgm-models`
+  shape) and the reference checker (`development/model/validate_fhgm.py`). This
+  package validates records against the pinned record contract and reads the
+  transport from the parsed header; the overlay is not asserted here, and K3-K6
+  remain upstream's checker.
 - The federation's R capability study is archived at docs/CAPABILITY.md
   (single-host measurement; the digest route in this repo supersedes its open
   question as a **decision**, with the alternatives and why they were rejected
