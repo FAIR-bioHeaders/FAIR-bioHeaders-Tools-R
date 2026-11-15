@@ -67,6 +67,11 @@ the explicit not-verified list are `docs/STATUS.md`.
   `BH_DRAFT_RECEIPT` / `BH_FHGM_RECEIPT`)
 - vendored-bytes audit (offline) / draft-pin freshness (online, advisory):
   `Rscript tools/check_vendoring.R [--fresh --fht <checkout> --fhgm <checkout>]`
+- namespace hygiene: `Rscript tools/check_duplicate_defs.R` — fails if any top-level
+  name in `R/` is defined twice. R resolves a duplicate silently (the file collated
+  later owns the binding, so the earlier copy is dead code) and `R CMD check` says
+  nothing about it, which is how six unreachable definitions sat on `main`; both CI
+  workflows now run this as a gate
 - docs: roxygen2 (`Config/roxygen2/version` in DESCRIPTION); regenerate `man/`
   and `docs/CAPABILITY-MATRIX.md` with `tools/render_capability_matrix.R`
 

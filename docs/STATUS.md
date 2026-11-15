@@ -1,10 +1,146 @@
 # STATUS — measured state of the R library
 
-Date: **2026-11-14**, with the 2026-11-15 section below added for #10. Everything in
+Date: **2026-11-14**, with the 2026-11-15 sections below added for #10 and #12. Everything in
 the table was measured on the commit this document accompanied, on macOS 14 arm64 with
 R 4.6.1, `jsonvalidate` 1.5.0 (V8 8.2.1), `digest` 0.6.39, `yaml` 2.3.12,
 `jsonlite` 2.0.0, `roxygen2` 8.1.0, `testthat` 3.3.2. CI re-measures the same spine on
 ubuntu-latest and macos-latest.
+
+## 2026-11-15 — six duplicate top-level definitions removed, and a guard added (#12)
+
+Measured in a fresh clone of `main` at `4611c2c`, on macOS 27.2.1 arm64, R 4.6.1.
+
+**The state before the change.** `R/` holds 150 top-level assignments, 128 of them function
+definitions, under 144 distinct names; **six names are defined twice**. #12's table gives five
+names and 126 definitions; the sixth found here is `%||%`, defined at `R/framing.R:34` and
+`R/internals.R:12`. The five names #12 lists reproduce in the same files; their line numbers in
+`R/conditions.R` are 9 higher than the issue recorded because #11 inserted a comment block in that
+file (verified: `git diff 9827944f..4611c2c -- R/conditions.R` touches only roxygen and comment
+lines, no code).
+
+| name | copy 1 | copy 2 | comparison of the two definitions |
+| --- | --- | --- | --- |
+| `bh_abort` | `R/conditions.R:29` | `R/internals.R:42` | raw source bytes identical |
+| `bh_warn` | `R/conditions.R:40` | `R/internals.R:55` | **differs semantically** (`63e96156c4d83e9f` vs `43727c8387068674`) |
+| `.bh_capture` | `R/conditions.R:55` | `R/internals.R:73` | differs by one line, no behaviour change (see below) |
+| `.bh_read_all` | `R/conditions.R:76` | `R/internals.R:18` | raw source bytes identical |
+| `.bh_c` | `R/framing.R:81` | `R/internals.R:14` | raw source bytes identical |
+| `%||%` | `R/framing.R:34` | `R/internals.R:12` | raw source bytes identical |
+
+Four pairs are byte-identical as written. Hashes are SHA-256(16) of the definition after
+`deparse()` canonicalisation, used to compare the two that differ, so indentation and line wrapping
+can neither fake a difference nor hide one.
+
+`.bh_capture` is the case worth recording precisely, because a raw text difference here is not a
+behaviour difference: after canonicalisation the two bodies differ by exactly one line — the
+`R/conditions.R` copy pre-declares `val <- NULL` immediately before assigning `val` again — and both
+copies, called the way the package calls them (expression passed lazily), return `identical()`
+results on all four traced inputs: no condition, two `bh_warn` calls, one `bh_abort`, and a warning
+followed by an error. The live binding agrees with both. #12 records this so the duplicate audit is
+not read as "two behaviourally different captures".
+
+**Which copy ran, established by execution.** The package was built and installed from the
+tarball and each name was read out of the loaded namespace with `getFromNamespace()`. For all six
+names the installed binding equals the `R/internals.R` copy; the `R/conditions.R` copies of
+`bh_warn` and `.bh_capture` are the only two whose canonical text differs from the live binding,
+which is the direct evidence that they were unreachable. `R/internals.R`'s `bh_abort` uses the same
+`paste(c(message, ...), collapse = "")` fallback as its `bh_warn`, so the retained module is the
+internally consistent one, as #12 predicted. A two-file control package (`R/conditions.R` and
+`R/internals.R` defining `dupe()` differently) was installed the same way and its namespace returns
+`"from-internals.R"` — the shadowing rule is measured, not argued.
+
+Behavioural discriminator for `bh_warn`, with `sprintf()` failing (`bh_warn("draft", "%s %d", "a")`):
+the live binding reports `’%s %da’` (the `paste()` fallback), the deleted `R/conditions.R` copy would
+have reported `’%s %d’`. Neither is exported (`NAMESPACE` lists neither), and both call sites —
+`R/fhgm.R:152`, `R/read.R:99` — pass `bh_warn("draft", "%s", w)`, where `sprintf()` succeeds, so no
+reachable path exercised the divergence before or after this change.
+
+**What was done.** The six dead copies were deleted; `R/internals.R` is now the sole owner of all
+six helpers. Nothing else in `R/` changed. `R/conditions.R` keeps the `conditions` topic and now
+records the deleted `bh_warn` fallback as an open question rather than silently discarding it: if
+the maintainers want the format-string-only handler, it is a one-line change in `R/internals.R`
+plus a test with mismatched directives, and no test of either handler exists today.
+
+**Evidence that nothing moved.** `tools/check_duplicate_defs.R` is new; `R/` goes from 150
+top-level assignments / 144 distinct names to 144 / 144. A canonical dump of every object in the
+loaded namespace (154 objects, 32 exports, functions printed via `deparse()`, native symbols by
+name only) is byte-identical before and after — SHA-256
+`302b870c81978963564ce66d1fe75e3d3c15e5ce80fe655fa1834e398a5f5379` for both, `cmp` clean. On top of
+that: `tests=770 failed=0 errors=0 skipped=0` (unchanged, and no test calls `bh_abort()`/`bh_warn()`
+directly); ledger `291 / 228 pass / 0 fail / 63 declared not-run`; golden `goldenDifferences=0` with
+`tests/testthat/reference/default-behavior-v0.6.0.json` still SHA-256
+`055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525`; FHT draft lane 66/66; FHGM draft
+lane 31 evaluated / 7 model-compared / 24 not-run; `docs/CAPABILITY-MATRIX.md` byte-identical after
+`tools/render_capability_matrix.R` (`1b4b0bbd4fddd9ea029e2b3975ad9fabb2ade66a5663d1c696c4d652d53b71a9`).
+Every receipt file is byte-identical between the two runs (`cmp`). `R CMD check --as-cran
+--no-manual` reports `Status: 1 NOTE` with exit 0 both before and after — the same unavoidable
+"New submission" NOTE — and the two logs are identical apart from paths and timings (`diff` after
+stripping those: empty). No `man/` file changed: no roxygen block was removed, and the
+`read.Rd`/`yaml-shape.Rd` trailing-blank-line artifact that `roxygen2::roxygenise()` produces on
+this tree appears identically on pristine `main`, so it was reverted again under the same rule as
+above.
+
+**The guard, and why it is not a status check.** `R CMD check` cannot catch this: on the two-file
+control package it exits 0 and the word "duplicate" appears nowhere in its log, and on `main` at
+`4611c2c` it exits 0 while reporting `Status: 1 NOTE` (#11 measured the same with
+`Status: 1 WARNING, 1 NOTE`). So `tools/check_duplicate_defs.R` is its own static analysis — it
+parses `R/*.R`, takes every top-level name assignment (`<-`, `<<-`, `->`, `->>`, `=`, and `assign()`
+with a literal name), and exits 1 on any name bound twice, identical bodies included, exiting 2 when
+it cannot see `R/` at all so that an unreadable tree is never a pass. It runs as a failing step in
+both workflows (`build.yml`, `native-acceptance.yaml`). Red/green was demonstrated four ways: on the
+real pre-fix tree (6 violations), on the fixed tree (green), after re-appending the identical
+`.bh_c` to `R/framing.R`, and after re-appending the divergent `bh_warn` copy to `R/conditions.R`
+(reported as `copies DIFFER`), plus a same-file duplicate and a directory with no `R/`. Each
+mutation was proven non-vacuous with `cmp` against the pre-mutation file, and each revert was
+verified byte-identical. Separately, the `R CMD check` steps now keep their log and fail on any
+`WARNING` line, which is the detection #12 asked about: it is wired, not just recommended. NOTEs are
+printed and not gated, because the "New submission" NOTE and the macOS pandoc NOTE are unavoidable
+and would make the leg permanently red.
+
+**A defect in the guard itself, caught by testing its own untested branch.** The first version
+parsed `Collate:` looking for double-quoted file names. DESCRIPTION fields quote with single
+quotes, so a package that declared `Collate:` fell through to alphabetical order while the
+violation line still asserted a load order — with `Collate: 'zzz.R' 'aaa.R'` it named `zzz.R:1` as
+live where the installed namespace binds `aaa.R`'s (`a(3)` returns `3`). Both quote forms now
+parse, continuation lines included, files the field omits are placed first as `R CMD INSTALL`
+does, and a `Collate:` field that yields no names stops the run with exit 2 instead of guessing:
+the order is what the message claims, so it is not a thing to fall back on. The operator list also
+read `->=` where `->>` was meant; R normalizes right-assignment before the script sees it
+(`parse(text = "(f) ->> a")` gives `<<-(a, f)`), so nothing was missed on the forms this package
+uses, and `->`, `->>`, `assign()` and non-function duplicates are each now tested to exit 1.
+
+**CI on this branch.** `build` and `Native acceptance` are green at `6bff0b5` (runs 43751103290,
+43751103350) and at `601eba6` (43751582981, 43751582983). The guard step runs on all three `Native
+acceptance` legs — including `oldrel-3` on **R 4.3.3**, job 132926503619 — and every leg then prints
+`R CMD check: no WARNING in check.log (exit status 0)`; the `build` legs print the same for
+`build-check.log`. At `2ca8f76` one duplicate was put back deliberately, its bytes proven (`R/framing.R`
+sha256 `79c44686f516…` → `2046b18a58b8…`, `cmp` reporting `EOF`), and **both workflows fail**
+(43751638775, 43751638779) with `Assert no name is defined twice in R/` as the only failed step in
+each job — the `build` jobs also fail `Upload native reports`, because the job aborted before the
+receipts it uploads were ever written. The `oldrel-3` leg fails the same way (job 132926683363), so
+the gate is proven on R 4.3.3 as well as on 4.6. `6ef9ea3` reverts the probe and both workflows are
+green again (43751655760, 43751655787). The `oldrel-3` attribution uses the REST per-job logs
+endpoint (`actions/jobs/{id}/logs`), because `Native acceptance` has two jobs named
+`R CMD check (ubuntu-latest)` and the name-keyed `gh run view --log --job=` route returns
+byte-identical logs for both — the trap #11 recorded.
+
+**What each CI leg reports for `R CMD check`, at `6267975` (runs 43753148520 and 43753148506)**, each
+value taken from that job's own REST log rather than from the run-wide log: `Status: 1 NOTE` on
+`build (ubuntu-latest)` (R 4.6.2, job 132931336686) and `Status: 2 NOTEs` on `build (macos-latest)`
+(R 4.6.2, job 132931336287) — "New submission", plus the known pandoc NOTE under
+`checking top-level files` — and `Status: OK` on all three `Native acceptance` legs: R 4.3.3
+(`r-version: oldrel-3`, job 132931336408), ubuntu release (job 132931336532) and macOS (job
+132931336141), none of which pass `--as-cran`. Every one of those five legs also prints
+`R CMD check: no WARNING in …-check.log` and `check_duplicate_defs: OK - every top-level name in R/
+is defined once`, so the new gate is green on the NOTEs it deliberately does not treat as failures.
+One caution, because it bit the extraction: the string `Status: 1 WARNING` also appears in these job
+logs as **echoed step text**, since the workflow comments quote #11's measurements. Only a bare
+`Status: …` output line is a result, and the counts above are from those.
+
+*Supersedes* the "**Found while doing this, deliberately not changed**" paragraph in the #10 section
+below, which recorded these duplicates as left in place on purpose. That was the right call for a
+documentation-only PR; #12 is the code change it deferred, so that paragraph is kept as the record of
+what #10 measured and should not be read as the current state.
 
 ## Baseline comparison, honestly framed
 

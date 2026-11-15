@@ -7,6 +7,14 @@
 #' @name internals
 NULL
 
+# This module is the sole owner of every helper defined below. Until #12 the same names also
+# appeared in R/conditions.R (`bh_abort`, `bh_warn`, `.bh_capture`, `.bh_read_all`) and
+# R/framing.R (`%||%`, `.bh_c`), where they were dead code: with no `Collate:` field this file is
+# collated after both of those, so its bindings were always the ones the namespace held. The
+# deleted `R/conditions.R` copy of `bh_warn()` had a different `sprintf()`-failure fallback; that
+# alternative is recorded in R/conditions.R and in FAIR-bioHeaders-Tools-R#12 as an open question,
+# and `tools/check_duplicate_defs.R` fails the build if any top-level name is defined twice again.
+
 # Base R has had %||% since 4.4; this package keeps its own so the null-coalescing
 # behaviour is identical on every R version it claims to support.
 `%||%` <- function(a, b) if (is.null(a) || !length(a)) b else a
