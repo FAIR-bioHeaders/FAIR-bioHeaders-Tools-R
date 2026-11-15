@@ -196,6 +196,10 @@ test_that("a case-mangled suite path fails where the filesystem is case-sensitiv
   mangled <- file.path(dirname(real), toupper(basename(real)))
   expect_false(identical(mangled, real))
   if (case_sensitive) {
+    cat(paste0(
+      "case-sensitivity control: this filesystem is case-sensitive, so '", mangled,
+      "' must not resolve, and the named-path guard is asserted here\n"
+    ))
     withr::with_options(list(bh.fhgm_dir = mangled), {
       expect_error(.bh_fhgm_suite_dir(), "holds no manifest.json",
         class = "bh_conformance"
@@ -222,7 +226,17 @@ test_that("the run refuses to report when the recorded suite pin no longer match
   # an abort, not a not-run, not a pass: and no receipt is written by a run that never began
   receipt <- tempfile()
   withr::with_envvar(c(BH_FHGM_RECEIPT = receipt), {
-    expect_error(bh_draft_fhgm_vectors(), "pinned", class = "bh_conformance")
+    out <- tryCatch(bh_draft_fhgm_vectors(), condition = function(e) e)
+    # `error` first: a *successful* run also returns a bh_conformance object, so the class
+    # alone would pass on the very outcome this control is meant to rule out
+    expect_true(inherits(out, "error"))
+    expect_s3_class(out, "bh_conformance")
+    expect_match(conditionMessage(out), "pinned")
+    cat(paste0(
+      "control 2 (recorded suite digest zeroed): the run refused - ",
+      substr(conditionMessage(out), 1L, 90L), "... - and wrote no receipt (",
+      file.exists(receipt), ")\n"
+    ))
   })
   expect_false(file.exists(receipt))
 })
@@ -258,6 +272,11 @@ test_that("one byte moved inside checksum coverage turns the labelled draft run 
   expect_equal(y$vectors, 31L)
   expect_equal(y$failures, 1L)
   row <- y$results[y$results$status == "fail", ]
+  cat(paste0(
+    "control 1 (one byte inside checksum coverage): ", y$vectors, " vectors evaluated, ",
+    y$failures, " failure (", row$id, ": got_base=", row$got_base,
+    " got_checksum=", row$got_checksum, ") - the labelled draft run goes red\n"
+  ))
   expect_equal(row$id, "supplied-external-model-id")
   expect_equal(row$got_base, "accept") # base still fine: the header did not move
   expect_equal(row$got_checksum, "stale")
@@ -296,6 +315,11 @@ test_that("a model checker that accepts everything is caught, not thanked", {
   expect_equal(z$vectors, 31L)
   expect_equal(z$failures, cmp_reject)
   bad <- z$results[z$results$status == "fail", ]
+  cat(paste0(
+    "control 3 (model checker neutered to accept everything): ", z$failures,
+    " of ", cmp_reject, " comparable expected-rejection vectors now disagree - ",
+    paste(bad$id, collapse = ", "), " - each reporting 'model pass vs expected reject'\n"
+  ))
   expect_setequal(bad$id, y$results$id[y$results$status == "pass" &
     y$results$expected_model == "reject"])
   expect_true(all(grepl("model pass vs expected reject", bad$reason)))
