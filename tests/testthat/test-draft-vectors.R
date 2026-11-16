@@ -27,6 +27,57 @@ test_that("the pinned FHT suite runs in full, through the lane, with the pinned 
   cat("draft lane: 72/72 FHT development vectors pass against the pinned draft\n")
 })
 
+test_that("the parentLink verdicts the re-pinned FHT suite seals are the verdicts we derive", {
+  # C3 accounting, added by the 2026-11-16 re-pin. Every parentLink entry in the pinned
+  # manifest states its own sealed outcome (`checked-pass`, `checked-fail`, `unchecked`);
+  # the shared runner reads only the cited parent FILE and derives a verdict from the
+  # recomputation, so nothing in a green run compares that verdict with the sealed word.
+  # This test does, one row per cited link, in the order the header lists them. Draft
+  # evidence about pinned unreleased bytes: it is not a claim that FHT parentLink
+  # semantics are settled (FHT-Specification #8, boxes 3/4/6/7 remain open; #10 says
+  # selfChecksum/parentLink finalize at FHT release).
+  dir <- .bh_draft_suite_dir()
+  man <- jsonlite::fromJSON(file.path(dir, "manifest.json"), simplifyVector = FALSE)
+  stated_all <- character()
+  derived_all <- character()
+  for (v in man$vectors) {
+    pls <- v$parentLink
+    if (is.null(pls) || !length(pls)) next
+    stated <- vapply(pls, function(pl) {
+      r <- pl$result
+      if (is.null(r) || !nzchar(r)) fail(paste0("vector ", v$id, " cites a parentLink with no sealed result"))
+      as.character(r)
+    }, "")
+    # a null `file` is the suite's own "no parent handed over" case (the one `unchecked`
+    # entry): the runner reads those as NA and passes no parent, and bh_verify_links()
+    # reports that link as unchecked rather than guessing at a file
+    files <- vapply(pls, function(pl) {
+      f <- pl$file
+      if (is.null(f) || is.na(f)) NA_character_ else file.path(dir, f)
+    }, "")
+    lv <- suppressWarnings(bh_verify_links(
+      file.path(dir, v$file), parent = files[!is.na(files)], format = v$format, draft = "FHT"
+    ))
+    expect_equal(nrow(lv$links), length(stated), info = v$id)
+    got <- ifelse(
+      lv$links$verdict == "mismatch" | lv$links$verdict == "missing-parent-file",
+      "checked-fail",
+      ifelse(lv$links$verdict == "unchecked", "unchecked", "checked-pass")
+    )
+    stated_all <- c(stated_all, stated)
+    derived_all <- c(derived_all, got)
+  }
+  # the census is stated so a future revision that adds or removes links moves this test
+  # rather than passing quietly: 12 links over 10 vectors at the pinned manifest, one of
+  # them with no parent file, which must stay `unchecked` and never become a pass
+  expect_equal(length(stated_all), 12L)
+  expect_equal(sum(stated_all == "checked-pass"), 7L)
+  expect_equal(sum(stated_all == "checked-fail"), 4L)
+  expect_equal(sum(stated_all == "unchecked"), 1L)
+  expect_identical(derived_all, stated_all)
+  cat("draft lane: 12/12 sealed parentLink verdicts reproduced natively (7 pass, 4 fail, 1 unchecked)\n")
+})
+
 test_that("a draft suite whose bytes moved off the pin is refused before any vector runs", {
   prov <- FAIRbioHeadersTools:::.bh_vendored()
   bad <- prov

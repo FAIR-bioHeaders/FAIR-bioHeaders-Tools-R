@@ -14,6 +14,22 @@ Measured on this branch's head, macOS 27.2.1 arm64, R 4.6.1, with the sibling ch
 re-pin, not a feature: the vendored draft suites had moved upstream while this package's
 records still described the 2026-11-14 revisions.
 
+**Spine, re-measured on this head.** `tools/run_tests.R`: `tests=785 failed=0 errors=0
+skipped=0` (770 before this PR; the 15 additions are the new parentLink comparison: one
+per-vector link-count assertion over 10 vectors plus its 5 census and equality assertions).
+Ledger `291 / 228 pass / 0 fail / 63 declared-not-run-with-reason`; default-behavior golden
+still `055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525` with
+`goldenDifferences=0`; `tools/check_duplicate_defs.R` exits 0 at 144 top-level assignments /
+144 distinct names; `tools/render_capability_matrix.R` re-renders byte-identically
+(`5b43306968cb8181e948d30f7a73460aad70f23ed1a7b4ec159a9a28f92b96ab`). `R CMD check --as-cran
+--no-manual`, same invocation (R 4.6.1, macOS 27.2.1 arm64, from a fresh clone in both cases):
+before = `Status: 1 NOTE`, exit 0, 66 check lines, `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 770 ]`
+inside the check; after = `Status: 1 NOTE`, exit 0, 66 check lines,
+`[ FAIL 0 | WARN 0 | SKIP 0 | PASS 785 ]`, i.e. no new WARNING or NOTE - the NOTE is the unavoidable "New submission" one, and the
+log-parse guard in `build.yml` still fires only on a WARNING (0 matches on the clean logs; it
+matches as designed when a WARNING line and a `Status: 1 WARNING, 2 NOTEs` line are appended
+to a copy).
+
 **What moved, and what demonstrably did not.** Every value below was re-measured from
 content-addressed git blobs (`git show <rev>:<path>`, `git cat-file -s`), not from
 `raw.githubusercontent.com`, and sizes are bytes actually written out, not `HEAD`
@@ -62,6 +78,28 @@ is a shape guard, not a finding about the current bytes; had the labels been dro
 expected rejections would have entered the compared set silently. Unlabelled now means
 `not-run` with the reason stated, and the receipt carries `vectorsNotRunUnlabelled`, which
 CI pins at 0.
+
+**The pins are consumed, and a tamper proves it.** With one byte-pinned field changed in
+each of four places (both suite manifests, the vendored `tests/draft/fhgm/provenance.json`,
+and the *installed* draft contract copy), `tools/check_vendoring.R` reported 4 DRIFT lines and
+exited 1; `bh_draft_pins()` reported `digest_ok = FALSE` for FHGM; `bh_validate_fhgm()`
+refused with "the bundled draft bytes no longer match their recorded digest"; both suite
+runners aborted naming the found and pinned manifest digests; and both acceptance scripts
+exited 1 writing **no receipt**. Every mutation was byte-verified before concluding from it
+(the needle occurred exactly once, and the file digest moved), and every file was restored
+with `cmp` clean against its pre-tamper copy. `tools/check_vendoring.R --fresh --fht … --fhgm
+…` then confirmed both contract pins unchanged against the live default branches; those heads
+had in fact advanced twice more today, by AGENTS.md-only PRs, leaving both conformance trees
+byte-identical (`eda186fd…`, `5eb338ef…`) - a good illustration of why the pin is a digest and
+a manifest's last-touch commit rather than a branch head.
+
+**A new comparison, prompted by the re-pin.** The FHT manifest's `parentLink` entries state a
+sealed outcome per link (`checked-pass` / `checked-fail` / `unchecked`), but the shared runner
+reads only the cited parent *file* and derives its own verdict, so no green run had ever
+compared the two. `test-draft-vectors.R` now walks all 12 links over 10 vectors and requires
+the derived verdict to equal the sealed one, link by link: 7 pass, 4 fail, 1 unchecked (the
+one whose `file` is null stays unchecked rather than becoming a pass). All 12 reproduce
+natively at the pinned revision.
 
 **Re-pinning is a deliberate act and is never automated.** Nothing here runs on a schedule:
 the advisory `draft-pin-freshness` job only *reports* drift. A re-pin is a commit that
