@@ -12,7 +12,8 @@ NULL
 # R/framing.R (`%||%`, `.bh_c`), where they were dead code: with no `Collate:` field this file is
 # collated after both of those, so its bindings were always the ones the namespace held. The
 # deleted `R/conditions.R` copy of `bh_warn()` had a different `sprintf()`-failure fallback; that
-# alternative is recorded in R/conditions.R and in FAIR-bioHeaders-Tools-R#12 as an open question,
+# alternative is recorded in R/conditions.R. The maintainer ruling on 2026-11-16 in #12
+# retains the joined-parts fallback, covered directly by tests/testthat/test-warning-fallback.R,
 # and `tools/check_duplicate_defs.R` fails the build if any top-level name is defined twice again.
 
 # Base R has had %||% since 4.4; this package keeps its own so the null-coalescing

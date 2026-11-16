@@ -7,6 +7,42 @@ R 4.6.1, `jsonvalidate` 1.5.0 (V8 8.2.1), `digest` 0.6.39, `yaml` 2.3.12,
 `jsonlite` 2.0.0, `roxygen2` 8.1.0, `testthat` 3.3.2. CI re-measures the same spine on
 ubuntu-latest and macos-latest.
 
+## 2026-11-16 — issue #12 warning-fallback regression
+
+The [maintainer ruling](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools-R/issues/12#issuecomment-6907515161)
+retains `paste(c(message, ...), collapse = "")` and declines `Collate:`. The re-pin
+PR #14 is merged. `tests/testthat/test-warning-fallback.R` now deliberately makes
+`sprintf("%s %d", "a")` fail, calls the installed namespace's `bh_warn()` directly,
+and checks the exact joined message `%s %da`, all four warning classes, and the
+invisible `NULL` return. In an isolated R process, replacing the fallback with the
+deleted bare-message alternative makes exactly the message assertion fail; the
+other four assertions pass. No source file or pin is changed by that control.
+
+Measured on macOS 27.2.1 arm64, R 4.6.1, testthat 3.3.2, using a source-built
+package installed into an isolated library:
+
+- `tools/run_tests.R`: **790 assertions, 0 failures/errors/skips** (785 on the
+  merged re-pin baseline plus these five assertions).
+- `tools/acceptance_native.R`: **291 accounted for, 228 pass, 63 declared not-run
+  with reasons**; golden comparison: 291 vectors, 228 documents, 32 selection
+  cases, **0 differences**.
+- `tools/acceptance_draft.R`: **72/72 FHT**; `tools/acceptance_fhgm.R`: **43/43 base
+  and checksum agreement, 9 model comparisons, 34 named not-run**, unchanged.
+- Duplicate-definition, native-path and offline vendoring guards pass; parsed
+  expressions in both edited `R/` files are identical to the merged baseline.
+  The 46-cell capability matrix is byte-identical after regeneration.
+- Full `R CMD check --as-cran --no-manual` completes with **0 errors/warnings**,
+  including all 790 packaged test assertions. Its two NOTEs are new submission
+  and the linked-worktree `.git` file. The final tarball is built from a clean
+  source export without `.git`; `R CMD check --as-cran --no-manual --no-tests`
+  on that export reports **1 NOTE (new submission), 0 errors/warnings**. The full
+  packaged tests were already run above; the packaging-only check does not count
+  skipped tests as passing.
+
+Contracts, suite pins/fixtures, golden bytes, `DESCRIPTION`, `NAMESPACE`, the
+existing CI warning/count gates and the duplicate-definition guard are unchanged.
+The older dated measurements below remain historical evidence, not current counts.
+
 ## 2026-11-16 — deliberate re-pin of the two draft suites; the two contracts stay put
 
 Measured on this branch's head, macOS 27.2.1 arm64, R 4.6.1, with the sibling checkouts
@@ -156,10 +192,11 @@ have reported `’%s %d’`. Neither is exported (`NAMESPACE` lists neither), an
 reachable path exercised the divergence before or after this change.
 
 **What was done.** The six dead copies were deleted; `R/internals.R` is now the sole owner of all
-six helpers. Nothing else in `R/` changed. `R/conditions.R` keeps the `conditions` topic and now
-records the deleted `bh_warn` fallback as an open question rather than silently discarding it: if
-the maintainers want the format-string-only handler, it is a one-line change in `R/internals.R`
-plus a test with mismatched directives, and no test of either handler exists today.
+six helpers. Nothing else in `R/` changed. `R/conditions.R` keeps the `conditions` topic and
+recorded the deleted `bh_warn` fallback as an open question rather than silently discarding it.
+The later 2026-11-16 ruling retains the joined-parts fallback;
+`tests/testthat/test-warning-fallback.R` now directly tests its exact message and warning classes.
+`Collate:` was declined; the duplicate-definition guard remains the CI gate.
 
 **Evidence that nothing moved.** `tools/check_duplicate_defs.R` is new; `R/` goes from 150
 top-level assignments / 144 distinct names to 144 / 144. A canonical dump of every object in the
