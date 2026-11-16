@@ -200,16 +200,19 @@ dper <- vapply(seq_along(dfiles), function(i) {
   sha256_bytes(readBin(file.path(dfh, dfiles[[i]]), what = "raw", n = dsizes[[i]]))
 }, "")
 names(dper) <- dfiles
-dper <- dper[order(names(dper))]
+dper <- dper[sort(names(dper))] # the record's key order: locale sort
 dman <- jsonlite::fromJSON(file.path(dfh, "manifest.json"), simplifyVector = FALSE)
+fcommit <- git_out(fht_repo, c("log", "-1", "--format=%H", "origin/main", "--",
+                               "conformance/manifest.json"))
 cat(sprintf("  %d files, manifest %s, %d vectors (status: %s)\n", length(dper),
             substr(unname(dper[["manifest.json"]]), 1, 16), length(dman$vectors),
             substr(unlist(dman$status), 1, 40)))
 
 cat("FHGM draft vectors (FHGM-Specification development suite, layered expectations)\n")
-# Published by the FHGM development repository, not by the shared specification: 31 vectors
+# Published by the FHGM development repository, not by the shared specification: a suite
 # whose manifest records what four independent checks report (base schema, checksum, gff3
-# feature layer, model layer). They are draft evidence and are never counted toward the 291.
+# feature layer, model layer), at whatever count the pinned revision carries. It is draft
+# evidence and is never counted toward the 291.
 # The bytes come from `git archive origin/main` of the owning repository, so a revision is
 # vendored rather than whatever a working tree happens to hold.
 fhgm_conformance_path <- "development/conformance"
@@ -323,7 +326,14 @@ prov <- list(
   files = rows,
   draft_vectors = list(
     header_type = "FHT", repository = git_out(fht_repo, c("remote", "get-url", "origin")),
-    ref = "origin/main", commit = git_out(fht_repo, c("rev-parse", "origin/main")),
+    ref = "origin/main",
+    # The suite pin is the revision of the SUITE, taken from the commit that last touched
+    # its manifest, and it is deliberately not the contract pin: the contract row above is
+    # the commit that last touched fht.json, and the two move independently. Pointing the
+    # suite at the branch head instead would let a commit that touches neither the manifest
+    # nor a vector read as a suite change.
+    commit = fcommit,
+    head_at_retrieval = git_out(fht_repo, c("rev-parse", "origin/main")),
     path = "conformance", dest = "tests/draft/fht", files = length(dper),
     manifest_sha256 = unname(dper[["manifest.json"]]),
     combined_sha256 = sha256_bytes(charToRaw(paste(sprintf("%s %s", names(dper), unname(dper)),

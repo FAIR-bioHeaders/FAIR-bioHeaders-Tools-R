@@ -198,7 +198,7 @@ jobs:
           if-no-files-found: error
 
   # Rule V7 evidence, separate and labelled: the pinned FHT development contract and
-  # its own 66-vector suite. Still native (R only, no Python). A pass here is "the
+  # its own 72-vector suite. Still native (R only, no Python). A pass here is "the
   # pinned draft bytes behave as their own suite expects through this reader", never
   # "FHT is supported": FHT has no released contract, no schemaVersion, no registry
   # row and no w3id URL (docs/CAPABILITY-MATRIX.md).
@@ -242,15 +242,17 @@ jobs:
             exit 1
           fi
           cat "$receipt"
-          grep -qx 'vectorsInManifest=66' "$receipt" || { echo "expected 66 vectors in the manifest" >&2; exit 1; }
-          grep -qx 'vectorsRan=66' "$receipt" || { echo "expected 66 draft vectors to run" >&2; exit 1; }
-          grep -qx 'vectorsPassed=66' "$receipt" || { echo "expected 66 draft vectors to pass" >&2; exit 1; }
+          grep -qx 'vectorsInManifest=72' "$receipt" || { echo "expected 72 vectors in the manifest" >&2; exit 1; }
+          grep -qx 'vectorsRan=72' "$receipt" || { echo "expected 72 draft vectors to run" >&2; exit 1; }
+          grep -qx 'vectorsPassed=72' "$receipt" || { echo "expected 72 draft vectors to pass" >&2; exit 1; }
           grep -qx 'contractCommit=226f923c28b680edb3c546e99a751482d06aef1a' "$receipt" \
             || { echo "the draft suite did not run against the pinned contract commit" >&2; exit 1; }
           grep -qx 'contractSha256=59ad9641adcb0e5591045c2d894c066d1adc9984cca84c5ff6502f8dad88487e' "$receipt" \
             || { echo "the draft suite did not run against the pinned contract digest" >&2; exit 1; }
-          grep -qx 'suiteCommit=156bda63bd6bbe0322bc6c5b8dcccdfad380655a' "$receipt" \
+          grep -qx 'suiteCommit=be9bcc825f55db92852fd882ffba4c1c214f53db' "$receipt" \
             || { echo "the suite is not the pinned revision" >&2; exit 1; }
+          grep -qx 'suiteManifestSha256=9fd8c0b2a4638d5ddc0bf9b5d1e96c66778b26bcf8f93975aafb707d8f2b702c' "$receipt" \
+            || { echo "the FHT suite manifest is not the pinned digest" >&2; exit 1; }
           grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; exit 1; }
 
   # Rule V7 evidence, separate and labelled: the FHGM development suite. FHGM is not a
@@ -292,9 +294,12 @@ jobs:
           # As in the FHT job, the receipt is written by the R run itself, which re-digests
           # the vendored bytes against the registry pin before reading a single vector. The
           # literals below are a SECOND, independent statement of the same pins and counts:
-          # drift in either place fails the job. 24 of the 31 vectors are deliberately NOT
+          # drift in either place fails the job. 34 of the 43 vectors are deliberately NOT
           # run at the model layer - their verdicts turn on checker rules K3-K6/B1 that this
           # package does not implement - and an empty or shrinking model layer fails here.
+          # The suite is pinned by digest first and count second: the manifest digest and
+          # the vector count are both asserted, because a count alone cannot see a step
+          # that changes bytes without changing the count.
           set -e
           receipt=fhgm-draft-vectors.properties
           if [ ! -s "$receipt" ]; then
@@ -303,16 +308,17 @@ jobs:
           fi
           cat "$receipt"
           cat > "${RUNNER_TEMP:-.}/fhgm-expected.txt" <<'EXPECTED'
-          vectorsInManifest=31
-          vectorsEvaluated=31
-          vectorsRan=7
-          vectorsPassed=7
+          vectorsInManifest=43
+          vectorsEvaluated=43
+          vectorsRan=9
+          vectorsPassed=9
           vectorsFailed=0
-          vectorsNotRun=24
-          vectorsNotRunWithReason=24
-          baseLayerAgreement=31/31
-          checksumLayerAgreement=31/31
-          modelLayerCompared=7
+          vectorsNotRun=34
+          vectorsNotRunWithReason=34
+          vectorsNotRunUnlabelled=0
+          baseLayerAgreement=43/43
+          checksumLayerAgreement=43/43
+          modelLayerCompared=9
           EXPECTED
           missing=0
           while IFS= read -r line; do
@@ -322,9 +328,9 @@ jobs:
             || { echo "the FHGM lane did not run against the pinned contract commit" >&2; missing=1; }
           grep -qx 'contractSha256=bf1553cac04dc88d8afaff1d39bc50360342e1ebedac4b73dfe3dff570ff410f' "$receipt" \
             || { echo "the FHGM lane did not run against the pinned contract digest" >&2; missing=1; }
-          grep -qx 'suiteCommit=ac3d37b3033312844fc3151217731928ae33aa54' "$receipt" \
+          grep -qx 'suiteCommit=d443073a6b9d32114fafd9da1d55e5759afc1fc1' "$receipt" \
             || { echo "the FHGM suite is not the pinned revision" >&2; missing=1; }
-          grep -qx 'suiteManifestSha256=31f14f022ff0858191170d1c8285bd83c7f943d88fd8cebc70f11712525617db' "$receipt" \
+          grep -qx 'suiteManifestSha256=0d2790151c4a29551e9b92fb6b3c3c62ea062f2889ffbd00b3c425e7b6da3458' "$receipt" \
             || { echo "the FHGM suite manifest is not the pinned digest" >&2; missing=1; }
           grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; missing=1; }
           if [ "$missing" -ne 0 ]; then

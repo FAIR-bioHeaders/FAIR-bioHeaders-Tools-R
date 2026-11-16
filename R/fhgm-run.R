@@ -1,6 +1,6 @@
 #' Runs the FHGM development suite and reports it layer by layer
 #'
-#' FHGM's published draft suite (31 vectors from FHGM-Specification
+#' FHGM's published draft suite (43 vectors from FHGM-Specification
 #' `development/conformance/`) is written differently from the shared one: each vector
 #' records what four independent checks report, because separability is the point - `base`
 #' (the released FHGFF3 contract over the parsed header), `checksum` (whether the file-bound
@@ -21,8 +21,17 @@
 #'   checker's cross-record and feature-layer rules - modelId uniqueness within a snapshot,
 #'   featureId resolving to exactly one local gene row, reference comparability against the
 #'   file's genome link, predecessor-pointer resolution - and are reported `not-run` with that
-#'   reason, never passed on the strength of the schema layer.
+#'   reason, never passed on the strength of the schema layer. A vector carrying **no rule
+#'   label at all** - neither a `rules` array nor a singular `rule` - is reported `not-run`
+#'   as well: an absent label is not evidence that the vector needs only the rules this
+#'   package checks, and reading it that way would silently enlarge the compared set. Every
+#'   vector of the pinned revision is labelled, so this is a guard on the suite's shape, not
+#'   a finding about its current bytes.
 #' * `gff3` - not run here: feature validation belongs to gff3-validator.
+#' * `base_matrix.json` - not evaluated here at all: it is the suite's second lane, every
+#'   sealed vector re-observed as an identity-rewritten twin against the released FHGFF3 1.2
+#'   (v0.6.0) base by the upstream runner (maintainer dual-base decision 2026-11-15). The
+#'   twin bytes are not vendored, so this package judges the sealed 1.1 lane only and says so.
 #'
 #' The run is separate, labelled, and never joins the 291: it is draft evidence about pinned
 #' unreleased bytes, not support for FHGM.
@@ -51,6 +60,7 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
   rows <- lapply(seq_along(man$vectors), function(i) {
     v <- man$vectors[[i]]
     rules <- unlist(if (!is.null(v$rules)) v$rules else v$rule)
+    unlabelled <- !length(rules)
     if (!is.null(limit) && i > limit) {
       return(.bh_fhgm_row(v, rules, "not-run", "beyond the requested limit"))
     }
@@ -89,8 +99,15 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
       "reject"
     }
     model_rules <- c("K1", "K2", "R3", "R15")
-    beyond <- setdiff(rules, model_rules)
-    comparable <- !length(beyond)
+    # An unlabelled vector is not a labelled-but-in-scope vector. `rules: []` would mean the
+    # suite says this verdict needs nothing this package checks; no label at all means the
+    # suite did not say, and the only honest reading of that is not-run. Every vector in the
+    # pinned 43-vector manifest is labelled - 29 in `rules`, 14 in the singular `rule` the
+    # runner has always accepted - so this guard is a shape rule for future revisions, not a
+    # finding about the current bytes; it exists because a suite that dropped its labels
+    # would otherwise move 14 rejection vectors into the compared set silently.
+    beyond <- if (unlabelled) "K?" else setdiff(rules, model_rules)
+    comparable <- !length(beyond) && !unlabelled
     status <- if (!identical(got_base, v$layers$base) ||
       !identical(got_sum, v$layers$checksum)) {
       "fail"
@@ -107,8 +124,18 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
         " vs expected ", v$layers$checksum, "; model ", got_model, " vs expected ",
         v$layers$model
       ),
-      `not-run` = if (comparable) {
+      `not-run` = if (!length(beyond)) {
         "base or checksum layer did not resolve"
+      } else if (unlabelled) {
+        paste0(
+          "the manifest records no rule label for this vector - neither a `rules` array nor ",
+          "a singular `rule` - so this run cannot tell whether its verdict falls inside the ",
+          "scope it evaluates (K1/K2) or outside it (K3-K6/B1); reported not-run rather than ",
+          "assumed comparable. The base and checksum layers this run can compare did agree, ",
+          "and they are reported separately. Every vector of the pinned revision carries a ",
+          "label, so an unlabelled one is a change in the suite's shape, said here rather ",
+          "than smoothed over."
+        )
       } else {
         paste0(
           "model layer needs rule(s) ", paste(beyond, collapse = "/"), ", which this ",
@@ -146,6 +173,11 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
 # the reason this package reports the layers separately instead of collapsing them into one
 # "invalid" like the checker does.
 .bh_fhgm_rule_notes <- list(
+  `K?` = paste0(
+    "the suite recorded no rule label for this vector, so the run cannot establish whether ",
+    "its verdict is inside this package's model scope; the checker rules K1-K6 and B1 are ",
+    "all named in the manifest's own rules block"
+  ),
   K3 = "modelId uniqueness within one snapshot (checker rule 1)",
   K4 = "featureId resolving, percent-decoded, to exactly one local gene row in the enclosing file (checker rule 2, which needs the GFF3 feature layer)",
   K5 = "record reference comparable with, and not contradicting, the file genome link (checker rule 3)",

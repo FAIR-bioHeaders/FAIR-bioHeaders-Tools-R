@@ -1,6 +1,7 @@
 # Capability matrix: type × operation × serialization × contract version
 
-Status date: **2026-11-14**. This file is the published capability statement of the
+Status date: **2026-11-16** (re-rendered with the FHT/FHGM draft-suite re-pin). This file
+is the published capability statement of the
 `FAIRbioHeadersTools` R package. It is generated from `bh_capability()` by
 `tools/render_capability_matrix.R`; the code and this table cannot drift apart
 silently, because CI re-renders and compares.
@@ -15,7 +16,7 @@ its records are model records transported inside an FHGFF3 header under
 `x-fhgm-models`, carrying no `schema` field of their own. FHGM's two `draft-lane`
 cells cover the transport rule (K1) and the per-record contract (K2); the
 checker's cross-record rules K3-K6 stay `not-supported-yet` with their own rows,
-and 24 of the 31 vectors in FHGM's own suite are reported `not-run` rather than
+and 34 of the 43 vectors in FHGM's own suite are reported `not-run` rather than
 passed.
 
 Cell vocabulary:

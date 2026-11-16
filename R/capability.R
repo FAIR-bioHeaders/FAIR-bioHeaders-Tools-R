@@ -162,10 +162,10 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
         "bh_validate_fhgm() evaluates each record against the pinned draft contract (K2) ",
         "plus the K1 transport rule (one or more records, and no extension at all in an ",
         "FHGFF3 1.0 header), and reports the model verdict apart from the base FHGFF3 ",
-        "verdict. That is the earned scope: of the 31 published vectors, 7 turn on K1/K2 ",
-        "alone and are compared; the other 24 turn on K3-K6 or B1 and are reported not-run. ",
-        "earn it. The suite's own manifest records 17 of its 19 invalid vectors passing ",
-        "both the released base schema and the exact-byte checksum (18 pass each one ",
+        "verdict. That is the earned scope: of the 43 published vectors, 9 turn on K1/K2 ",
+        "alone and are compared; the other 34 turn on K3-K6 or B1 and are reported not-run. ",
+        "earn it. The suite's own manifest records 27 of its 29 invalid vectors passing ",
+        "both the released base schema and the exact-byte checksum (28 pass each one ",
         "singly), so only those cross-record rules separate them; passing them on the ",
         "schema layer alone would inflate the claim rather than earn it."
       ),
@@ -174,7 +174,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       none_yet, "not-supported-yet",
       paste0(
         "K3 (modelId unique within one snapshot) is a cross-record check the draft ",
-        "checker performs and this package does not; the 4 vectors that turn on it are ",
+        "checker performs and this package does not; the 5 vectors that turn on it are ",
         "reported not-run by bh_draft_fhgm_vectors()"
       ),
       "FHGM-Specification#9"),
@@ -183,7 +183,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       paste0(
         "K4 needs the GFF3 feature layer - featureId resolving, percent-decoded, to ",
         "exactly one local gene row - which belongs to gff3-validator, not to this ",
-        "package; the 5 vectors that turn on it are reported not-run"
+        "package; the 8 vectors that turn on it are reported not-run"
       ),
       "FHGM-Specification#9"),
     R("FHGM", "draft", "check_reference_agreement", "nested in fhgff3 via x-fhgm-models",
@@ -192,7 +192,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
         "K5 compares each record's reference with the enclosing file's genome link and ",
         "rejects a contradiction; that cross-record comparison is part of the draft ",
         "checker and is not ported here - only the record's own shape is checked (K2); ",
-        "the 4 vectors that turn on it are reported not-run"
+        "the 7 vectors that turn on it are reported not-run"
       ),
       "FHGM-Specification#9"),
     R("FHGM", "draft", "resolve_revision_pointer", "nested in fhgff3 via x-fhgm-models",
@@ -200,7 +200,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       paste0(
         "K6 predecessor-pointer resolution against explicitly supplied prior snapshots is ",
         "not implemented; a resolved pointer would in any case only identify a ",
-        "predecessor, not accept a revision, which is a curator decision. The 10 vectors ",
+        "predecessor, not accept a revision, which is a curator decision. The 14 vectors ",
         "that turn on it are reported not-run"
       ),
       "FHGM-Specification#9,FAIR-bioHeaders-Specification#204"),

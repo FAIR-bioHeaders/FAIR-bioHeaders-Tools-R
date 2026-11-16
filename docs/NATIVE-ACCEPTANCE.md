@@ -88,30 +88,45 @@ provably additive.
 
 ## The rule V7 draft lane is separate, labelled, and never acceptance
 
-`bh_draft_vectors()` runs the **66 FHT development vectors** published by
+`bh_draft_vectors()` runs the **72 FHT development vectors** published by
 FHT-Specification (vendored at the pinned suite commit, re-digested before use)
 through the native reader with the lane open. A pass is draft evidence against
 pinned unreleased bytes, not support for FHT; the label says so; the shared
 ledger's numbers do not include them; CI runs them in a separate, labelled job
 whose receipt pins contract commit `226f923c...`, SHA-256 `59ad9641...`, suite
-commit `156bda63...`. The advisory `draft-pin-freshness` job compares the pins
-with the owning repositories' live default branches and reports drift without
-gating released acceptance.
+commit `be9bcc82...` and manifest digest `9fd8c0b2...`. The advisory
+`draft-pin-freshness` job compares the pins with the owning repositories' live
+default branches and reports drift without gating released acceptance.
 
-`bh_draft_fhgm_vectors()` runs the **31 FHGM development vectors** published by
+The contract pin and the suite pin are different objects and move separately.
+`226f923c...` is the commit that last touched `fht.json`; `be9bcc82...` is the
+commit that last touched `conformance/manifest.json`. A re-pin that advanced the
+contract while the suite moved for unrelated reasons - or, worse, one that
+collapsed the two fields onto whichever revision was checked out at the time -
+would destroy exactly the distinction that lets a reader say "the contract did
+not change, the vectors did".
+
+`bh_draft_fhgm_vectors()` runs the **43 FHGM development vectors** published by
 FHGM-Specification, in its own labelled CI job, and never into the 291. That
 suite records four independent layers per vector (`base`, `checksum`, `gff3`,
 `model`), so the run reports them separately: base and checksum are compared on
-all 31, the model layer only on the 7 whose rule labels are inside what this
-package evaluates (K1 transport, K2 the pinned record contract). The other 24
+all 43, the model layer only on the 9 whose rule labels are inside what this
+package evaluates (K1 transport, K2 the pinned record contract). The other 34
 turn on K3-K6 or B1 and are `not-run` with the rule named - never passed on the
-strength of the schema layer. FHGM is not a header type: its records ride inside
+strength of the schema layer. A vector carrying no rule label at all is also
+`not-run`: an absent label does not establish that the verdict needs only K1/K2,
+so the run refuses to assume it and the receipt's
+`vectorsNotRunUnlabelled=0` line states that the pinned manifest needed no such
+refusal. FHGM is not a header type: its records ride inside
 an FHGFF3 header under `x-fhgm-models` and carry no `schema` field, so the lane
 selects only the contract applied to the records. The receipt pins contract
 commit and SHA-256 (`ac3d37b3...` / `bf1553ca...`), the suite commit
-(`ac3d37b3...`) and its manifest digest (`31f14f02...`), and the workflow
-asserts the counts as fixed strings, so a model layer that silently shrank or
-started over-claiming fails the job.
+(`d443073a...`, the commit that last touched the suite manifest) and its
+manifest digest (`0d279015...`), and the workflow asserts the counts as fixed
+strings, so a model layer that silently shrank or started over-claiming fails
+the job. The suite's `base_matrix.json` lane - every sealed vector re-observed
+as an FHGFF3 1.2 twin by the upstream runner - is vendored but **not evaluated
+here**: the twin bytes are not, so this package judges the sealed 1.1 lane only.
 
 ## Controls that must go red
 
@@ -121,14 +136,14 @@ conclusion from it:
 
 1. **One byte inside checksum coverage.** A valid vector is copied to a scratch
    tree, one feature-line byte changes (`ID=toy-a` to `ID=toy-A`), and the test
-   asserts the bytes differ, then that the labelled run reports 31 vectors with
+   asserts the bytes differ, then that the labelled run reports 43 vectors with
    exactly **1 failure** - base still `accept`, checksum `stale`.
 2. **A zeroed recorded pin.** `draft_fhgm_vectors$manifest_sha256` is replaced
    with zeros in the provenance cache; the run **aborts** (`bh_conformance`
    error) and writes no receipt, rather than reporting not-run or pass.
 3. **A neutered model checker.** `bh_validate_fhgm()` is bound to a stub that
    reports every record valid. The test first shows the stub live on a fixture
-   the real code rejects, then requires the 4 comparable expected-rejection
+   the real code rejects, then requires the 6 comparable expected-rejection
    vectors to become failures reading `model pass vs expected reject`, with base
    and checksum still agreeing. If the stub were not on the called path, this
    control would be vacuous, so that check is asserted rather than assumed.
