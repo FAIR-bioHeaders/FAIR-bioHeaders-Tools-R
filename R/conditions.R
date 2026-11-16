@@ -22,16 +22,13 @@ NULL
 # `R/internals.R` is now the only definition of each name. Which copy ran was established from
 # the installed namespace's bindings, not by reasoning about load order.
 #
-# One of those deletions is not information-free, so it is recorded here rather than decided.
-# The `bh_warn()` copy this file held handled a failing `sprintf()` with `error = function(e)
-# message`, which reports the format string alone; the live `R/internals.R` copy handles it with
-# `paste(c(message, ...), collapse = "")`, which reports every part of the call. #12 keeps the
-# behaviour that already ran, because that is the behaviour-preserving choice. Whether the
-# format-string-only fallback was the intent is left open for the maintainers - see the comment
-# on FAIR-bioHeaders-Tools-R#12. Switching to it is a one-line change in `R/internals.R` plus a
-# test that calls `bh_warn()` with directives and values that do not match. No such test exists
-# for either copy, and no call site in `R/` reaches the fallback today: `R/fhgm.R` and `R/read.R`
-# both pass `bh_warn("draft", "%s", w)`, so `sprintf()` succeeds and the two handlers agree.
+# The deleted `bh_warn()` copy handled a failing `sprintf()` with `error = function(e)
+# message`, reporting the format string alone. The live `R/internals.R` copy instead uses
+# `paste(c(message, ...), collapse = "")`, reporting every part of the call. The maintainer
+# ruling on 2026-11-16 in FAIR-bioHeaders-Tools-R#12 retains this joined-parts behaviour;
+# tests/testthat/test-warning-fallback.R exercises a deliberately mismatched format string
+# and asserts its exact message and warning classes. The same ruling declines `Collate:`:
+# the duplicate-definition guard catches the underlying hazard instead.
 #
 # `tools/check_duplicate_defs.R` fails the build if any top-level name is defined twice again.
 
