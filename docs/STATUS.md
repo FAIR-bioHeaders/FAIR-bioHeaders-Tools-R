@@ -1,10 +1,110 @@
 # STATUS — measured state of the R library
 
-Date: **2026-11-14**, with the 2026-11-15 sections below added for #10 and #12. Everything in
+Date: **2026-11-14**, with the 2026-11-15 sections below added for #10 and #12 and a
+2026-11-16 section for the draft-suite re-pin. Everything in
 the table was measured on the commit this document accompanied, on macOS 14 arm64 with
 R 4.6.1, `jsonvalidate` 1.5.0 (V8 8.2.1), `digest` 0.6.39, `yaml` 2.3.12,
 `jsonlite` 2.0.0, `roxygen2` 8.1.0, `testthat` 3.3.2. CI re-measures the same spine on
 ubuntu-latest and macos-latest.
+
+## 2026-11-16 — deliberate re-pin of the two draft suites; the two contracts stay put
+
+Measured on this branch's head, macOS 27.2.1 arm64, R 4.6.1, with the sibling checkouts
+`FHT-Specification` and `FHGM` fetched to `origin/main` first. This is a provenance
+re-pin, not a feature: the vendored draft suites had moved upstream while this package's
+records still described the 2026-11-14 revisions.
+
+**Spine, re-measured on this head.** `tools/run_tests.R`: `tests=785 failed=0 errors=0
+skipped=0` (770 before this PR; the 15 additions are the new parentLink comparison: one
+per-vector link-count assertion over 10 vectors plus its 5 census and equality assertions).
+Ledger `291 / 228 pass / 0 fail / 63 declared-not-run-with-reason`; default-behavior golden
+still `055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525` with
+`goldenDifferences=0`; `tools/check_duplicate_defs.R` exits 0 at 144 top-level assignments /
+144 distinct names; `tools/render_capability_matrix.R` re-renders byte-identically
+(`5b43306968cb8181e948d30f7a73460aad70f23ed1a7b4ec159a9a28f92b96ab`). `R CMD check --as-cran
+--no-manual`, same invocation (R 4.6.1, macOS 27.2.1 arm64, from a fresh clone in both cases):
+before = `Status: 1 NOTE`, exit 0, 66 check lines, `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 770 ]`
+inside the check; after = `Status: 1 NOTE`, exit 0, 66 check lines,
+`[ FAIL 0 | WARN 0 | SKIP 0 | PASS 785 ]`, i.e. no new WARNING or NOTE - the NOTE is the unavoidable "New submission" one, and the
+log-parse guard in `build.yml` still fires only on a WARNING (0 matches on the clean logs; it
+matches as designed when a WARNING line and a `Status: 1 WARNING, 2 NOTEs` line are appended
+to a copy).
+
+**What moved, and what demonstrably did not.** Every value below was re-measured from
+content-addressed git blobs (`git show <rev>:<path>`, `git cat-file -s`), not from
+`raw.githubusercontent.com`, and sizes are bytes actually written out, not `HEAD`
+content-length.
+
+| record | old | new | how measured |
+| --- | --- | --- | --- |
+| FHT contract `fht.json` | `59ad9641adcb0e55...` / 29,430 B @ `226f923c` | **unchanged** (live `main` = `be9bcc82` serves the same digest) | `git show origin/main:fht.json \| shasum -a 256` |
+| FHT suite manifest | `9b07179497bdc724...` / 66 vectors | `9fd8c0b2a4638d5d...` / 65,615 B / 72 vectors | same, at `be9bcc82` |
+| FHT suite tree | 69 files, combined `71e3e3ad...` | 77 files, combined `86231b50...` | `tools/check_vendoring.R` after re-extraction |
+| FHGM record contract | `bf1553cac04dc88d...` / 9,564 B @ `ac3d37b3` | **unchanged** (blob `1fb066b8da5bf5bb...` at `ac3d37b3` and at head `57118c52`) | `git show origin/main:development/model/fhgm-model.schema.json` |
+| FHGM transport overlay | `dd9f69274f26860b...` / 1,363 B | `d1619cced91b4ef5...` / 2,613 B (dual-base framing, FHGM #17) | `git show origin/main:development/model/fhgm-draft.schema.json` |
+| FHGM suite manifest | `31f14f022ff08581...` / 35,269 B / 31 vectors | `0d2790151c4a2955...` / 51,114 B / 43 vectors | `git show origin/main:development/conformance/manifest.json` |
+| FHGM suite / example trees | 17 + 23 files | 28 + 30 files | re-extraction, upstream `.py` files left behind |
+
+**Contract pin ≠ suite pin, and the two now provably differ.** FHT: contract `226f923c`,
+suite `be9bcc82`. FHGM: contract `ac3d37b3`, suite `d443073a`. Both jobs assert all four
+strings in their receipts, so collapsing them into one value fails CI rather than passing
+quietly. `tools/vendor_upstream.R` previously wrote the FHT *suite* pin as the branch head
+at retrieval, which conflates "the tree I happened to hold" with "the revision of the
+suite"; it now derives it the way it already derived FHGM's, from the commit that last
+touched that suite's manifest.
+
+**Digest first, count second.** FHGM's manifest went 35,269 → 51,114 bytes while its
+count went 31 → 43, and the intermediate step (36,001 B with the count still 31) was
+invisible to any count-only assertion. Both are pinned here: the manifest SHA-256 is
+re-digested by `tools/check_vendoring.R` and by the runner before a single vector is read,
+and the count is checked against it afterwards.
+
+**The 12 new FHGM vectors are real-data promotions, and only two of them are in this
+package's model scope.** FHGM #18 promoted ten gap-proof *rejection* cases from the
+Drosophila chr4 example lane, each with a matching pair of valid anchors, so the manifest
+grew 31 → 43: 10 `dmel-*` invalids plus `dmel-snapshot-v1` and `dmel-snapshot-v2-resolved`.
+Two of the ten (`dmel-empty-model-array` = K1, `dmel-numeric-model-version` = K2) fall
+inside the scope this package evaluates; the other eight name K3/K4/K5/K6 and are not-run.
+The re-measured split for the whole suite: 43 evaluated, base 43/43, checksum 43/43,
+**9 compared at the model layer** (3 accepts, 6 K1/K2 rejections), **34 not-run** naming
+K3 (5) / K4 (8) / K5 (7) / K6 (14) / B1 (2). Every sealed expectation of the old 31 is
+byte-identical in the new manifest - no previously published verdict was rewritten by the
+promotion - and no new vector became a pass that the checker's own rules do not let it be.
+
+**A guard added while measuring.** The runner treated a vector with no rule label as
+in-scope (`setdiff(character(0), …)` is empty, so "comparable"). None of the 43 pinned
+vectors is unlabelled — 29 label through `rules`, 14 through the singular `rule` — so this
+is a shape guard, not a finding about the current bytes; had the labels been dropped, 14
+expected rejections would have entered the compared set silently. Unlabelled now means
+`not-run` with the reason stated, and the receipt carries `vectorsNotRunUnlabelled`, which
+CI pins at 0.
+
+**The pins are consumed, and a tamper proves it.** With one byte-pinned field changed in
+each of four places (both suite manifests, the vendored `tests/draft/fhgm/provenance.json`,
+and the *installed* draft contract copy), `tools/check_vendoring.R` reported 4 DRIFT lines and
+exited 1; `bh_draft_pins()` reported `digest_ok = FALSE` for FHGM; `bh_validate_fhgm()`
+refused with "the bundled draft bytes no longer match their recorded digest"; both suite
+runners aborted naming the found and pinned manifest digests; and both acceptance scripts
+exited 1 writing **no receipt**. Every mutation was byte-verified before concluding from it
+(the needle occurred exactly once, and the file digest moved), and every file was restored
+with `cmp` clean against its pre-tamper copy. `tools/check_vendoring.R --fresh --fht … --fhgm
+…` then confirmed both contract pins unchanged against the live default branches; those heads
+had in fact advanced twice more today, by AGENTS.md-only PRs, leaving both conformance trees
+byte-identical (`eda186fd…`, `5eb338ef…`) - a good illustration of why the pin is a digest and
+a manifest's last-touch commit rather than a branch head.
+
+**A new comparison, prompted by the re-pin.** The FHT manifest's `parentLink` entries state a
+sealed outcome per link (`checked-pass` / `checked-fail` / `unchecked`), but the shared runner
+reads only the cited parent *file* and derives its own verdict, so no green run had ever
+compared the two. `test-draft-vectors.R` now walks all 12 links over 10 vectors and requires
+the derived verdict to equal the sealed one, link by link: 7 pass, 4 fail, 1 unchecked (the
+one whose `file` is null stays unchecked rather than becoming a pass). All 12 reproduce
+natively at the pinned revision.
+
+**Re-pinning is a deliberate act and is never automated.** Nothing here runs on a schedule:
+the advisory `draft-pin-freshness` job only *reports* drift. A re-pin is a commit that
+states what moved, keeps the two contract rows on their own commits, and re-runs the whole
+spine afterwards.
 
 ## 2026-11-15 — six duplicate top-level definitions removed, and a guard added (#12)
 
@@ -268,24 +368,34 @@ byte-identical, so `man/conditions.Rd` is the only documentation page this chang
 ## Draft state (rule V7; never a support claim)
 
 - FHT: opt-in lane, pinned contract `226f923c28b680edb3c546e99a751482d06aef1a`
-  (SHA-256 `59ad9641...`), suite `156bda63...` (manifest `9b071794...`), 66/66
+  (SHA-256 `59ad9641adcb0e55...`, 29,430 bytes; re-verified 2026-11-16 unchanged
+  against the owning repository's live `main` = `be9bcc82...`), suite
+  `be9bcc82...` (manifest `9fd8c0b2a4638d5d...`, 65,615 bytes, 72 vectors), 72/72
   pass; warns on every read; release-shaped FHT URLs stay V5. FHT publishes as
-  specification v0.7.0 (FHT-Specification #8/#9/#10).
+  specification v0.7.0 (FHT-Specification #8/#9/#10). #8's boxes 3/4/6/7 are still
+  open upstream, so this pin is expected to move again.
 - FHGM: **not a header type**. Its records are transported inside an FHGFF3 header under
   `x-fhgm-models` and carry no `schema` field, so the lane selects only the contract applied
   to the records. Contract bytes registered and digest-pinned (`ac3d37b3...`, SHA-256
-  `bf1553cac04dc88d...`, 9,564 bytes - re-verified 2026-11-14 against the owning
-  repository's live `main`, whose head is `52b07b7a...`, with a nonsense-path 404 control);
+  `bf1553cac04dc88d...`, 9,564 bytes - re-verified 2026-11-16 unchanged against the owning
+  repository's live `main`, whose head is `57118c52...`; the same content-addressed blob
+  `1fb066b8da5bf5bb...` is served at the pinned commit and at head, so the contract did not
+  move while the suite did);
   the suite bytes are vendored under `tests/draft/fhgm` plus the `tests/draft/examples`
-  files its vectors cite (17 + 23 files, manifest `31f14f02...`, 31 vectors).
+  files its vectors cite (28 + 30 files, manifest `0d2790151c4a2955...`, 51,114 bytes,
+  43 vectors; suite commit `d443073a...` - the commit that last touched that manifest,
+  deliberately not the contract commit).
   `bh_fhgm_models()` / `bh_validate_fhgm()` / `bh_draft_fhgm_vectors()` are the lane: they
   evaluate K1 (transport: one or more records, and no extension at all in an FHGFF3 1.0
   header) and K2 (each record against the pinned draft contract) and report the model verdict
   apart from the base FHGFF3 verdict. K3-K6 are **not** ported and stay named gaps with their
-  own matrix rows; 24 of the 31 vectors are `not-run` for exactly that reason. Opt-in only,
+  own matrix rows; 34 of the 43 vectors are `not-run` for exactly that reason (5 K3, 8 K4,
+  7 K5, 14 K6, 2 B1). A vector with no rule label is `not-run` too, never assumed in-scope.
+  The suite's `base_matrix.json` (FHGFF3 1.2 re-observation lane, twin bytes not vendored) is
+  not evaluated here. Opt-in only,
   warns on every record read, and `schemaVersion`, registry row and w3id URL are all absent,
   as rule V7 requires. Tracked in #3; FHGM publishes as specification v0.8.0.
-- Freshness of both draft pins was verified 2026-11-14 against the owning
+- Freshness of both draft pins was last verified 2026-11-16 against the owning
   repositories' live default branches (advisory CI job `draft-pin-freshness`, which now
   covers both contracts and both suite manifests).
 
@@ -359,7 +469,7 @@ lane only; the released path and the golden do not move.
 7. **FHGM cross-record model rules** K3 (modelId uniqueness in a snapshot), K4
    (feature-target resolution against the GFF3 feature layer), K5 (record/file
    reference comparability) and K6 (predecessor-pointer resolution): not ported,
-   named as their own matrix rows, and their 24 vectors are reported `not-run`
+   named as their own matrix rows, and their 34 vectors are reported `not-run`
    rather than passed. The upstream checker (`validate_fhgm.py`) stays the
    reference for them and is deliberately not vendored here.
 8. **FHGM revision/curator semantics.** A resolved pointer would only identify a
@@ -369,7 +479,16 @@ lane only; the released path and the golden do not move.
 
 ## Provenance notes
 
-- `inst/VENDORED.json`'s `commit` fields record the **annotated tag object**
+- 2026-11-16 re-pin: only the two **suite** blocks of `inst/VENDORED.json` and the vendored
+  trees under `tests/draft/` moved, plus `tests/draft/fhgm/provenance.json` (now the owning
+  repository's `provenanceVersion` 2 record, byte-identical to its `origin/main` blob
+  `9cf5c218e4e3dad0...`). The 9 released-contract rows, the version-registry row, the two
+  draft-**contract** rows and the whole shared `conformance` block are unchanged in the JSON
+  (asserted field-by-field before writing, and re-audited by `tools/check_vendoring.R`).
+  `combined_sha256` values were recomputed with the same recipe the record was written with
+  - a locale-sorted `"<path> <sha256>"` join - and the recipe was validated first by
+  reproducing the superseded values `71e3e3ad...` and `3ab6118f...` exactly from the old
+  trees before using it to write the new ones.
   SHAs for released-contract rows (all rows consistently; for example the
   v0.6.0 tag object `ab7e3ddd53bfccee9a31d59fc10524eadf32c1da` dereferences to
   commit `0ae18b00ee4bd71ab2dc28bae706b0f9d195076b`). Byte identity was verified

@@ -317,7 +317,7 @@ bh_conformance <- function(suite = NULL, formats = NULL, draft = FALSE, limit = 
 
 #' Runs the FHT development suite through the draft lane
 #'
-#' These 66 vectors are published by FHT-Specification, not by the shared specification, and
+#' These 72 vectors are published by FHT-Specification, not by the shared specification, and
 #' their manifest says its expectations are "derived from the rule text, never from an
 #' implementation under test". They are therefore reported separately, under the rule V7 lane
 #' with the pinned draft bytes, and they never join the 291. A result here is draft evidence:
