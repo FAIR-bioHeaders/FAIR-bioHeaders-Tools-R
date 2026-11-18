@@ -193,16 +193,50 @@ test_that("K1 carrier identity is decided by the one shared citation grammar, sl
   }
   # and every spelling NEITHER layer admits is refused by BOTH of them, in step:
   # the raw tag with a trailing slash is not in base-schemas.json's list and does not
-  # match .bh_raw_re either - K1 must refuse it (consistency, not tolerance).
-  for (u in c(
+  # match .bh_raw_re either - K1 must refuse it, AND selection must not read it as an
+  # FHGFF3 citation at all (measured: it falls through to V5 as an unknown URL routed
+  # to the current FHR, which is exactly "no release named here"). For the superseded
+  # v0.4.0 the two layers answer DIFFERENT questions and both answers are asserted:
+  # selection resolves the real released 1.0 contract for that URL (V3, schema_version
+  # 1.0 - a contract does exist), while K1 refuses the v0.4.0+1.1 transport pairing.
+  # This is agreement about the pairing, not a claim of universal layer identity: raw
+  # main is the documented deliberate divergence (selection V1 answers "which bytes
+  # validate this header"; K1 answers "may FHGM transport bind to this citation"), and
+  # the assertion below pins even that so neither layer can drift silently.
+  refused_by_both <- c(
     "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/v0.5.0/fhgff3.json/",
-    "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/v0.6.0/fhgff3.json/",
-    "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0/" # superseded, slash or not
-  )) {
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/v0.6.0/fhgff3.json/"
+  )
+  for (u in refused_by_both) {
     v <- suppressWarnings(bh_validate_fhgm(variant(u)))
     expect_false(v$all_valid, info = u)
     expect_match(paste(v$records$errors, collapse = " "), "K1: the carrier", info = u)
+    sel <- bh_select(u)
+    expect_false(identical(sel$header_type, "FHGFF3"), info = u)
+    expect_equal(sel$rule, "V5", info = u) # unreadable as a release citation -> V5 FHR
   }
+  # superseded v0.4.0: selection names the 1.0 contract that release actually carries;
+  # K1 refuses the transport pairing. Both outcomes asserted, divergence owned.
+  v40 <- suppressWarnings(bh_validate_fhgm(
+    variant("https://w3id.org/fair-bioheaders/fhgff3/v0.4.0/")
+  ))
+  expect_false(v40$all_valid)
+  expect_match(paste(v40$records$errors, collapse = " "), "citation-version pair")
+  sel40 <- bh_select("https://w3id.org/fair-bioheaders/fhgff3/v0.4.0/")
+  expect_equal(sel40$rule, "V3")
+  expect_equal(sel40$header_type, "FHGFF3")
+  expect_equal(sel40$release, "v0.4.0")
+  expect_equal(sel40$schema_version, "1.0")
+  # raw main: the intended domain split, pinned in both directions
+  vrm <- suppressWarnings(bh_validate_fhgm(.bh_fhgm_path(
+    "vectors/invalid/carrier-cites-raw-main.fhgff3.gff3"
+  )))
+  expect_false(vrm$all_valid)
+  selrm <- bh_select(
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/main/fhgff3.json"
+  )
+  expect_equal(selrm$rule, "V1") # selection answers the released-header question
+  expect_equal(selrm$header_type, "FHGFF3")
   # the probe of the shared grammar directly: same pattern pair from both layers
   re <- FAIRbioHeadersTools:::.bh_release_url_re("fhgff3")
   expect_true(grepl(re$w3id, "https://w3id.org/fair-bioheaders/fhgff3/v0.6.0/", perl = TRUE))
