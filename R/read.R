@@ -301,3 +301,37 @@ bh_validate <- function(path, format = NULL, compressed = NA,
     issues = a$issues, warnings = a$warnings
   )
 }
+
+#' Extracts a file's header, as YAML text or as the parsed record in JSON
+#'
+#' `as = "yaml"` returns the header block's YAML exactly as written, with the `;~` or `#~`
+#' prefix removed from every line. `as = "json"` returns the parsed record as the JSON the
+#' contract validator sees; it needs a header that parses, so a header the YAML rules
+#' reject (R8, R12, a parse error) raises a `bh_input` error naming why. Neither form
+#' verifies the checksum or validates the contract: use [bh_read()] for that.
+#'
+#' @param path A FASTA, GFA or GFF3 file carrying a FAIR-bioHeaders header.
+#' @param as `"yaml"` (default) or `"json"`.
+#' @param format,compressed As for [bh_read()].
+#' @return A length-1 character string.
+#' @export
+bh_extract_header <- function(path, as = c("yaml", "json"), format = NULL, compressed = NA) {
+  as <- match.arg(as)
+  format <- format %||% .bh_guess_format(path)
+  if (!format %in% names(.bh_formats)) {
+    bh_abort("input", paste0("unknown serialization ", sQuote(format)))
+  }
+  head <- .bh_head(path, compressed = compressed)
+  frame <- .bh_frame(head$bytes, format, complete = head$complete)
+  lines <- .bh_header_lines(frame)
+  if (!length(lines)) bh_abort("input", "%s", paste0(basename(path), " carries no header block"))
+  if (as == "yaml") return(paste0(paste(lines, collapse = "\n"), "\n"))
+  parsed <- .bh_parse_record(lines)
+  if (is.null(parsed$record)) {
+    bh_abort("input", "%s", paste0(
+      "the header of ", basename(path), " does not parse to a record: ",
+      paste(parsed$why, collapse = "; ")
+    ))
+  }
+  as.character(.bh_record_json(parsed$record))
+}

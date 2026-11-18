@@ -2,8 +2,10 @@
 
 Native R reader, checksum verifier and contract validator for
 [FAIR bioHeaders](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification)
-file-bound metadata (`;~`/`#~` YAML header blocks in FASTA, GFA and GFF3), with no
-foreign-language runtime anywhere in the acceptance path.
+file-bound metadata (`;~`/`#~` YAML header blocks in FASTA, GFA and GFF3). Framing,
+the checksum and the YAML rules are R and vendored C. JSON Schema validation uses
+`jsonvalidate` with its `ajv` engine, which runs in the V8 JavaScript engine that
+`jsonvalidate` embeds; no Python or other toolkit is called.
 
 Released contracts, validated as JSON Schema draft/2020-12 with asserted `format`
 (specification v0.6.0): **FHR 2.1, FHP 1.2, FHGFF3 1.2**.
@@ -33,7 +35,12 @@ bh_verify("genome.fhr.fasta")             # checksum only
 bh_validate("ann.fhgff3.gff3")            # contract verdict against the cited schema
 bh_sha512_256_file("genome.fhr.fasta")    # the file checksum, streamed
 
-x <- bh_conformance()                     # the shared 291-vector suite, natively
+bh_extract_header("genome.fhr.fasta")             # the header YAML, prefixes removed
+bh_extract_header("genome.fhr.fasta", as = "json") # the parsed record as JSON
+
+# the shared 291-vector suite; the vectors ship in the source tree (tests/conformance),
+# not in the installed package, so run this from a checkout or name the directory
+x <- bh_conformance("tests/conformance")
 x$ok
 
 # Rule V7 draft lane - explicit, per read or process-wide, always warns:
