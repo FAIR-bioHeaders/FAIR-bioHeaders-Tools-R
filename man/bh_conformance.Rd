@@ -7,8 +7,12 @@
 bh_conformance(suite = NULL, formats = NULL, draft = FALSE, limit = NULL)
 }
 \arguments{
-\item{suite}{A directory holding \code{manifest.json} and the vector files; defaults to the
-vendored copy under \verb{tests/conformance/}.}
+\item{suite}{A directory holding \code{manifest.json} and the vector files. The vectors are
+vendored in the package's source tree under \verb{tests/conformance/}, which \verb{R CMD INSTALL} does not install, so from an installed package name the directory - a source
+checkout's \code{tests/conformance}, or the specification's \verb{conformance/} at the pinned
+commit - here, with \code{options(bh.conformance_dir = )} or with the
+\code{FAIRBH_CONFORMANCE_DIR} environment variable. Inside the package's own tests it is
+found without help.}
 
 \item{formats}{Restrict the run to these formats. The accounting still covers all 291,
 and the count guards are skipped, because a partial run is not an acceptance run.}

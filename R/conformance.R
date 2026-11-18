@@ -98,7 +98,11 @@ NULL
   bh_abort("conformance", paste0(
     "the ", what, " was not found. Looked in: ",
     paste(sQuote(unique(cands)), collapse = ", "),
-    ". Re-create it with tools/vendor_upstream.R."
+    ". The vectors are part of the package's source tree, not of the installed package: ",
+    "run from a source checkout, or pass the directory as `suite` (for the shared suite, ",
+    "\"<checkout>/tests/conformance\"; option bh.conformance_dir and the ",
+    "FAIRBH_CONFORMANCE_DIR environment variable also name it). A copy missing from a ",
+    "checkout is re-created with tools/vendor_upstream.R."
   ))
 }
 
@@ -290,8 +294,13 @@ NULL
 
 #' Runs the shared conformance vectors through the native reader
 #'
-#' @param suite A directory holding `manifest.json` and the vector files; defaults to the
-#'   vendored copy under `tests/conformance/`.
+#' @param suite A directory holding `manifest.json` and the vector files. The vectors are
+#'   vendored in the package's source tree under `tests/conformance/`, which `R CMD
+#'   INSTALL` does not install, so from an installed package name the directory - a source
+#'   checkout's `tests/conformance`, or the specification's `conformance/` at the pinned
+#'   commit - here, with `options(bh.conformance_dir = )` or with the
+#'   `FAIRBH_CONFORMANCE_DIR` environment variable. Inside the package's own tests it is
+#'   found without help.
 #' @param formats Restrict the run to these formats. The accounting still covers all 291,
 #'   and the count guards are skipped, because a partial run is not an acceptance run.
 #' @param draft Passed to the reader; `FALSE` (the default) runs the released vectors exactly
@@ -323,6 +332,9 @@ bh_conformance <- function(suite = NULL, formats = NULL, draft = FALSE, limit = 
 #' with the pinned draft bytes, and they never join the 291. A result here is draft evidence:
 #' it says what this build does with an unreleased contract, not that FHT is supported.
 #'
+#' @param suite A directory holding the FHT suite's `manifest.json`. It is vendored in the
+#'   source tree under `tests/draft/fht/`, which is not installed; from an installed package
+#'   name it here, with `options(bh.draft_dir = )` or with `FAIRBH_DRAFT_DIR`.
 #' @param formats Restrict the run; the default runs the whole draft suite.
 #' @inheritParams bh_conformance
 #' @return A `bh_conformance` object, labelled as draft evidence.

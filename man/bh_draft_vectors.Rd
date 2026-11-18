@@ -7,8 +7,9 @@
 bh_draft_vectors(suite = NULL, formats = NULL, limit = NULL)
 }
 \arguments{
-\item{suite}{A directory holding \code{manifest.json} and the vector files; defaults to the
-vendored copy under \verb{tests/conformance/}.}
+\item{suite}{A directory holding the FHT suite's \code{manifest.json}. It is vendored in the
+source tree under \verb{tests/draft/fht/}, which is not installed; from an installed package
+name it here, with \code{options(bh.draft_dir = )} or with \code{FAIRBH_DRAFT_DIR}.}
 
 \item{formats}{Restrict the run; the default runs the whole draft suite.}
 
@@ -18,7 +19,7 @@ vendored copy under \verb{tests/conformance/}.}
 A \code{bh_conformance} object, labelled as draft evidence.
 }
 \description{
-These 66 vectors are published by FHT-Specification, not by the shared specification, and
+These 72 vectors are published by FHT-Specification, not by the shared specification, and
 their manifest says its expectations are "derived from the rule text, never from an
 implementation under test". They are therefore reported separately, under the rule V7 lane
 with the pinned draft bytes, and they never join the 291. A result here is draft evidence:

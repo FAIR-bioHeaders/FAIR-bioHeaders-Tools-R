@@ -64,8 +64,8 @@ held for rules V2/V3/V6.
 | verify_checksum | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **native** | NA | NA |
 | validate_contract | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **native** | NA | NA |
 | select_schema_V1_V6 | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **native** | NA | NA |
-| extract_header_yaml | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **native** | NA | NA |
-| extract_header_json | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **native** | NA | NA |
+| extract_header_yaml | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **native** | bh_extract_header(path) | NA |
+| extract_header_json | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **native** | bh_extract_header(path, as = "json") | NA |
 | read_header | jsonld,microdata | FHGFF3 1.0, 1.1, 1.2 | **not-supported-yet** | as for FHR: the JSON-LD and microdata readers are unbuilt | FAIR-bioHeaders-Tools-R#3 |
 | verify_parent_links | fhgff3 against caller-supplied parent files | FHGFF3 1.0, 1.1, 1.2 | **native** | as for FHR; the annotates and genomeReference forms are both read out of derivedFrom | NA |
 | combine_header,strip_header,convert_serialization | fhgff3 | FHGFF3 1.0, 1.1, 1.2 | **not-supported-yet** | no write path | FAIR-bioHeaders-Tools-R#3 |
@@ -79,8 +79,8 @@ held for rules V2/V3/V6.
 | verify_checksum | fhp-fasta | FHP 1.0, 1.1, 1.2 | **native** | NA | NA |
 | validate_contract | fhp-fasta | FHP 1.0, 1.1, 1.2 | **native** | NA | NA |
 | select_schema_V1_V6 | fhp-fasta | FHP 1.0, 1.1, 1.2 | **native** | NA | NA |
-| extract_header_yaml | fhp-fasta | FHP 1.0, 1.1, 1.2 | **native** | NA | NA |
-| extract_header_json | fhp-fasta | FHP 1.0, 1.1, 1.2 | **native** | NA | NA |
+| extract_header_yaml | fhp-fasta | FHP 1.0, 1.1, 1.2 | **native** | bh_extract_header(path) | NA |
+| extract_header_json | fhp-fasta | FHP 1.0, 1.1, 1.2 | **native** | bh_extract_header(path, as = "json") | NA |
 | read_header | jsonld,microdata | FHP 1.0, 1.1, 1.2 | **not-supported-yet** | as for FHR: the JSON-LD and microdata readers are unbuilt | FAIR-bioHeaders-Tools-R#3 |
 | verify_parent_links | fhp-fasta against caller-supplied parent files | FHP 1.0, 1.1, 1.2 | **native** | as for FHR: bh_verify_links(), no automatic file resolution | NA |
 | combine_header,strip_header,convert_serialization | fhp-fasta | FHP 1.0, 1.1, 1.2 | **not-supported-yet** | no write path | FAIR-bioHeaders-Tools-R#3 |
@@ -93,8 +93,8 @@ held for rules V2/V3/V6.
 | verify_checksum | fasta,gfa | FHR 1, 2.0, 2.1 | **native** | NA | NA |
 | validate_contract | fasta,gfa | FHR 1, 2.0, 2.1 | **native** | NA | NA |
 | select_schema_V1_V6 | fasta,gfa | FHR 1, 2.0, 2.1 | **native** | NA | NA |
-| extract_header_yaml | fasta,gfa | FHR 1, 2.0, 2.1 | **native** | NA | NA |
-| extract_header_json | fasta,gfa | FHR 1, 2.0, 2.1 | **native** | NA | NA |
+| extract_header_yaml | fasta,gfa | FHR 1, 2.0, 2.1 | **native** | bh_extract_header(path) | NA |
+| extract_header_json | fasta,gfa | FHR 1, 2.0, 2.1 | **native** | bh_extract_header(path, as = "json") | NA |
 | read_header | jsonld | FHR 1, 2.0, 2.1 | **not-supported-yet** | no JSON-LD reader: frame expansion, context handling and rules J1-J9 are unbuilt; 37 shared jsonld vectors stay not-run | FAIR-bioHeaders-Tools-R#3 |
 | read_header | microdata | FHR 1, 2.0, 2.1 | **not-supported-yet** | no HTML/microdata reader: implied end tags, itemref/itemid scoping and rules M1-M5 are unbuilt; 26 shared microdata vectors stay not-run | FAIR-bioHeaders-Tools-R#3 |
 | read_header | yaml | FHR 1, 2.0, 2.1 | **not-supported-yet** | standalone metadata files are not read: no checksum applies, so this is metadata validation only and it is not implemented yet | FAIR-bioHeaders-Tools-R#3 |
