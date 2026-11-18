@@ -9,8 +9,9 @@
 #' @section What "valid" means here:
 #' A file is valid when every rule that applies to it passes: the checksum matches the
 #' bytes it covers, the header block and its grammar are well formed, the YAML parses
-#' without R8, R12 or R13 violations, and the contract the record itself selects accepts
-#' it. Two things are reported and deliberately do not change validity, because the
+#' without R8, R12 or R13 violations, the record's own `checksum` is the line that was
+#' verified, the header type is one the container may carry (FHR or FHP in FASTA, FHR in
+#' GFA, FHGFF3 in GFF3), and the contract the record itself selects accepts it. Two things are reported and deliberately do not change validity, because the
 #' released contracts accept them and rejecting them would invalidate records that are
 #' valid today: a required value that is present but empty, and a `uri` value whose scheme
 #' is not `http`, `https`, `ftp`, `urn:`, `doi:` or `info:` (rule R14). Both appear in
@@ -21,6 +22,7 @@
 #' `tryCatch(expr, bh_error = handler)` catches the family. An invalid *file* is not an
 #' error: the returned object says so. An unusable *input* is - a missing file, a
 #' serialization the name does not identify, a header block over the reader limit, a
+#' gzip file that is corrupt, truncated or followed by bytes that are not gzip, a
 #' contract this build does not hold.
 #'
 #' @name read
@@ -52,6 +54,52 @@ NULL
     "cannot tell the serialization of ", basename(path),
     " from its name; pass format = one of ", paste(names(.bh_formats), collapse = ", ")
   ))
+}
+
+# The header types each serialization may carry (docs/FORMAT.md: "A header whose type ...
+# does not match the file it is in makes the file invalid, even when its checksum
+# matches"). FHT joins the FASTA forms only through the draft lane.
+.bh_family_allowed <- list(
+  fasta = c("FHR", "FHP"), `fhp-fasta` = c("FHR", "FHP"), `fht-fasta` = c("FHR", "FHP"),
+  gfa = "FHR", fhgff3 = "FHGFF3"
+)
+
+#' The container rule: an FHGFF3 header in FASTA, an FHP header in GFA and the like.
+#'
+#' An unsupported citation is left to rule V4, which already says why the file cannot be
+#' checked, as the Python reference does.
+#' @noRd
+.bh_family_issue <- function(selection, format) {
+  if (is.null(selection) || identical(selection$status, "unsupported")) return(character())
+  type <- selection$header_type
+  allowed <- .bh_family_allowed[[format]]
+  if (format %in% c("fasta", "fhp-fasta", "fht-fasta") && identical(selection$status, "draft")) {
+    allowed <- c(allowed, "FHT")
+  }
+  if (is.na(.bh_c(type, NA_character_)) || type %in% allowed) return(character())
+  paste0(
+    "container: the record's schema selects ", type, ", which a ", format,
+    " file cannot carry; expected ", paste(allowed, collapse = " or "), " metadata"
+  )
+}
+
+#' The checksum line the bytes were verified against must be the record's own checksum.
+#'
+#' Rules R2 and R5 find the one root-level line that starts with `checksum:` and hold it to
+#' the bare value, but a line can look like that and still be part of something else - the
+#' middle of a multi-line quoted scalar or of a flow mapping - while the record's real
+#' `checksum` key sits elsewhere. The line read alone must give `{checksum: value}` (R5
+#' guarantees that shape), and the parsed record's top-level checksum must be that value.
+#' @noRd
+.bh_checksum_binding_issue <- function(record, cs) {
+  if (!isTRUE(cs$ok) || is.null(record)) return(character())
+  own <- record[["checksum"]]
+  if (is.character(own) && length(own) == 1L && identical(own, cs$value)) return(character())
+  paste0(
+    "R5: the checksum line is not the record's checksum: the line holds ", cs$value,
+    " but the parsed record's checksum is ",
+    if (is.character(own) && length(own) == 1L) own else "something else"
+  )
 }
 
 #' Full read of one file.
@@ -98,6 +146,8 @@ NULL
     if (identical(selection$status, "draft")) {
       for (w in selection$warnings) bh_warn("draft", "%s", w)
     }
+    issues <- c(issues, .bh_family_issue(selection, format))
+    issues <- c(issues, .bh_checksum_binding_issue(record, cs))
   }
 
   if (verify_checksum && cs$ok) {

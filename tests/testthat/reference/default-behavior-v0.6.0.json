@@ -4314,7 +4314,7 @@
         "schema_version": "2.1",
         "status": "released"
       },
-      "issue_codes": ["G1", "G1", "rule"],
+      "issue_codes": ["G1", "G1", "container", "rule"],
       "warning_codes": ["empty-required", "empty-required", "empty-required", "empty-required"],
       "record_json_sha256": "d691fa72dcb6342537b83f1fed3b43adbdf7e0860a47a09d1537458e0cfdba0a"
     },
@@ -4524,7 +4524,7 @@
         "schema_version": "2.1",
         "status": "released"
       },
-      "issue_codes": "rule",
+      "issue_codes": ["container", "rule"],
       "warning_codes": ["empty-required", "empty-required", "empty-required"],
       "record_json_sha256": "3ff7772a21a717cfe377de15e9742eeeaab188acd9d3d212f2a5011a7d5cc075"
     },

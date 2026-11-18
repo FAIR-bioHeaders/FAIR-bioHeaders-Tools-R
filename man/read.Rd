@@ -14,8 +14,9 @@ record cites, and validates against it. \code{\link[=bh_checksum]{bh_checksum()}
 
 A file is valid when every rule that applies to it passes: the checksum matches the
 bytes it covers, the header block and its grammar are well formed, the YAML parses
-without R8, R12 or R13 violations, and the contract the record itself selects accepts
-it. Two things are reported and deliberately do not change validity, because the
+without R8, R12 or R13 violations, the record's own \code{checksum} is the line that was
+verified, the header type is one the container may carry (FHR or FHP in FASTA, FHR in
+GFA, FHGFF3 in GFF3), and the contract the record itself selects accepts it. Two things are reported and deliberately do not change validity, because the
 released contracts accept them and rejecting them would invalidate records that are
 valid today: a required value that is present but empty, and a \code{uri} value whose scheme
 is not \code{http}, \code{https}, \code{ftp}, \verb{urn:}, \verb{doi:} or \verb{info:} (rule R14). Both appear in
@@ -28,5 +29,6 @@ Everything this package raises is a classed condition (\code{bh_error} plus a su
 \code{tryCatch(expr, bh_error = handler)} catches the family. An invalid \emph{file} is not an
 error: the returned object says so. An unusable \emph{input} is - a missing file, a
 serialization the name does not identify, a header block over the reader limit, a
+gzip file that is corrupt, truncated or followed by bytes that are not gzip, a
 contract this build does not hold.
 }

@@ -40,6 +40,32 @@ NULL
   length(b) == 2L && identical(b, as.raw(c(0x1f, 0x8b)))
 }
 
+#' Opens a file's bytes for reading, decompressing a gzip transport strictly.
+#'
+#' Returns `list(read = function(n), close = function())`. A compressed file is read by
+#' the zlib reader in src/gz.c rather than by `gzfile()`, which drops bytes after the last
+#' member without a word and reports a bad CRC or a truncated member only as a connection
+#' warning. Here each of those is a classed `bh_input` error naming the problem.
+#' @noRd
+.bh_open_input <- function(path, compressed) {
+  if (!isTRUE(compressed)) {
+    con <- file(path, open = "rb")
+    return(list(read = function(n) readBin(con, what = "raw", n = n),
+                close = function() close(con)))
+  }
+  ptr <- .Call(C_gz_open, path)
+  list(
+    read = function(n) {
+      r <- .Call(C_gz_read, ptr, as.integer(n))
+      if (is.character(r)) {
+        bh_abort("input", "%s", paste0("cannot read ", basename(path), " as gzip: ", r))
+      }
+      r
+    },
+    close = function() invisible(.Call(C_gz_close, ptr))
+  )
+}
+
 .bh_nl <- as.raw(10)
 .bh_cr <- as.raw(13)
 
@@ -204,12 +230,12 @@ NULL
 #' @noRd
 .bh_head <- function(path, compressed = NA, limit = .bh_limits$header_block_bytes) {
   if (is.na(compressed)) compressed <- .bh_is_gzip_file(path)
-  con <- if (compressed) gzfile(path, open = "rb") else file(path, open = "rb")
-  on.exit(close(con), add = TRUE)
+  con <- .bh_open_input(path, compressed)
+  on.exit(con$close(), add = TRUE)
   step <- min(65536L, limit + 1L)
   got <- raw()
   repeat {
-    b <- readBin(con, what = "raw", n = step)
+    b <- con$read(step)
     got <- c(got, b)
     if (length(b) < step) {
       return(list(bytes = got, compressed = compressed, complete = TRUE))
