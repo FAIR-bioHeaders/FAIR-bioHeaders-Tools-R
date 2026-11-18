@@ -171,6 +171,28 @@ NULL
     }
     res <- .bh_capture(.bh_analyze(path, format = fmt, draft = lane))
     if (!is.null(res$error)) {
+      # A vector may declare its own failure class. `selfChecksum: "unreachable"` says
+      # the bytes cannot be framed at all - the suite's reason for the truncated gzip
+      # vector reads "there are no decompressed bytes for R1 to hash and the file is
+      # rejected before any checksum comparison" - which is the same scoring the
+      # toolkit's FHT lane applies ("unreachable rejects before any checksum question
+      # arises"). When such a vector expects `invalid` and this reader answers with its
+      # classed gzip-refusal (R/framing.R: a truncated member, a bad CRC or trailing
+      # garbage is an unusable input, never a verdict built on missing bytes), the
+      # reader has produced exactly the rejection the vector declares. Scoring that
+      # `error` would call a faithful refusal a defect; scoring `pass` here says on the
+      # record which refusal it accepted and why. Any other error stays an error.
+      if (identical(v$expected, "invalid") && identical(v$selfChecksum, "unreachable") &&
+          grepl(" as gzip: ", res$error, fixed = TRUE)) {
+        rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "pass",
+          reason = "", observed = "invalid",
+          diagnostics = paste0(
+            "rejected before any checksum question: the reader refused the compressed ",
+            "framing (", res$error, "); the vector declares selfChecksum=unreachable"
+          )
+        )
+        next
+      }
       rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "error",
         paste0("native reader errored: ", res$error))
       next
@@ -326,7 +348,7 @@ bh_conformance <- function(suite = NULL, formats = NULL, draft = FALSE, limit = 
 
 #' Runs the FHT development suite through the draft lane
 #'
-#' These 72 vectors are published by FHT-Specification, not by the shared specification, and
+#' These 82 vectors are published by FHT-Specification, not by the shared specification, and
 #' their manifest says its expectations are "derived from the rule text, never from an
 #' implementation under test". They are therefore reported separately, under the rule V7 lane
 #' with the pinned draft bytes, and they never join the 291. A result here is draft evidence:

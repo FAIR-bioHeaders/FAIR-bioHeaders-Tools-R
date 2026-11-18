@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 #' Rule V7 draft-lane acceptance: the FHT development suite, run natively.
 #'
-#' Separate, labelled, and never merged into the shared ledger: these 72 vectors are
+#' Separate, labelled, and never merged into the shared ledger: these 82 vectors are
 #' published by FHT-Specification against an UNRELEASED contract (rule V7). A pass here
 #' says the pinned draft bytes behave as their own suite expects through this package's
 #' native reader; it is not, and never becomes, a claim that FHT is supported. FHT has
@@ -36,8 +36,8 @@ receipt <- list(
 )
 FAIRbioHeadersTools:::.bh_receipt("BH_DRAFT_RECEIPT", receipt)
 for (nm in names(receipt)) say(nm, "=", receipt[[nm]])
-if (receipt$vectorsFailed > 0L || receipt$vectorsRan != 72L) {
+if (receipt$vectorsFailed > 0L || receipt$vectorsRan != 82L) {
   say("draft-lane acceptance: FAIL")
   quit(status = 1L, save = "no")
 }
-say("draft-lane acceptance: 72/72 FHT development vectors passed through the lane")
+say("draft-lane acceptance: 82/82 FHT development vectors passed through the lane")

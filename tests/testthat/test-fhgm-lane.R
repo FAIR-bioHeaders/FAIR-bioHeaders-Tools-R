@@ -18,10 +18,10 @@
 
 test_that("the FHGM draft vectors are vendored with their own provenance and count", {
   pinned <- FAIRbioHeadersTools:::.bh_vendored()$draft_fhgm_vectors
-  expect_equal(pinned$vectors, 43L)
+  expect_equal(pinned$vectors, 62L)
   expect_match(pinned$manifest_sha256, "^[0-9a-f]{64}$")
   expect_match(pinned$commit, "^[0-9a-f]{40}$")
-  expect_equal(pinned$files, 28L)
+  expect_equal(pinned$files, 48L)
   expect_equal(pinned$examples, 30L)
   dir <- .bh_fhgm_suite_dir()
   expect_identical(.bh_sha256_hex(.bh_read_all(file.path(dir, "manifest.json"))),
@@ -33,26 +33,26 @@ test_that("the FHGM draft vectors are vendored with their own provenance and cou
   cited <- vapply(man$vectors, function(v) normalizePath(
     file.path(dir, v$file), mustWork = FALSE
   ), "")
-  expect_equal(sum(file.exists(cited)), 43L)
+  expect_equal(sum(file.exists(cited)), 62L)
   # the generator and checker scripts stay upstream; the data does not
   expect_false(any(grepl("[.]py$", list.files(dir, recursive = TRUE))))
   # and the record contract the lane validates against is the pinned draft, not a copy
   pins <- bh_draft_pins()
   row <- pins[pins$header_type == "FHGM", ]
   expect_true(isTRUE(row$digest_ok))
-  expect_equal(row$bytes, 9564L)
+  expect_equal(row$bytes, 11522L)
 })
 
 test_that("base and checksum layers agree with the suite on every vector", {
   y <- .fhgm_run()
-  expect_equal(y$vectors, 43L)
-  expect_equal(sum(y$results$got_base == y$results$expected_base), 43L)
-  expect_equal(sum(y$results$got_checksum == y$results$expected_checksum), 43L)
+  expect_equal(y$vectors, 62L)
+  expect_equal(sum(y$results$got_base == y$results$expected_base), 62L)
+  expect_equal(sum(y$results$got_checksum == y$results$expected_checksum), 62L)
   expect_equal(y$failures, 0L)
   cat(paste0(
     "FHGM draft suite: ", nrow(y$results), " vectors | base ",
-    sum(y$results$got_base == y$results$expected_base), "/43 | checksum ",
-    sum(y$results$got_checksum == y$results$expected_checksum), "/43 | model layer ",
+    sum(y$results$got_base == y$results$expected_base), "/62 | checksum ",
+    sum(y$results$got_checksum == y$results$expected_checksum), "/62 | model layer ",
     "compared and agreeing ", sum(y$results$status == "pass"),
     " | not-run with named rules ", sum(y$results$status == "not-run"), "\n"
   ))
@@ -61,7 +61,7 @@ test_that("base and checksum layers agree with the suite on every vector", {
 test_that("a vector whose model verdict needs a checker rule is not-run, never passed", {
   y <- .fhgm_run()
   nr <- y$results[y$results$status == "not-run", ]
-  expect_equal(nrow(nr), 34L)
+  expect_equal(nrow(nr), 43L)
   expect_true(all(nzchar(nr$reason)))
   expect_true(all(grepl("does not implement", nr$reason)))
   # and each such vector names at least one rule outside this package's model layer
@@ -69,10 +69,10 @@ test_that("a vector whose model verdict needs a checker rule is not-run, never p
   # and no not-run row is here because the suite omitted its label: that case is reported,
   # never counted as in-scope (see vectorsNotRunUnlabelled in tools/acceptance_fhgm.R)
   expect_equal(sum(!nzchar(nr$rules)), 0L)
-  # the pass column is not carrying acceptances only: six of the nine compared vectors
-  # are expected rejections, and this package rejects them
+  # the pass column is not carrying acceptances only: thirteen of the nineteen compared
+  # vectors are expected rejections, and this package rejects them
   cmp <- y$results[y$results$status == "pass", ]
-  expect_equal(nrow(cmp), 9L)
+  expect_equal(nrow(cmp), 19L)
   expect_gte(sum(cmp$expected_model == "reject"), 1L)
   expect_gte(sum(cmp$expected_model == "pass"), 1L)
   expect_true(all(cmp$got_model == cmp$expected_model))
@@ -128,6 +128,26 @@ test_that("an FHGFF3 1.1 header transports records; a 1.0 header cannot", {
     }
   )
   expect_match(paste(warns3, collapse = " | "), "unreleased draft")
+})
+
+test_that("K1 refuses a carrier citation no registered release answers to, and accepts the recognised pairs", {
+  # the clause the 2026-11-18 re-pin first exercises: `carrier-cites-raw-main` names a
+  # citation (raw main) that no registered FHGFF3 release answers to, and the model layer
+  # must reject it, saying K1 rather than failing silently at some other layer
+  rej <- suppressWarnings(bh_validate_fhgm(
+    .bh_fhgm_path("vectors/invalid/carrier-cites-raw-main.fhgff3.gff3")
+  ))
+  expect_false(rej$all_valid)
+  expect_match(paste(rej$records$errors, collapse = " "), "K1: the carrier cites")
+  # and the two dual-base forms the manifest's K1 text recognises must NOT be refused:
+  # a v0.6.0 citation stating 1.1, and a raw tag URL under the historical
+  # FHR-Specification repository name (reject -> accept flips sealed at FHGM#29)
+  for (id in c("v0.6.0-citation-stating-1.1", "fhr-specification-alias-v0.6.0")) {
+    v <- suppressWarnings(bh_validate_fhgm(
+      .bh_fhgm_path(paste0("vectors/valid/", id, ".fhgff3.gff3"))
+    ))
+    expect_true(v$all_valid, info = id)
+  }
 })
 
 test_that("an empty transport array is a rule-K1 violation, not a vacuous pass", {
@@ -271,7 +291,7 @@ test_that("one byte moved inside checksum coverage turns the labelled draft run 
   expect_equal(sum(as.integer(after) != as.integer(before)), 1L)
 
   y <- suppressWarnings(bh_draft_fhgm_vectors(suite = suite))
-  expect_equal(y$vectors, 43L)
+  expect_equal(y$vectors, 62L)
   expect_equal(y$failures, 1L)
   row <- y$results[y$results$status == "fail", ]
   cat(paste0(
@@ -290,8 +310,8 @@ test_that("one byte moved inside checksum coverage turns the labelled draft run 
 test_that("a model checker that accepts everything is caught, not thanked", {
   # The neutered-loop control, as a standing test. bh_validate_fhgm() is replaced with a
   # version that reports every record valid - the exact failure mode a schema-only port
-  # would have - and the run must turn the four comparable expected-rejection vectors into
-  # failures instead of passing them.
+  # would have - and the run must turn the thirteen comparable expected-rejection vectors
+  # into failures instead of passing them.
   y <- .fhgm_run()
   expect_equal(y$failures, 0L)
   cmp_reject <- sum(y$results$status == "pass" & y$results$expected_model == "reject")
@@ -314,7 +334,7 @@ test_that("a model checker that accepts everything is caught, not thanked", {
     .bh_fhgm_path("vectors/invalid/record-unknown-key.fhgff3.gff3")
   )$all_valid))
   z <- suppressWarnings(bh_draft_fhgm_vectors())
-  expect_equal(z$vectors, 43L)
+  expect_equal(z$vectors, 62L)
   expect_equal(z$failures, cmp_reject)
   bad <- z$results[z$results$status == "fail", ]
   cat(paste0(

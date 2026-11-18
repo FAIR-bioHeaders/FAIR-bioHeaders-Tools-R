@@ -42,3 +42,4 @@ repairs it from the same text, in its own module
 (\code{FAIRbioHeadersTools:::.bh_fhgm_flow_scalar_keys()}), and nothing about the released
 path changes.
 }
+

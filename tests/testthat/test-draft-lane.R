@@ -14,10 +14,10 @@ test_that("the bundled drafts are pinned by commit and digest, and the bytes mat
   expect_true(all(pins$digest_ok))
   expect_match(pins$commit, "^[0-9a-f]{40}$")
   expect_match(pins$sha256, "^[0-9a-f]{64}$")
-  # the FHT draft is the transcriptome contract bytes, 29,430 of them, and FHGM is the
+  # the FHT draft is the transcriptome contract bytes, 34,396 of them, and FHGM is the
   # nested model contract, not a header contract
-  expect_equal(pins$bytes[pins$header_type == "FHT"], 29430L)
-  expect_equal(pins$bytes[pins$header_type == "FHGM"], 9564L)
+  expect_equal(pins$bytes[pins$header_type == "FHT"], 34396L)
+  expect_equal(pins$bytes[pins$header_type == "FHGM"], 11522L)
 })
 
 test_that("with the lane closed, a draft citation is selected exactly as V5 always did", {

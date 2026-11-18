@@ -15,7 +15,7 @@ bh_draft_fhgm_vectors(suite = NULL, limit = NULL)
 A \code{bh_conformance}-shaped object with one column per layer.
 }
 \description{
-FHGM's published draft suite (31 vectors from FHGM-Specification
+FHGM's published draft suite (62 vectors from FHGM-Specification
 \verb{development/conformance/}) is written differently from the shared one: each vector
 records what four independent checks report, because separability is the point - \code{base}
 (the released FHGFF3 contract over the parsed header), \code{checksum} (whether the file-bound
@@ -32,13 +32,24 @@ extension fields of that header. The checksum mismatch is excluded here because 
 the next layer's outcome.
 \item \code{checksum} - native.
 \item \code{model} - native only for the rules this package actually evaluates: K1 (transport: the
-key holds one or more records, and an FHGFF3 1.0 header cannot carry it at all) and K2
+key holds one or more records, an FHGFF3 1.0 header cannot carry it at all, and the
+carrier's citation must be a registered FHGFF3 release - raw main and unrecognised
+citation-version pairs are refused) and K2
 (each record against the pinned draft record contract). K3, K4, K5 and K6 are the draft
 checker's cross-record and feature-layer rules - modelId uniqueness within a snapshot,
 featureId resolving to exactly one local gene row, reference comparability against the
 file's genome link, predecessor-pointer resolution - and are reported \code{not-run} with that
-reason, never passed on the strength of the schema layer.
+reason, never passed on the strength of the schema layer. A vector carrying \strong{no rule
+label at all} - neither a \code{rules} array nor a singular \code{rule} - is reported \code{not-run}
+as well: an absent label is not evidence that the vector needs only the rules this
+package checks, and reading it that way would silently enlarge the compared set. Every
+vector of the pinned revision is labelled, so this is a guard on the suite's shape, not
+a finding about its current bytes.
 \item \code{gff3} - not run here: feature validation belongs to gff3-validator.
+\item \code{base_matrix.json} - not evaluated here at all: it is the suite's second lane, every
+sealed vector re-observed as an identity-rewritten twin against the released FHGFF3 1.2
+(v0.6.0) base by the upstream runner (maintainer dual-base decision 2026-11-15). The
+twin bytes are not vendored, so this package judges the sealed 1.1 lane only and says so.
 }
 
 The run is separate, labelled, and never joins the 291: it is draft evidence about pinned

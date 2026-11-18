@@ -1,6 +1,6 @@
 # The FHT development suite, run natively through the rule V7 lane.
 #
-# These 72 vectors are published by FHT-Specification, not by the shared specification;
+# These 82 vectors are published by FHT-Specification, not by the shared specification;
 # their manifest states its expectations are "derived from the rule text, never from an
 # implementation under test". They are draft evidence: a pass here says what this build
 # does with the pinned unreleased bytes, never that FHT is supported. They are never
@@ -11,8 +11,8 @@ test_that("the pinned FHT suite runs in full, through the lane, with the pinned 
   pins <- bh_draft_pins()
   expect_true(all(pins$digest_ok))
   x <- bh_draft_vectors()
-  expect_equal(x$vectors, 72L)
-  expect_equal(sum(x$results$status == "pass"), 72L)
+  expect_equal(x$vectors, 82L)
+  expect_equal(sum(x$results$status == "pass"), 82L)
   expect_equal(sum(x$results$status %in% c("fail", "error", "missing-fixture")), 0L)
   expect_true(x$ok)
   expect_false(isTRUE(x$limited))
@@ -24,7 +24,7 @@ test_that("the pinned FHT suite runs in full, through the lane, with the pinned 
   # is named on the vectors that lean on it
   gap_rows <- x$results[nzchar(x$results$rule_gaps), ]
   expect_true(all(grepl("C2|C3", gap_rows$rule_gaps)))
-  cat("draft lane: 72/72 FHT development vectors pass against the pinned draft\n")
+  cat("draft lane: 82/82 FHT development vectors pass against the pinned draft\n")
 })
 
 test_that("the parentLink verdicts the re-pinned FHT suite seals are the verdicts we derive", {
@@ -78,6 +78,43 @@ test_that("the parentLink verdicts the re-pinned FHT suite seals are the verdict
   cat("draft lane: 12/12 sealed parentLink verdicts reproduced natively (7 pass, 4 fail, 1 unchecked)\n")
 })
 
+test_that("an unparsable compressed stream scores as the vector declares, never as a free pass", {
+  # `fht-fasta-gzip-truncated` declares its own failure class: selfChecksum=unreachable,
+  # "the file is rejected before any checksum comparison". The reader refuses the framing
+  # with a classed input error (R/framing.R), and the runner passes it only because the
+  # vector says that refusal is the expected rejection. Two halves, both measured:
+  # (1) the pinned run passes the vector and says on the record which refusal it accepted;
+  x <- bh_draft_vectors()
+  row <- x$results[x$results$id == "fht-fasta-gzip-truncated", ]
+  expect_equal(row$status, "pass")
+  expect_equal(row$observed, "invalid")
+  expect_match(row$diagnostics, "selfChecksum=unreachable")
+  expect_match(row$diagnostics, "as gzip", fixed = TRUE)
+  # (2) the same vector WITHOUT its declared class is an error again. The scratch manifest
+  # deliberately bypasses the digest gate by calling the runner with pinned = NULL: the
+  # suite bytes stay the pinned ones, only the declaration is deleted, so nothing outside
+  # this file's own scoring decision moves.
+  dir <- .bh_draft_suite_dir()
+  scratch <- tempfile("fht-decl")
+  dir.create(scratch)
+  on.exit(unlink(scratch, recursive = TRUE), add = TRUE)
+  file.copy(list.files(dir, full.names = TRUE, all.files = TRUE), scratch,
+    recursive = TRUE
+  )
+  mp <- file.path(scratch, "manifest.json")
+  man <- jsonlite::fromJSON(mp, simplifyVector = FALSE)
+  hit <- vapply(man$vectors, function(v) identical(v$id, "fht-fasta-gzip-truncated"), logical(1L))
+  expect_equal(sum(hit), 1L)
+  man$vectors[[which(hit)]]$selfChecksum <- NULL
+  writeLines(jsonlite::toJSON(man, auto_unbox = TRUE, pretty = TRUE, null = "null"), mp)
+  y <- FAIRbioHeadersTools:::.bh_run_suite(scratch, list(), lane = "FHT", formats = NULL,
+    limit = NULL, label = "scratch", run_formats = "fht-fasta"
+  )
+  zrow <- y$results[y$results$id == "fht-fasta-gzip-truncated", ]
+  expect_equal(zrow$status, "error")
+  expect_match(zrow$reason, "native reader errored")
+})
+
 test_that("a draft suite whose bytes moved off the pin is refused before any vector runs", {
   prov <- FAIRbioHeadersTools:::.bh_vendored()
   bad <- prov
@@ -92,7 +129,7 @@ test_that("a draft suite whose bytes moved off the pin is refused before any vec
 test_that("the shared run is unaffected by the draft lane existing: default off", {
   # with the lane closed (the default), the shared acceptance numbers are exactly what
   # they were before the lane existed - the same 228 supported vectors run, none of the
-  # 72 draft vectors is anywhere in the accounting, and no draft warning is emitted
+  # 82 draft vectors is anywhere in the accounting, and no draft warning is emitted
   warns <- character()
   x <- withCallingHandlers(
     bh_conformance(),
