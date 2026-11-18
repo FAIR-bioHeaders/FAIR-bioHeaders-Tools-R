@@ -20,6 +20,6 @@ A length-1 character string.
 \code{as = "yaml"} returns the header block's YAML exactly as written, with the \verb{;~} or \verb{#~}
 prefix removed from every line. \code{as = "json"} returns the parsed record as the JSON the
 contract validator sees; it needs a header that parses, so a header the YAML rules
-reject (R8, R12, a parse error) raises a \code{bh_input} error naming why. Neither form
+reject (R8, R12, R13, a parse error) raises a \code{bh_input} error naming why. Neither form
 verifies the checksum or validates the contract: use \code{\link[=bh_read]{bh_read()}} for that.
 }

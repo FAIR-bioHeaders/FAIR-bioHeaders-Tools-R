@@ -15,6 +15,18 @@ test_that("bh_extract_header backs the extract_header_* capability rows", {
     bh_error = function(e) e)
   expect_s3_class(e, "bh_input")
   expect_match(conditionMessage(e), "R8: an anchor")
+  # a record that parses but bh_read() rejects (R12 a YAML 1.1 boolean, R13 a non-finite
+  # float) is refused too, never exported as the JSON the file did not mean
+  for (case in list(c("x-a: yes\n", "R12"), c("x-a: .nan\n", "R13"))) {
+    p <- .bh_write_header_file(case[[1L]])
+    r <- suppressWarnings(bh_read(p))
+    expect_false(r$valid)
+    expect_true(any(startsWith(r$issues, case[[2L]])), info = case[[1L]])
+    e <- tryCatch(bh_extract_header(p, as = "json"), bh_error = function(e) e)
+    expect_s3_class(e, "bh_input")
+    expect_match(conditionMessage(e), paste0(case[[2L]], ":"), info = case[[1L]])
+    expect_match(bh_extract_header(p), sub("\n$", "", case[[1L]]), fixed = TRUE)
+  }
   rows <- bh_capability(operation = c("extract_header_yaml", "extract_header_json"))
   expect_true(all(rows$support == "native"))
   expect_true(all(grepl("bh_extract_header", rows$blocker)))

@@ -177,11 +177,11 @@ SEXP bh_gz_read(SEXP ptr, SEXP n_) {
 
   while (have < (size_t)n && !g->done) {
     if (!g->in_member) {
-      /* between members: zero padding is allowed, then a member or the end */
-      int c;
-      do {
-        c = bh_gz_byte(g);
-      } while (c == 0);
+      /* between members: zero padding is allowed after a complete member, then a member
+       * or the end. Before the first member it is not: the file must start with one. */
+      int c = bh_gz_byte(g);
+      if (g->members)
+        while (c == 0) c = bh_gz_byte(g);
       if (c < 0) {
         if (ferror(g->fp)) {
           UNPROTECT(1);
