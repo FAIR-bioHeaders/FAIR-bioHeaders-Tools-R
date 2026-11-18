@@ -75,8 +75,11 @@ NULL
         release = a$selection$release, schema_version = a$selection$schema_version,
         status = a$selection$status
       ),
-      issue_codes = sort(vapply(a$issues, .bh_issue_code, "", USE.NAMES = FALSE)),
-      warning_codes = sort(vapply(a$warnings, .bh_issue_code, "", USE.NAMES = FALSE)),
+      # radix: byte order, so the golden reads the same under any locale's collation
+      issue_codes = sort(vapply(a$issues, .bh_issue_code, "", USE.NAMES = FALSE),
+        method = "radix"),
+      warning_codes = sort(vapply(a$warnings, .bh_issue_code, "", USE.NAMES = FALSE),
+        method = "radix"),
       record_json_sha256 = if (is.null(a$record)) NA_character_ else
         .bh_sha256_hex(charToRaw(.bh_record_json(a$record)))
     )
