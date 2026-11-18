@@ -23,7 +23,7 @@ NULL
 
 .bh_raw_re <- paste0(
   "^https://raw\\.githubusercontent\\.com/FAIR-bioHeaders/",
-  "(?:FHR|FAIR-bioHeaders)-Specification/([^/]+)/(fhr|fhp|fhgff3)\\.json$"
+  "(?:FHR|FAIR-bioHeaders)-Specification/(.+?)/(fhr|fhp|fhgff3)\\.json$"
 )
 .bh_w3id_re <- "^https://w3id\\.org/fair-bioheaders/(fhr|fhp|fhgff3)/(v[0-9]+\\.[0-9]+\\.[0-9]+)/?$"
 .bh_types_by_file <- c(fhr = "FHR", fhp = "FHP", fhgff3 = "FHGFF3")
@@ -69,7 +69,10 @@ bh_select <- function(value, schema_version = NULL, draft = FALSE) {
     return(pick("fhr", reg$current, "V5"))
   }
 
-  m <- regmatches(value, regexec(.bh_raw_re, value))[[1L]]
+  # the ref is kept whole, slashes included: `refs/heads/main` is a raw GitHub ref, but it
+  # is neither `main` nor a release tag, so rule V4 rejects it rather than V5 reading it as
+  # some other file
+  m <- regmatches(value, regexec(.bh_raw_re, value, perl = TRUE))[[1L]]
   if (length(m)) {
     ref <- m[[2L]]
     file <- m[[3L]]

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "gz.h"
 #include "scan.h"
 #include "sha512.h"
 
@@ -308,6 +309,9 @@ static const R_CallMethodDef bh_calls[] = {
     {"stream_update", (DL_FUNC)&bh_stream_update, 3},
     {"stream_value", (DL_FUNC)&bh_stream_value, 2},
     {"selftest", (DL_FUNC)&bh_selftest, 0},
+    {"gz_open", (DL_FUNC)&bh_gz_open, 1},
+    {"gz_read", (DL_FUNC)&bh_gz_read, 2},
+    {"gz_close", (DL_FUNC)&bh_gz_close, 1},
     {NULL, NULL, 0}};
 
 void R_init_FAIRbioHeadersTools(DllInfo *dll) {

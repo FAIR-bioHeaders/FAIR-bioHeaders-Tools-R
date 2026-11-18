@@ -10,8 +10,11 @@ bh_releases(header_type = "FHR")
 \item{header_type}{\code{FHR}, \code{FHP} or \code{FHGFF3}.}
 }
 \value{
-A character vector of release tags, \code{main} first as \code{main (vX.Y.Z)}.
+A character vector: \code{main (vX.Y.Z)} first, then the release tags in version
+order.
 }
 \description{
-Releases whose contract copies this package holds
+Every release in the registry that registers a contract of this type, where this
+package holds that contract version - which is every release a \code{schema} URL can select.
+Several releases can share one contract version (v0.4.0 to v0.4.2 all carry FHR 2.0).
 }

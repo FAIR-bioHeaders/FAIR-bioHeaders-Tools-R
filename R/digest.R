@@ -244,8 +244,8 @@ bh_sha512_256_file <- function(path, skip = NULL, compressed = NA, scan = NULL,
   if (is.na(buffer) || buffer < 1024L) buffer <- 1024L
 
   if (is.na(compressed)) compressed <- .bh_is_gzip_file(path)
-  con <- if (compressed) gzfile(path, open = "rb") else file(path, open = "rb")
-  on.exit(close(con), add = TRUE)
+  con <- .bh_open_input(path, compressed)
+  on.exit(con$close(), add = TRUE)
 
   st <- bh_digest_stream("sha512-256")
   if (!is.null(scan)) {
@@ -259,7 +259,7 @@ bh_sha512_256_file <- function(path, skip = NULL, compressed = NA, scan = NULL,
   to <- if (is.null(skip)) NA_real_ else from + as.double(skip[2L]) - 1
   fed <- 0
   repeat {
-    chunk <- readBin(con, what = "raw", n = buffer)
+    chunk <- con$read(buffer)
     if (length(chunk) == 0L) break
     start <- fed + 1
     fed <- fed + length(chunk)

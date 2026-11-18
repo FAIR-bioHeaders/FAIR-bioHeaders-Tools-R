@@ -150,7 +150,7 @@ bh_dialect_probe <- function() {
   v <- .bh_validator(selection$file)
   json <- .bh_record_json(record)
   res <- tryCatch(
-    suppressWarnings(v(json)),
+    suppressWarnings(v(json, verbose = TRUE)),
     error = function(e) {
       bh_abort("schema", paste0(
         "the validator could not evaluate ", selection$header_type, ": ",
@@ -160,12 +160,16 @@ bh_dialect_probe <- function() {
   )
   errors <- character()
   if (!isTRUE(res)) {
-    errs <- attr(res, "errors")
+    errs <- .bh_drop_empty_uri_errors(attr(res, "errors"))
+    if (is.data.frame(errs) && !nrow(errs)) res <- TRUE
+  }
+  if (!isTRUE(res)) {
     errors <- if (is.data.frame(errs) && nrow(errs)) {
-      apply(errs, 1L, function(r) paste0(
-        .bh_c(r[["instancePath"]], ""), " ", .bh_c(r[["keyword"]], ""), ": ",
-        .bh_c(r[["message"]], "")
-      ))
+      col <- function(nm) {
+        v <- errs[[nm]]
+        if (is.null(v)) rep("", nrow(errs)) else vapply(v, function(x) .bh_c(as.character(x), ""), "")
+      }
+      paste0(col("instancePath"), " ", col("keyword"), ": ", col("message"))
     } else {
       "the selected contract rejected the record"
     }
@@ -174,4 +178,25 @@ bh_dialect_probe <- function() {
     valid = isTRUE(res), errors = errors, warnings = selection$warnings,
     contract = contract
   )
+}
+
+#' The `format: uri` failures that RFC 3986 does not support.
+#'
+#' A URI may have an empty path, so `doi:` with nothing after the scheme is a URI, and the
+#' Python reference accepts it (and warns under R14). ajv's `uri` format rejects it. Only
+#' that case is dropped here - a bare scheme and a colon - so every other `uri` verdict
+#' stays ajv's. R14 still reports the value: its scheme has nothing after it.
+#' @noRd
+.bh_drop_empty_uri_errors <- function(errs) {
+  if (!is.data.frame(errs) || !nrow(errs) || !"keyword" %in% names(errs)) return(errs)
+  data <- if ("data" %in% names(errs)) errs$data else rep(list(NULL), nrow(errs))
+  fmt <- if ("params" %in% names(errs) && is.data.frame(errs$params)) errs$params$format else NULL
+  if (is.null(fmt) && "format" %in% names(errs)) fmt <- errs$format
+  if (is.null(fmt)) return(errs)
+  bare <- vapply(seq_len(nrow(errs)), function(i) {
+    d <- if (is.list(data)) data[[i]] else data[[i]]
+    identical(errs$keyword[[i]], "format") && identical(fmt[[i]], "uri") &&
+      is.character(d) && length(d) == 1L && grepl("^[A-Za-z][A-Za-z0-9+.-]*:$", d)
+  }, NA)
+  errs[!bare, , drop = FALSE]
 }

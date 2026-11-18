@@ -78,15 +78,24 @@ bh_contracts <- function() {
 
 #' Releases whose contract copies this package holds
 #'
+#' Every release in the registry that registers a contract of this type, where this
+#' package holds that contract version - which is every release a `schema` URL can select.
+#' Several releases can share one contract version (v0.4.0 to v0.4.2 all carry FHR 2.0).
+#'
 #' @param header_type `FHR`, `FHP` or `FHGFF3`.
-#' @return A character vector of release tags, `main` first as `main (vX.Y.Z)`.
+#' @return A character vector: `main (vX.Y.Z)` first, then the release tags in version
+#'   order.
 #' @export
 bh_releases <- function(header_type = "FHR") {
   header_type <- toupper(header_type)
   reg <- .bh_registry()
-  cs <- bh_contracts()
-  have <- unique(cs$release[cs$header_type == header_type])
-  c(paste0("main (", reg$current, ")"), sort(setdiff(have, reg$current)))
+  held <- vapply(names(reg$releases), function(r) {
+    v <- reg$releases[[r]][[header_type]]
+    !is.null(v) && !is.null(.bh_contract_row(header_type, v))
+  }, NA)
+  tags <- names(reg$releases)[held]
+  tags <- tags[order(numeric_version(sub("^v", "", tags)))]
+  c(paste0("main (", reg$current, ")"), tags)
 }
 
 #' The header-family table
