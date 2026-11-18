@@ -78,41 +78,93 @@ test_that("the parentLink verdicts the re-pinned FHT suite seals are the verdict
   cat("draft lane: 12/12 sealed parentLink verdicts reproduced natively (7 pass, 4 fail, 1 unchecked)\n")
 })
 
-test_that("an unparsable compressed stream scores as the vector declares, never as a free pass", {
-  # `fht-fasta-gzip-truncated` declares its own failure class: selfChecksum=unreachable,
-  # "the file is rejected before any checksum comparison". The reader refuses the framing
-  # with a classed input error (R/framing.R), and the runner passes it only because the
-  # vector says that refusal is the expected rejection. Two halves, both measured:
-  # (1) the pinned run passes the vector and says on the record which refusal it accepted;
+test_that("an unparsable compressed stream scores only on independently detected truncation, never on its own declaration", {
+  # The R1 reading (unchanged from the first version of this test): a truncated gzip
+  # stream has no decompressed bytes for R1 to hash, so the file is rejected before any
+  # checksum question. What changed after review: the ground is .bh_gz_stream_truncated()
+  # re-reading the cited bytes - the manifest's selfChecksum label may NARROW the
+  # exception but never licenses it. A vector may not certify its own unreachability
+  # (maintainer ruling, FAIR-bioHeaders-Tools#146 / spec#139: self-declared
+  # `unreachable` vectors were excluded from scoring there for exactly this reason).
+  dir <- .bh_draft_suite_dir()
+  scratch_suite <- function() {
+    s <- tempfile("fhtdecl")
+    dir.create(s)
+    file.copy(list.files(dir, full.names = TRUE, all.files = TRUE), s, recursive = TRUE)
+    s
+  }
+  run_scratch <- function(s) {
+    suppressWarnings(FAIRbioHeadersTools:::.bh_run_suite(s, list(), lane = "FHT",
+      formats = NULL, limit = NULL, label = "scratch", run_formats = "fht-fasta"
+    ))
+  }
+  gz_plain <- .bh_read_all(file.path(dir, "valid", "fht-fasta-gzip.fht.fasta.gz"))
+  expect_true(length(gz_plain) > 10L) # an empty read is a failed measurement
+
+  # (1) the pinned run: the real vector passes and says on the record what grounded it
   x <- bh_draft_vectors()
   row <- x$results[x$results$id == "fht-fasta-gzip-truncated", ]
   expect_equal(row$status, "pass")
   expect_equal(row$observed, "invalid")
+  expect_match(row$diagnostics, "independently re-read")
   expect_match(row$diagnostics, "selfChecksum=unreachable")
-  expect_match(row$diagnostics, "as gzip", fixed = TRUE)
-  # (2) the same vector WITHOUT its declared class is an error again. The scratch manifest
-  # deliberately bypasses the digest gate by calling the runner with pinned = NULL: the
-  # suite bytes stay the pinned ones, only the declaration is deleted, so nothing outside
-  # this file's own scoring decision moves.
-  dir <- .bh_draft_suite_dir()
-  scratch <- tempfile("fht-decl")
-  dir.create(scratch)
-  on.exit(unlink(scratch, recursive = TRUE), add = TRUE)
-  file.copy(list.files(dir, full.names = TRUE, all.files = TRUE), scratch,
-    recursive = TRUE
-  )
-  mp <- file.path(scratch, "manifest.json")
+  # the probe itself, three ways: truncated is detected, whole is not, whole+garbage
+  # is not (a refusal to frame is not the same condition as an unfinished member)
+  probe <- FAIRbioHeadersTools:::.bh_gz_stream_truncated
+  tf <- tempfile(fileext = ".gz")
+  writeBin(gz_plain[seq_len(length(gz_plain) - 6L)], tf)
+  expect_true(probe(tf))
+  expect_false(probe(file.path(dir, "valid", "fht-fasta-gzip.fht.fasta.gz")))
+  tg <- tempfile(fileext = ".gz")
+  writeBin(c(gz_plain, charToRaw("GARBAGE")), tg)
+  expect_false(probe(tg))
+  tp <- tempfile(fileext = ".fasta")
+  writeBin(charToRaw("not gzip at all\n"), tp)
+  expect_false(probe(tp))
+
+  # (2) the reviewer's false-pass repro, red at 2a6343f: the R2 missing-checksum
+  # vector's fixture is REPLACED with truncated-gzip bytes. That vector declares
+  # selfChecksum=unreachable too - under the old rule it passed, scoring a rejection
+  # whose required check (R2) was never reached. Now: not R1-labelled -> error.
+  s <- scratch_suite()
+  tgt <- file.path(s, "invalid", "fht-fasta-missing-checksum.fht.fasta")
+  before <- .bh_read_all(tgt)
+  writeBin(gz_plain[seq_len(length(gz_plain) - 6L)], tgt)
+  expect_false(identical(before, .bh_read_all(tgt))) # the mutation landed
+  r2row <- run_scratch(s)$results
+  hit <- r2row[r2row$id == "fht-fasta-missing-checksum", ]
+  expect_equal(hit$status, "error")
+  expect_match(hit$reason, "native reader errored")
+  unlink(s, recursive = TRUE)
+
+  # (3) a refusal that is NOT the R1 condition: trailing non-gzip bytes after a whole
+  # member, parked on the R1-labelled truncated vector. Old rule scored it pass; the
+  # probe says the member is complete, so the exception does not fire: error.
+  s2 <- scratch_suite()
+  tgt2 <- file.path(s2, "invalid", "fht-fasta-gzip-truncated.fht.fasta.gz")
+  writeBin(c(gz_plain, charToRaw("GARBAGE")), tgt2)
+  hit2 <- run_scratch(s2)$results
+  g2 <- hit2[hit2$id == "fht-fasta-gzip-truncated", ]
+  expect_equal(g2$status, "error")
+  expect_match(g2$reason, "native reader errored")
+  unlink(s2, recursive = TRUE)
+
+  # (4) the declaration still buys nothing on its own: removing it from the manifest
+  # turns the genuine vector into an error - kept from the first version of this test.
+  s3 <- scratch_suite()
+  mp <- file.path(s3, "manifest.json")
   man <- jsonlite::fromJSON(mp, simplifyVector = FALSE)
-  hit <- vapply(man$vectors, function(v) identical(v$id, "fht-fasta-gzip-truncated"), logical(1L))
-  expect_equal(sum(hit), 1L)
-  man$vectors[[which(hit)]]$selfChecksum <- NULL
-  writeLines(jsonlite::toJSON(man, auto_unbox = TRUE, pretty = TRUE, null = "null"), mp)
-  y <- FAIRbioHeadersTools:::.bh_run_suite(scratch, list(), lane = "FHT", formats = NULL,
-    limit = NULL, label = "scratch", run_formats = "fht-fasta"
+  hit3 <- vapply(man$vectors, function(v) identical(v$id, "fht-fasta-gzip-truncated"),
+    logical(1L)
   )
-  zrow <- y$results[y$results$id == "fht-fasta-gzip-truncated", ]
-  expect_equal(zrow$status, "error")
-  expect_match(zrow$reason, "native reader errored")
+  expect_equal(sum(hit3), 1L)
+  man$vectors[[which(hit3)]]$selfChecksum <- NULL
+  writeLines(jsonlite::toJSON(man, auto_unbox = TRUE, pretty = TRUE, null = "null"), mp)
+  d3 <- run_scratch(s3)$results
+  expect_equal(d3[d3$id == "fht-fasta-gzip-truncated", ]$status, "error")
+  unlink(s3, recursive = TRUE)
+  # and nothing outside the scratch trees moved: the pinned suite is still green
+  expect_true(bh_draft_vectors()$ok)
 })
 
 test_that("a draft suite whose bytes moved off the pin is refused before any vector runs", {

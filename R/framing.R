@@ -66,6 +66,33 @@ NULL
   )
 }
 
+#' Independent detection of the R1 framing condition on one file's own bytes.
+#'
+#' TRUE when the bytes AT `path` carry the gzip magic AND the strict reader cannot
+#' reach the end of a member - the stream is truncated. Nothing from any manifest
+#' is consulted: this is the runner re-reading the file, the same external evidence
+#' the released reader's own errors are built on. A CRC-corrupt stream or trailing
+#' non-gzip bytes are refused by the reader but are not truncations, so they do not
+#' match here. Used by the conformance runner's R1 scoring (R/conformance.R).
+#' @noRd
+.bh_gz_stream_truncated <- function(path) {
+  con <- file(path, open = "rb")
+  magic <- readBin(con, what = "raw", n = 2L)
+  close(con)
+  if (length(magic) != 2L || !identical(magic, as.raw(c(0x1f, 0x8b)))) return(FALSE)
+  r <- .bh_capture({
+    inp <- .bh_open_input(path, compressed = TRUE)
+    repeat {
+      b <- inp$read(1048576L)
+      if (!length(b)) break
+    }
+    inp$close()
+    TRUE
+  })
+  !is.null(r$error) &&
+    grepl("truncated: the file ends inside a member", r$error, fixed = TRUE)
+}
+
 .bh_nl <- as.raw(10)
 .bh_cr <- as.raw(13)
 

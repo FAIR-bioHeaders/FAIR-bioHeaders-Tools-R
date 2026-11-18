@@ -171,24 +171,37 @@ NULL
     }
     res <- .bh_capture(.bh_analyze(path, format = fmt, draft = lane))
     if (!is.null(res$error)) {
-      # A vector may declare its own failure class. `selfChecksum: "unreachable"` says
-      # the bytes cannot be framed at all - the suite's reason for the truncated gzip
-      # vector reads "there are no decompressed bytes for R1 to hash and the file is
-      # rejected before any checksum comparison" - which is the same scoring the
-      # toolkit's FHT lane applies ("unreachable rejects before any checksum question
-      # arises"). When such a vector expects `invalid` and this reader answers with its
-      # classed gzip-refusal (R/framing.R: a truncated member, a bad CRC or trailing
-      # garbage is an unusable input, never a verdict built on missing bytes), the
-      # reader has produced exactly the rejection the vector declares. Scoring that
-      # `error` would call a faithful refusal a defect; scoring `pass` here says on the
-      # record which refusal it accepted and why. Any other error stays an error.
-      if (identical(v$expected, "invalid") && identical(v$selfChecksum, "unreachable") &&
-          grepl(" as gzip: ", res$error, fixed = TRUE)) {
+      # One rejection class is established from the file's own bytes rather than from a
+      # reader verdict: R1 hashes the DECOMPRESSED stream, so a truncated gzip member has
+      # no decompressed bytes for it to hash and the file is rejected before any checksum
+      # question arises (the suite's own reason text for fht-fasta-gzip-truncated, and
+      # the same reading the toolkit's FHT lane applies). The grounding is EXTERNAL:
+      # .bh_gz_stream_truncated() re-reads the cited path and independently detects the
+      # gzip magic plus an unrecoverably incomplete member. The manifest's own words
+      # participate only as narrowing conditions, never as the ground - per the
+      # maintainer ruling that a vector may not self-certify unreachability
+      # (FAIR-bioHeaders-Tools#146, spec#139), a declaration of `selfChecksum:
+      # unreachable` alone licenses nothing: it also rides on uncompressed
+      # checksum-line failures whose required check a framing error never reaches. All
+      # four conditions must hold: this vector expects `invalid`, its own rule labels
+      # name R1, the bytes are independently detected truncated, and the reader's
+      # refusal was the gzip refusal. Anything else that errors stays an error.
+      if (
+        identical(v$expected, "invalid") && "R1" %in% rules &&
+          identical(v$selfChecksum, "unreachable") &&
+          grepl(" as gzip: ", res$error, fixed = TRUE) &&
+          .bh_gz_stream_truncated(path)
+      ) {
         rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "pass",
           reason = "", observed = "invalid",
           diagnostics = paste0(
-            "rejected before any checksum question: the reader refused the compressed ",
-            "framing (", res$error, "); the vector declares selfChecksum=unreachable"
+            "rejected before any checksum question: R1 has no decompressed payload to ",
+            "hash over a truncated gzip stream; the runner independently re-read the ",
+            "cited bytes and detected the truncation itself ",
+            "(.bh_gz_stream_truncated), and the reader's classed refusal agrees (",
+            res$error, "). The vector's R1 label and selfChecksum=unreachable narrow ",
+            "the exception; neither grounds it - a declaration cannot certify itself ",
+            "(FAIR-bioHeaders-Tools#146, spec#139)"
           )
         )
         next
