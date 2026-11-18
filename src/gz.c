@@ -5,13 +5,16 @@
  * after the last gzip member are dropped silently, so a file with trailing garbage
  * verified as valid, and a CRC mismatch or a truncated member surfaces only as a
  * connection warning or an unclassed "error reading from the connection". This reader
- * walks the members itself with zlib and reports each of those as an error the R side
- * turns into a classed condition.
+ * walks the members itself and reports each of those as an error the R side turns into a
+ * classed condition.
  *
  * It accepts what the Python reference's gzip module accepts: one or more members back to
  * back (BGZF is such a file), with zero bytes allowed as padding between or after them.
- * Anything else after a member, a member that does not end before the file does, and a
- * member whose CRC-32 or length trailer does not match are errors.
+ * Each member's header is parsed here (RFC 1952), its deflate data is inflated raw, and its
+ * CRC-32 and length trailer are checked against the bytes produced. As in the reference,
+ * the optional 16-bit header CRC is skipped rather than checked. Anything else after a
+ * member, a member that does not end before the file does, and a trailer that does not
+ * match are errors.
  */
 
 #include <R.h>
@@ -28,10 +31,12 @@
 typedef struct {
   FILE *fp;
   z_stream strm;
-  int strm_ready;   /* inflateInit2 succeeded */
-  int in_member;    /* inside a member: its end has not been seen */
-  int members;      /* members started */
-  int done;         /* clean end of input */
+  int strm_ready;     /* inflateInit2 succeeded */
+  int in_member;      /* inside a member's deflate data */
+  int members;        /* members started */
+  int done;           /* clean end of input */
+  uLong crc;          /* CRC-32 of the current member's output */
+  uLong size;         /* length of the current member's output, mod 2^32 */
   unsigned char in[BH_GZ_IN];
 } bh_gz;
 
@@ -68,8 +73,8 @@ SEXP bh_gz_open(SEXP path) {
     free(g);
     error("cannot open %s", translateChar(STRING_ELT(path, 0)));
   }
-  /* 16 + MAX_WBITS: a gzip wrapper, CRC-32 and length trailer checked by zlib */
-  if (inflateInit2(&g->strm, 16 + MAX_WBITS) != Z_OK) {
+  /* raw deflate: the gzip wrapper is parsed and checked here */
+  if (inflateInit2(&g->strm, -MAX_WBITS) != Z_OK) {
     bh_gz_free(g);
     error("cannot initialise zlib");
   }
@@ -82,7 +87,7 @@ SEXP bh_gz_open(SEXP path) {
   return ptr;
 }
 
-/* Refills the input buffer; returns the bytes now available. */
+/* Refills the input buffer when it is empty; returns the bytes now available. */
 static unsigned int bh_gz_fill(bh_gz *g) {
   size_t got;
   if (g->strm.avail_in) return g->strm.avail_in;
@@ -90,6 +95,66 @@ static unsigned int bh_gz_fill(bh_gz *g) {
   g->strm.next_in = g->in;
   g->strm.avail_in = (uInt)got;
   return (unsigned int)got;
+}
+
+/* The next input byte, or -1 at the end of the file. */
+static int bh_gz_byte(bh_gz *g) {
+  if (!bh_gz_fill(g)) return -1;
+  g->strm.avail_in--;
+  return *g->strm.next_in++;
+}
+
+/* Reads a member header after its first byte (0x1f) was seen. Returns NULL or an error. */
+static const char *bh_gz_header(bh_gz *g) {
+  int c, flg, i;
+  if (bh_gz_byte(g) != 0x8b) return "bytes that are not a gzip member follow a gzip member";
+  c = bh_gz_byte(g);
+  if (c < 0) return "the gzip data is truncated: the file ends inside a member header";
+  if (c != 8) return "the gzip member uses an unknown compression method";
+  flg = bh_gz_byte(g);
+  if (flg < 0) return "the gzip data is truncated: the file ends inside a member header";
+  for (i = 0; i < 6; i++) /* MTIME, XFL, OS */
+    if (bh_gz_byte(g) < 0) return "the gzip data is truncated: the file ends inside a member header";
+  if (flg & 4) { /* FEXTRA */
+    int lo = bh_gz_byte(g), hi = bh_gz_byte(g);
+    long xlen;
+    if (lo < 0 || hi < 0) return "the gzip data is truncated: the file ends inside a member header";
+    for (xlen = lo | (hi << 8); xlen > 0; xlen--)
+      if (bh_gz_byte(g) < 0) return "the gzip data is truncated: the file ends inside a member header";
+  }
+  if (flg & 8) { /* FNAME */
+    do {
+      c = bh_gz_byte(g);
+      if (c < 0) return "the gzip data is truncated: the file ends inside a member header";
+    } while (c != 0);
+  }
+  if (flg & 16) { /* FCOMMENT */
+    do {
+      c = bh_gz_byte(g);
+      if (c < 0) return "the gzip data is truncated: the file ends inside a member header";
+    } while (c != 0);
+  }
+  if (flg & 2) { /* FHCRC: skipped, not checked, as the reference does */
+    if (bh_gz_byte(g) < 0 || bh_gz_byte(g) < 0)
+      return "the gzip data is truncated: the file ends inside a member header";
+  }
+  return NULL;
+}
+
+/* Reads and checks a member's trailer: CRC-32 and length, little-endian. */
+static const char *bh_gz_trailer(bh_gz *g) {
+  unsigned long v[2] = {0, 0};
+  int i, k, c;
+  for (k = 0; k < 2; k++) {
+    for (i = 0; i < 4; i++) {
+      c = bh_gz_byte(g);
+      if (c < 0) return "the gzip data is truncated: the file ends inside a member trailer";
+      v[k] |= (unsigned long)c << (8 * i);
+    }
+  }
+  if (v[0] != (g->crc & 0xffffffffUL)) return "the gzip data is corrupt (CRC-32 mismatch)";
+  if (v[1] != (g->size & 0xffffffffUL)) return "the gzip data is corrupt (length mismatch)";
+  return NULL;
 }
 
 static SEXP bh_gz_fail(const char *msg) { return mkString(msg); }
@@ -102,6 +167,7 @@ SEXP bh_gz_read(SEXP ptr, SEXP n_) {
   size_t have = 0;
   unsigned char *out;
   SEXP res, buf;
+  const char *err;
   char msg[256];
   if (!isInteger(n_) || XLENGTH(n_) != 1 || INTEGER(n_)[0] == NA_INTEGER || INTEGER(n_)[0] < 1)
     error("`n` must be a positive integer");
@@ -112,15 +178,11 @@ SEXP bh_gz_read(SEXP ptr, SEXP n_) {
   while (have < (size_t)n && !g->done) {
     if (!g->in_member) {
       /* between members: zero padding is allowed, then a member or the end */
-      for (;;) {
-        if (!bh_gz_fill(g)) break;
-        while (g->strm.avail_in && *g->strm.next_in == 0) {
-          g->strm.next_in++;
-          g->strm.avail_in--;
-        }
-        if (g->strm.avail_in) break;
-      }
-      if (!g->strm.avail_in) {
+      int c;
+      do {
+        c = bh_gz_byte(g);
+      } while (c == 0);
+      if (c < 0) {
         if (ferror(g->fp)) {
           UNPROTECT(1);
           return bh_gz_fail("the file could not be read");
@@ -132,16 +194,22 @@ SEXP bh_gz_read(SEXP ptr, SEXP n_) {
         g->done = 1;
         break;
       }
-      if (*g->strm.next_in != 0x1f) {
+      if (c != 0x1f) {
         UNPROTECT(1);
         return bh_gz_fail(g->members
           ? "bytes that are not a gzip member follow the last gzip member"
           : "the file does not start with a gzip member");
       }
+      if ((err = bh_gz_header(g)) != NULL) {
+        UNPROTECT(1);
+        return bh_gz_fail(err);
+      }
       if (inflateReset(&g->strm) != Z_OK) {
         UNPROTECT(1);
         return bh_gz_fail("cannot reset zlib between gzip members");
       }
+      g->crc = crc32(0L, Z_NULL, 0);
+      g->size = 0;
       g->in_member = 1;
       g->members++;
     }
@@ -154,9 +222,18 @@ SEXP bh_gz_read(SEXP ptr, SEXP n_) {
     g->strm.avail_out = (uInt)((size_t)n - have);
     {
       int ret = inflate(&g->strm, Z_NO_FLUSH);
-      have = (size_t)n - g->strm.avail_out;
+      size_t now = (size_t)n - g->strm.avail_out;
+      if (now > have) {
+        g->crc = crc32(g->crc, out + have, (uInt)(now - have));
+        g->size += (uLong)(now - have);
+      }
+      have = now;
       if (ret == Z_STREAM_END) {
         g->in_member = 0;
+        if ((err = bh_gz_trailer(g)) != NULL) {
+          UNPROTECT(1);
+          return bh_gz_fail(err);
+        }
       } else if (ret == Z_BUF_ERROR) {
         /* no progress possible without more input: the next fill decides */
         if (g->strm.avail_in) {

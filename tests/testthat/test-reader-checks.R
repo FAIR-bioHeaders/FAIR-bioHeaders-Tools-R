@@ -91,6 +91,13 @@ test_that("gzip: members, padding, and every corruption is a classed error", {
   expect_true(suppressWarnings(bh_read(write_gz(c(one, as.raw(rep(0, 16))))))$valid)
   expect_true(suppressWarnings(bh_read(write_gz(c(gz_of(raw()), one))))$valid)
 
+  # a header CRC (FHCRC) is skipped, not checked, as the reference does; a name and a
+  # comment field are read past
+  stopifnot(one[4] == as.raw(0))
+  flagged <- c(one[1:3], as.raw(2 + 8 + 16), one[5:10], charToRaw("n.fa"), as.raw(0),
+    charToRaw("c"), as.raw(0), as.raw(c(0xde, 0xad)), one[-(1:10)])
+  expect_true(suppressWarnings(bh_read(write_gz(flagged)))$valid)
+
   bad_crc <- one
   k <- length(bad_crc) - 7L
   bad_crc[k] <- xor(bad_crc[k], as.raw(0xff))
