@@ -307,7 +307,7 @@ bh_validate <- function(path, format = NULL, compressed = NA,
 #' `as = "yaml"` returns the header block's YAML exactly as written, with the `;~` or `#~`
 #' prefix removed from every line. `as = "json"` returns the parsed record as the JSON the
 #' contract validator sees; it needs a header that parses, so a header the YAML rules
-#' reject (R8, R12, a parse error) raises a `bh_input` error naming why. Neither form
+#' reject (R8, R12, R13, a parse error) raises a `bh_input` error naming why. Neither form
 #' verifies the checksum or validates the contract: use [bh_read()] for that.
 #'
 #' @param path A FASTA, GFA or GFF3 file carrying a FAIR-bioHeaders header.
@@ -327,7 +327,9 @@ bh_extract_header <- function(path, as = c("yaml", "json"), format = NULL, compr
   if (!length(lines)) bh_abort("input", "%s", paste0(basename(path), " carries no header block"))
   if (as == "yaml") return(paste0(paste(lines, collapse = "\n"), "\n"))
   parsed <- .bh_parse_record(lines)
-  if (is.null(parsed$record)) {
+  # `record` can be present while `ok` is FALSE: R12 and R13 are found after parsing, and
+  # a record bh_read() rejects is never exported as if the file had said it.
+  if (!isTRUE(parsed$ok)) {
     bh_abort("input", "%s", paste0(
       "the header of ", basename(path), " does not parse to a record: ",
       paste(parsed$why, collapse = "; ")

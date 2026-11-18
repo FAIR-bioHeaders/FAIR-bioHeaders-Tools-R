@@ -91,6 +91,17 @@ test_that("gzip: members, padding, and every corruption is a classed error", {
   expect_true(suppressWarnings(bh_read(write_gz(c(one, as.raw(rep(0, 16))))))$valid)
   expect_true(suppressWarnings(bh_read(write_gz(c(gz_of(raw()), one))))$valid)
 
+  # zero padding follows a complete member; before the first member it is not padding,
+  # and the file does not start with a gzip member (as the reference refuses it)
+  lead <- write_gz(c(as.raw(c(0, 0)), one))
+  e <- tryCatch(bh_read(lead, compressed = TRUE), bh_error = function(e) e)
+  expect_s3_class(e, "bh_input")
+  expect_match(conditionMessage(e), "does not start with a gzip member")
+  e <- tryCatch(bh_sha512_256_file(lead, compressed = TRUE), bh_error = function(e) e)
+  expect_s3_class(e, "bh_input")
+  # sniffed, the file has no gzip magic, so it is read as plain bytes: no header block
+  expect_false(suppressWarnings(bh_read(lead))$valid)
+
   # a header CRC (FHCRC) is skipped, not checked, as the reference does; a name and a
   # comment field are read past
   stopifnot(one[4] == as.raw(0))
