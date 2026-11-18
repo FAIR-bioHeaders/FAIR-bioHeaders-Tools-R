@@ -241,12 +241,11 @@ NULL
   }
   root_indent <- nchar(regmatches(first, m)) - nchar(prefix)
 
-  cand <- integer()
-  for (i in idx) {
-    l <- .bh_strip_term(.bh_c(frame$text[[i]], ""))
-    g <- regmatches(l, regexec(paste0("^", prefix, "( *)checksum( *):"), l))[[1L]]
-    if (length(g) && nchar(g[[2L]]) == root_indent) cand <- c(cand, i)
-  }
+  # one vectorized pass: a per-line loop here cost seconds on a 10,000-line header
+  txt <- .bh_strip_term(vapply(frame$text[idx], .bh_c, "", default = ""))
+  g <- regmatches(txt, regexec(paste0("^", prefix, "( *)checksum( *):"), txt))
+  hit <- vapply(g, function(m) length(m) > 0L && nchar(m[[2L]]) == root_indent, NA)
+  cand <- idx[hit]
   if (length(cand) != 1L) {
     return(list(ok = FALSE, index = NA_integer_, value = NA_character_,
                 root_indent = root_indent,

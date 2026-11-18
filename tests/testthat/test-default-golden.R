@@ -26,7 +26,7 @@ test_that("the golden file is the one this test suite ships with", {
   # structure passes muster, and regeneration (tools/golden_dump.R) must update this
   # line in the same reviewed commit
   expect_identical(.bh_sha256_hex(.bh_read_all(path)),
-    "055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525"
+    "9b3f134f6439780da4fdcff4cd4e1a1724d4dd8ef3d8c2519a0598452811ff30"
   )
   want <- jsonlite::fromJSON(path, simplifyVector = FALSE)
   expect_equal(want$fingerprintVersion, 1L)

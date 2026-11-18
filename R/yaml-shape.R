@@ -46,42 +46,45 @@ NULL
 #' @return A character vector of key names.
 #' @noRd
 .bh_sequence_keys <- function(lines) {
+  # The per-line regular expressions run once over all lines, vectorized; the loop below
+  # only carries the pending key from line to line. (Run line by line, they made a
+  # 9,000-line header take seconds.)
+  tl <- trimws(lines)
+  skip <- !nzchar(tl) | startsWith(tl, "#")
+  ind <- attr(regexpr("^ *", lines), "match.length") # regexpr: see test-framing.R on sub()
+  body <- sub("^ *", "", lines)
+  item <- grepl("^-([ \t]|$)", body)
+  inner <- sub("^-([ \t]|$)", "", body)
+  head <- ifelse(item, inner, body)
+  is_key <- grepl("^[^:#]+:([ \t]|$)", head)
+  k <- trimws(sub("([ \t]*):.*$", "", head))
+  v <- trimws(sub("^[^:]*:[ \t]*", "", head))
+  has_v <- grepl(":", head) & nzchar(v)
+  ind2 <- ind + attr(regexpr("^[^:#]+:", inner), "match.length")
+
   keys <- character()
-  pending <- NULL # a key whose value is not on its own line: the next line decides
-
-  for (l in lines) {
-    if (!nzchar(trimws(l)) || startsWith(trimws(l), "#")) next
-    ind <- nchar(regmatches(l, regexpr("^ *", l))) # regexpr: see test-framing.R on sub()
-    body <- sub("^ *", "", l)
-
-    if (grepl("^-([ \t]|$)", body)) {
+  pending_name <- NULL # a key whose value is not on its own line: the next line decides
+  pending_ind <- NA_integer_
+  for (i in which(!skip)) {
+    if (item[[i]]) {
       # a block sequence item; it belongs to the pending key when one is open, including
       # the FASTA-header style where the item sits at the key's own indentation
-      if (!is.null(pending) && ind >= pending$ind) keys <- c(keys, pending$name)
-      inner <- sub("^-([ \t]|$)", "", body)
-      if (grepl("^[^:#]+:([ \t]|$)", inner)) {
-        k <- trimws(sub("([ \t]*):.*$", "", inner))
-        v <- .bh_inline_value(inner)
-        ind2 <- ind + nchar(regmatches(inner, regexpr("^[^:#]+:", inner)))
-        pending <- if (is.null(v)) list(name = k, ind = ind2) else NULL
-      } else {
-        pending <- NULL
+      if (!is.null(pending_name) && ind[[i]] >= pending_ind) keys <- c(keys, pending_name)
+      pending_name <- NULL
+      if (is_key[[i]] && !has_v[[i]]) {
+        pending_name <- k[[i]]
+        pending_ind <- ind2[[i]]
       }
       next
     }
-
-    if (!grepl("^[^:#]+:([ \t]|$)", body)) {
-      pending <- NULL
+    pending_name <- NULL
+    if (!is_key[[i]]) next
+    if (!has_v[[i]]) {
+      pending_name <- k[[i]]
+      pending_ind <- ind[[i]]
       next
     }
-    k <- trimws(sub("([ \t]*):.*$", "", body))
-    v <- .bh_inline_value(body)
-    if (is.null(v)) {
-      pending <- list(name = k, ind = ind)
-      next
-    }
-    if (startsWith(v, "[")) keys <- c(keys, k) # a flow sequence
-    pending <- NULL
+    if (startsWith(v[[i]], "[")) keys <- c(keys, k[[i]]) # a flow sequence
   }
   unique(keys)
 }
@@ -103,16 +106,17 @@ NULL
 .bh_repair_shape <- function(x, keys) {
   if (!is.list(x) || !length(keys)) return(x)
   walk <- function(node) {
-    if (is.list(node)) {
-      if (is.null(names(node))) return(lapply(node, walk))
-      for (nm in names(node)) {
-        v <- walk(node[[nm]])
-        if (nm %in% keys && is.atomic(v) && length(v) >= 1L) v <- as.list(v)
-        node[[nm]] <- v
-      }
-      return(node)
+    if (!is.list(node)) return(node)
+    nms <- names(node)
+    out <- lapply(node, walk)
+    if (is.null(nms)) return(out)
+    hit <- which(nms %in% keys)
+    for (i in hit) {
+      v <- out[[i]]
+      if (is.atomic(v) && length(v) >= 1L) out[[i]] <- as.list(v)
     }
-    node
+    # a key whose value is null is left out, as it always was here
+    out[!vapply(out, is.null, logical(1L))]
   }
   walk(x)
 }

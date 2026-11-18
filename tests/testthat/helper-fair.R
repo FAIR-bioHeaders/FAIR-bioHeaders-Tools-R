@@ -59,3 +59,42 @@
   v <- jsonvalidate::json_validator(schema_text, engine = engine)
   isTRUE(suppressWarnings(v(data_json)))
 }
+
+# A minimal valid FHR 2.1 record, as header YAML, for building synthetic files.
+.bh_fhr_base <- paste0(
+  "schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0\n",
+  "schemaVersion: '2.1'\n",
+  "genome: Synthetic genome\n",
+  "taxon:\n  name: Homo sapiens\n  uri: https://identifiers.org/taxonomy:9606\n",
+  "version: 1.0.0\n",
+  "metadataAuthor:\n- name: Someone\n",
+  "assemblyAuthor:\n- name: Someone\n",
+  "dateCreated: '2026-10-08'\n",
+  "masking: not-masked\n"
+)
+
+#' Writes a file whose header is `base` plus `extra`, with a correct checksum line.
+#'
+#' The checksum is computed over the file without its checksum line, so a file built
+#' here fails only for the reason a test puts in it. Returns the path.
+.bh_write_header_file <- function(extra = "", base = .bh_fhr_base, ext = ".fhr.fasta",
+                                  prefix = NULL, body = NULL, first = "",
+                                  checksum_line = NULL, dir = tempdir()) {
+  if (is.null(prefix)) prefix <- if (grepl("fasta$", ext)) ";~" else "#~"
+  if (is.null(body)) {
+    body <- if (grepl("fasta$", ext)) ">c1\nACGT\n" else if (grepl("gfa$", ext)) {
+      "S\t1\tACGT\n"
+    } else {
+      "chr1\t.\tgene\t1\t4\t.\t+\t.\tID=g1\n"
+    }
+  }
+  if (!nzchar(first) && grepl("gff3$", ext)) first <- "##gff-version 3\n"
+  text <- paste0(base, extra)
+  lines <- strsplit(text, "\n", fixed = TRUE)[[1L]]
+  hdr <- paste0(paste0(prefix, lines, "\n"), collapse = "")
+  covered <- charToRaw(paste0(first, hdr, body))
+  line <- checksum_line %||% paste0("checksum: ", bh_sha512_256_b64(covered))
+  path <- tempfile(fileext = ext, tmpdir = dir)
+  writeBin(charToRaw(paste0(first, hdr, prefix, line, "\n", body)), path)
+  path
+}
