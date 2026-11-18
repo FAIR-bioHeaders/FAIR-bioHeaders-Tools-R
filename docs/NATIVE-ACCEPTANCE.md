@@ -109,14 +109,22 @@ the distinction that lets a reader say "the contract did not change, the vectors
 did". Four of the 82 suite vectors are marked `promotion: candidate-unreviewed`
 and are scored as unreviewed candidates, not as reviewed expectations.
 
-One vector scores by a rule the suite states about itself: `fht-fasta-gzip-truncated`
-declares `selfChecksum: unreachable` - "there are no decompressed bytes for R1 to
-hash and the file is rejected before any checksum comparison" - and this package's
-reader answers exactly that with its classed gzip refusal. The runner passes the
-vector *because the vector declares that refusal as its expected rejection*, naming
-the accepted refusal in the row's diagnostics; a vector whose error carries no such
-declaration is still an `error` and fails the run (a standing test deletes the
-declaration from a scratch manifest and shows the vector turns red again).
+One vector scores by a rule the suite states about its *bytes*, established
+externally: `fht-fasta-gzip-truncated`'s stream ends inside the gzip trailer, so R1
+has no decompressed payload to hash and the file is "rejected before any checksum
+comparison" - the same reading the toolkit's FHT lane applies. The runner grounds
+that scoring on **its own re-read of the cited file**
+(`.bh_gz_stream_truncated()`: gzip magic present, member provably unfinished), never
+on a manifest field: per the maintainer ruling that a vector may not certify its own
+unreachability (FAIR-bioHeaders-Tools#146, spec#139 - self-declared `unreachable`
+vectors are excluded from scoring upstream for exactly that circularity), the
+manifest's `selfChecksum` label and the vector's R1 label only *narrow* the
+exception. Four standing controls: the pinned vector passes; deleting its
+declaration turns it to `error` (the label buys nothing alone); replacing the
+R2 missing-checksum fixture with truncated-gzip bytes yields `error`, not the false
+`pass` the first revision produced - a rejection whose required check was never
+reached is not the gzip case; and trailing non-gzip bytes after a *complete*
+member - a refusal to frame, but not a truncation - also stays `error`.
 
 `bh_draft_fhgm_vectors()` runs the **62 FHGM development vectors** published by
 FHGM-Specification, in its own labelled CI job, and never into the 291. That

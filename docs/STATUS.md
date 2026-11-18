@@ -70,13 +70,42 @@ answers to (raw main, superseded releases)" - had never been exercised: the new
 `carrier-cites-raw-main` vector exposed that `bh_validate_fhgm()` did not evaluate
 it, and it is now implemented and tested (including the two dual-base accept forms
 the re-pin also newly exercises, `v0.6.0-citation-stating-1.1` and
-`fhr-specification-alias-v0.6.0`). Second, `fht-fasta-gzip-truncated` declares its
-own failure class (`selfChecksum: unreachable`, "rejected before any checksum
-comparison"); the reader's classed gzip refusal is that rejection, and the runner
-now scores it as declared, names the accepted refusal in the row's diagnostics, and
-is controlled by a standing test that deletes the declaration and shows the vector
-turns back into an `error`. The released reader taxonomy and the released 291
-ledger are untouched.
+`fhr-specification-alias-v0.6.0`). The accepted citation shapes come from ONE
+shared grammar (`.bh_release_url_re`, R/selection.R) that selection and K1 both
+consume - the w3id release URL with or without a trailing slash, and the raw tag
+URL under either repository name - which is exactly what the checker's own
+`development/model/base-schemas.json` registers; a test pins the eight registered
+spellings and the cross-layer agreement in both directions. Second,
+`fht-fasta-gzip-truncated` is scored on the R1 condition established EXTERNALLY:
+`.bh_gz_stream_truncated()` re-reads the cited bytes and independently detects the
+gzip magic plus an unfinished member - "there are no decompressed bytes for R1 to
+hash and the file is rejected before any checksum comparison" - the same reading
+the toolkit's FHT lane applies. The manifest's `selfChecksum: unreachable` label
+may narrow the exception but never grounds it: a vector may not certify its own
+unreachability (maintainer ruling, FAIR-bioHeaders-Tools#146 / spec#139). Four
+standing controls, red-first against the first revision of this PR: the pinned
+vector passes; the declaration deleted from a scratch manifest -> `error`; the
+R2 missing-checksum fixture replaced with truncated-gzip bytes -> `error` (the
+first revision falsely passed it); a complete member followed by trailing non-gzip
+bytes -> `error` (a refusal to frame is not a truncation). The released reader
+taxonomy and the released 291 ledger are untouched.
+
+**Review follow-ups on this branch (2026-11-18, same day).** The independent review
+of the first head found three blockers, each fixed with red-first proofs and its own
+commit: (1) the K1 clause above initially refused the w3id trailing-slash spelling
+that `R/selection.R:28` has always accepted - one package contradicting itself - now
+resolved by the shared grammar with a battery over both layers; (2) the gzip
+scoring initially keyed on the vector's own declaration, reproducing the
+self-certifying-`unreachable` failure mode the maintainer had already ruled out
+elsewhere in this round - now grounded externally as above; (3) the vendor
+generator initially rewrote `previous` on every run, so an unchanged rerun erased
+the last real pin transition - `previous` now rotates only when the resolved
+digests move, proven by `tools/selftest_vendor_previous.R` (bare-origin fixture
+repos, four generator runs: unchanged rerun byte-identical, one-lane move rotates
+only that lane, a second move rotates to the immediately prior pin), wired as a
+build step because `tools/` is excluded from the tarball and a skip would violate
+the zero-skip rule. An unchanged-input rerun of the fixed generator against the
+real owning repositories left `inst/VENDORED.json` byte-identical.
 
 **Measured acceptance counts.** The model layer's compared set was not predicted
 but measured through R's own scope rule over both new manifests via
@@ -94,9 +123,9 @@ singular `rule`, zero unlabelled.
 (`REFUSED`, before any vector runs); re-running against the vendored bytes gives
 82/82 and 62/62-ok again, and `tools/check_vendoring.R` stays clean afterwards.
 
-**Spine.** `tools/run_tests.R`: `tests=1057 failed=0 errors=0 skipped=0`
-(1046 before, +11 from the two new controls); `tools/check_duplicate_defs.R` OK at
-161 top-level names; native-path grep clean; `tools/acceptance_native.R`
+**Spine.** `tools/run_tests.R`: `tests=1111 failed=0 errors=0 skipped=0`
+(1046 before the PR, 1057 at the first head, +54 more from the review-fix controls);
+`tools/check_duplicate_defs.R` OK; native-path grep clean; `tools/acceptance_native.R`
 291 / 228 / 63 with golden `goldenDifferences=0`; both draft receipts green with
 the literals above; matrix re-renders byte-identically (46 cells); differential
 `90 inputs, 0 mismatches`; `R CMD check --as-cran --no-manual` (idle machine):

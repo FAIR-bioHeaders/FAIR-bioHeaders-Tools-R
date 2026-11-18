@@ -71,6 +71,18 @@ jobs:
           set -e
           Rscript tools/check_duplicate_defs.R --verbose
 
+      - name: Assert the vendor record rotates its history only on change
+        run: |
+          # Review follow-up (#22). Re-running tools/vendor_upstream.R with unchanged
+          # inputs must leave every `previous` field byte-identical; only a genuine
+          # digest move rotates the predecessor. The script builds three throwaway
+          # git repositories and runs the generator against them; tools/ is excluded
+          # from the package tarball, so this proof lives beside the generator as a
+          # build step, not in testthat - where R CMD check could only skip it, and
+          # skips fail this job by design (docs/NATIVE-ACCEPTANCE.md).
+          set -e
+          Rscript tools/selftest_vendor_previous.R
+
       - name: Install
         run: |
           R CMD build .
@@ -81,10 +93,10 @@ jobs:
           # Any failure, any error, ANY skip, or fewer than the floor of assertions
           # fails the build (docs/NATIVE-ACCEPTANCE.md). Floor raised 500 -> 700 with
           # the FHGM model lane and 700 -> 1000 with the 2026-11-18 draft re-pin: the
-          # revision measures 1057 assertions locally (the +11 over the previous 1046
-          # are the K1 carrier-identity test and the declared-class scoring control),
-          # and the floor is the current real count rounded down, never a number
-          # nothing reaches.
+          # revision measures 1111 assertions locally (1046 before the re-pin; the
+          # additions are the K1 carrier tests, the shared-grammar citation battery,
+          # and the four declared-class scoring controls), and the floor is the
+          # current real count rounded down, never a number nothing reaches.
           BH_MIN_TESTS=1000 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
           cat tests.properties
           for line in failed=0 errors=0 skipped=0; do
