@@ -15,8 +15,10 @@
 #' * K1 additionally binds the transport to a **registered** FHGFF3 release: a citation no
 #'   registered release answers to (raw main, superseded or unregistered tags, an
 #'   unrecognised citation-version pair) is refused at the model layer, while v0.5.0 with
-#'   1.1 and v0.6.0 with 1.1 or 1.2 - w3id URL or raw tag URL, under either repository
-#'   name - are accepted (maintainer dual-base decision 2026-11-15);
+#'   1.1 and v0.6.0 with 1.1 or 1.2 - w3id URL with or without a trailing slash, or raw
+#'   tag URL, under either repository name, exactly the citation shapes selection.R
+#'   recognises - are accepted (maintainer dual-base decision 2026-11-15; registered
+#'   spellings per FHGM-Specification development/model/base-schemas.json);
 #' * the model verdict is reported separately from the base header verdict, and a model
 #'   failure does not rewrite the FHGFF3 result - the upstream suite records its four
 #'   layers apart for exactly that reason (see the `layers` block of each vector);
@@ -53,21 +55,19 @@ NULL
       "release answers to it"
     ))
   }
-  w3id <- paste0("^https://w3id\\.org/fair-bioheaders/fhgff3/",
-    "(v[0-9]+\\.[0-9]+\\.[0-9]+)$")
-  tagpat <- paste0(
-    "^https://raw\\.githubusercontent\\.com/FAIR-bioHeaders/",
-    "(FAIR-bioHeaders-Specification|FHR-Specification)/",
-    "(v[0-9]+\\.[0-9]+\\.[0-9]+)/fhgff3\\.json$"
-  )
-  tag <- sub(w3id, "\\1", url)
-  tag <- sub(tagpat, "\\2", tag)
+  # registered citation shapes come from ONE shared definition (.bh_release_url_re,
+  # R/selection.R): the w3id release URL with or without its trailing slash, and the
+  # raw tag URL under either repository name. K1 must not refuse a spelling the
+  # selection layer of this same package accepts.
+  re <- .bh_release_url_re("fhgff3")
+  tag <- sub(re$w3id, "\\1", url)
+  tag <- sub(re$tag, "\\1", tag)
   if (identical(tag, url)) {
     return(paste0(
       "K1: the carrier cites ", url, ", which no registered FHGFF3 release answers ",
       "to (raw main, superseded releases and unregistered tags are refused; a ",
-      "registered citation is the w3id release URL or the raw tag URL for ",
-      "fhgff3.json, under either repository name)"
+      "registered citation is the w3id release URL, with or without a trailing ",
+      "slash, or the raw tag URL for fhgff3.json, under either repository name)"
     ))
   }
   pair_ok <- (identical(tag, "v0.5.0") && identical(sv, "1.1")) ||

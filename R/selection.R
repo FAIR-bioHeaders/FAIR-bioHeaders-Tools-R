@@ -21,11 +21,40 @@
 #' @name selection
 NULL
 
+# One shared definition of what a REGISTERED release citation looks like, so the
+# released selection below and the FHGM K1 carrier test (R/fhgm.R) cannot drift:
+# they diverged at 2a6343f, where K1 refused `.../fhgff3/v0.6.0/` - a spelling the
+# selection layer has always accepted here (`/?` below) and that the checker's own
+# base registry explicitly registers (FHGM-Specification
+# development/model/base-schemas.json lists each release's w3id URL "with and
+# without the trailing slash", plus the raw tag URL under both repository names).
+# The trailing-slash policy therefore exists exactly once: in .bh_w3id_release_re.
+.bh_release_tag_re <- "v[0-9]+\\.[0-9]+\\.[0-9]+"
+.bh_spec_repo_re <- "(?:FHR|FAIR-bioHeaders)-Specification"
+
+#' The two anchored patterns naming a registered release of one type: the w3id
+#' release URL (trailing slash allowed) and the raw tag URL for `<type>.json` at
+#' that tag under either specification repository name (trailing slash NOT allowed -
+#' neither this selection nor the upstream registry admits one, and the pair of
+#' verdicts must agree, which test-fhgm-lane.R pins for exactly these patterns).
+#' @noRd
+.bh_release_url_re <- function(type) {
+  list(
+    w3id = paste0("^https://w3id\\.org/fair-bioheaders/", type, "/(",
+      .bh_release_tag_re, ")/?$"),
+    tag = paste0("^https://raw\\.githubusercontent\\.com/FAIR-bioHeaders/",
+      .bh_spec_repo_re, "/(", .bh_release_tag_re, ")/", type, "\\.json$")
+  )
+}
+
 .bh_raw_re <- paste0(
   "^https://raw\\.githubusercontent\\.com/FAIR-bioHeaders/",
-  "(?:FHR|FAIR-bioHeaders)-Specification/(.+?)/(fhr|fhp|fhgff3)\\.json$"
+  .bh_spec_repo_re, "/(.+?)/(fhr|fhp|fhgff3)\\.json$"
 )
-.bh_w3id_re <- "^https://w3id\\.org/fair-bioheaders/(fhr|fhp|fhgff3)/(v[0-9]+\\.[0-9]+\\.[0-9]+)/?$"
+.bh_w3id_re <- paste0(
+  "^https://w3id\\.org/fair-bioheaders/(fhr|fhp|fhgff3)/(",
+  .bh_release_tag_re, ")/?$"
+)
 .bh_types_by_file <- c(fhr = "FHR", fhp = "FHP", fhgff3 = "FHGFF3")
 
 #' Chooses the contract for a `schema` value.

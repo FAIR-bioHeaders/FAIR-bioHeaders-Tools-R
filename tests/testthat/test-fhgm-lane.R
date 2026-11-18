@@ -150,6 +150,72 @@ test_that("K1 refuses a carrier citation no registered release answers to, and a
   }
 })
 
+test_that("K1 carrier identity is decided by the one shared citation grammar, slash included", {
+  # red-first at 2a6343f: K1 refused `https://w3id.org/fair-bioheaders/fhgff3/v0.6.0/` -
+  # a spelling the selection layer of this same package has always accepted
+  # (.bh_w3id_re) and that the checker's own base registry explicitly registers
+  # (FHGM-Specification development/model/base-schemas.json: "the release's w3id URL
+  # with and without the trailing slash, and its raw tag URL under both repository
+  # names"). K1 now consumes .bh_release_url_re() - one definition, no discipline-kept
+  # pair of regexes - and this test pins the cross-layer agreement in both directions.
+  base <- rawToChar(.bh_read_all(.bh_fhgm_path("vectors/valid/both-reference-forms.fhgff3.gff3")))
+  cited <- "https://w3id.org/fair-bioheaders/fhgff3/v0.5.0"
+  variant <- function(url, sv = NULL) {
+    txt <- sub(cited, url, base, fixed = TRUE)
+    if (!is.null(sv)) {
+      txt <- sub("schemaVersion:[^\n]*", paste0("schemaVersion: ", sv), txt)
+    }
+    # the swap landed, unless this IS the base's own citation (a legitimate variant)
+    if (!identical(url, cited)) expect_false(identical(txt, base))
+    p <- tempfile(fileext = ".fhgff3.gff3")
+    writeLines(strsplit(txt, "\n", fixed = TRUE)[[1L]], p)
+    p
+  }
+  # the eight spellings base-schemas.json registers for the two usable bases
+  registered <- c(
+    paste0("https://w3id.org/fair-bioheaders/fhgff3/v0.5.0", c("", "/")),
+    paste0("https://raw.githubusercontent.com/FAIR-bioHeaders/",
+      c("FAIR-bioHeaders-Specification", "FHR-Specification"),
+      "/v0.5.0/fhgff3.json"),
+    paste0("https://w3id.org/fair-bioheaders/fhgff3/v0.6.0", c("", "/")),
+    paste0("https://raw.githubusercontent.com/FAIR-bioHeaders/",
+      c("FAIR-bioHeaders-Specification", "FHR-Specification"),
+      "/v0.6.0/fhgff3.json")
+  )
+  for (u in registered) {
+    v <- suppressWarnings(bh_validate_fhgm(variant(u)))
+    expect_true(v$all_valid, info = u)
+    sel <- bh_select(u)
+    expect_equal(sel$header_type, "FHGFF3", info = u)
+    expect_equal(sel$release, if (grepl("v0\\.5\\.0", u)) "v0.5.0" else "v0.6.0",
+      info = u
+    )
+  }
+  # and every spelling NEITHER layer admits is refused by BOTH of them, in step:
+  # the raw tag with a trailing slash is not in base-schemas.json's list and does not
+  # match .bh_raw_re either - K1 must refuse it (consistency, not tolerance).
+  for (u in c(
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/v0.5.0/fhgff3.json/",
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/v0.6.0/fhgff3.json/",
+    "https://w3id.org/fair-bioheaders/fhgff3/v0.4.0/" # superseded, slash or not
+  )) {
+    v <- suppressWarnings(bh_validate_fhgm(variant(u)))
+    expect_false(v$all_valid, info = u)
+    expect_match(paste(v$records$errors, collapse = " "), "K1: the carrier", info = u)
+  }
+  # the probe of the shared grammar directly: same pattern pair from both layers
+  re <- FAIRbioHeadersTools:::.bh_release_url_re("fhgff3")
+  expect_true(grepl(re$w3id, "https://w3id.org/fair-bioheaders/fhgff3/v0.6.0/", perl = TRUE))
+  expect_true(grepl(re$w3id, "https://w3id.org/fair-bioheaders/fhgff3/v0.6.0", perl = TRUE))
+  expect_false(grepl(re$tag, paste0(
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/",
+    "v0.6.0/fhgff3.json/"
+  ), perl = TRUE))
+  expect_identical(sub(re$w3id, "\\1", "https://w3id.org/fair-bioheaders/fhgff3/v0.5.0/"),
+    "v0.5.0"
+  )
+})
+
 test_that("an empty transport array is a rule-K1 violation, not a vacuous pass", {
   p <- .bh_fhgm_path("vectors/invalid/empty-model-array.fhgff3.gff3")
   v <- suppressWarnings(bh_validate_fhgm(p))
