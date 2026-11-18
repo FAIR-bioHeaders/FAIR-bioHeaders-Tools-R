@@ -162,7 +162,9 @@ NULL
   new_keys <- function() new.env(hash = TRUE, parent = emptyenv())
   add_key <- function(keys, k) {
     if (is.null(keys)) return(invisible())
-    id <- paste0("k:", k)
+    # hex of the UTF-8 bytes: environment names pass through the native encoding, where
+    # two different non-ASCII keys could collide (or warn) under a C locale
+    id <- paste0("k", paste(as.character(charToRaw(enc2utf8(k))), collapse = ""))
     if (exists(id, envir = keys, inherits = FALSE)) {
       flag("R8: a duplicate mapping key")
     } else {

@@ -178,3 +178,9 @@ test_that("JSON-style flow values, multi-line quoted values and block scalars st
   expect_true(r$valid, info = paste(r$issues, collapse = "; "))
   expect_identical(r$record[["x-b"]], "first second")
 })
+
+test_that("non-ASCII keys are compared as UTF-8, whatever the locale", {
+  withr::local_locale(c(LC_CTYPE = "C"))
+  expect_identical(scan_of("x-näme: 1\nx-nåme: 2")$why, character())
+  expect_identical(scan_of("x-näme: 1\nx-näme: 2")$why, "R8: a duplicate mapping key")
+})
