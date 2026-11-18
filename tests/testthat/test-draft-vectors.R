@@ -84,8 +84,13 @@ test_that("an unparsable compressed stream scores only on independently detected
   # checksum question. What changed after review: the ground is .bh_gz_stream_truncated()
   # re-reading the cited bytes - the manifest's selfChecksum label may NARROW the
   # exception but never licenses it. A vector may not certify its own unreachability
-  # (maintainer ruling, FAIR-bioHeaders-Tools#146 / spec#139: self-declared
-  # `unreachable` vectors were excluded from scoring there for exactly this reason).
+  # (maintainer ruling, 2026-11-18, round-13 P-6 review recorded on this repository's
+  # PR #22; no org issue number records it - the Tools#146/spec#139 citations in earlier
+  # drafts were verified wrong and are withdrawn: #146 is a Zenodo DOI PR, spec#139 is
+  # the voucher-specimens issue. Verified adjacent implementations of the same
+  # discipline: Java commit 2c35d938 requires unreachable vectors to report the
+  # line-shape rejection, "nothing passes for the wrong reason"; FHT-Specification#37
+  # finalizes the selfChecksum field's semantics).
   dir <- .bh_draft_suite_dir()
   scratch_suite <- function() {
     s <- tempfile("fhtdecl")
@@ -163,6 +168,40 @@ test_that("an unparsable compressed stream scores only on independently detected
   d3 <- run_scratch(s3)$results
   expect_equal(d3[d3$id == "fht-fasta-gzip-truncated", ]$status, "error")
   unlink(s3, recursive = TRUE)
+
+  # (5) the 2026-11-18 re-review's counterexample, red-first at 09241ade: the live
+  # R1-labelled vector's bytes are replaced with a COMPLETE, readable gzip - the valid
+  # payload plus one newline, recorded checksum untouched. The reader then RETURNS a
+  # verdict (an R4 checksum mismatch) instead of erroring, and the generic
+  # observed==expected path passed it as the truncation rejection. Now bound on the
+  # normal-return path too: bytes that parsed cannot evidence an unreachable stream.
+  s4 <- scratch_suite()
+  tgt4 <- file.path(s4, "invalid", "fht-fasta-gzip-truncated.fht.fasta.gz")
+  con <- gzfile(file.path(dir, "valid", "fht-fasta-gzip.fht.fasta.gz"), "rb")
+  payload <- readBin(con, "raw", n = 1e6)
+  close(con)
+  expect_gt(length(payload), 100L) # an empty read is a failed measurement
+  gzc <- gzfile(tgt4, "wb")
+  writeBin(c(payload, charToRaw("\n")), gzc)
+  close(gzc)
+  # prove the substitution: bytes changed, the gzip is COMPLETE (the probe says so), and
+  # the analyzer returns a verdict rather than erroring - an R4 checksum mismatch
+  expect_false(identical(.bh_read_all(tgt4), .bh_read_all(
+    file.path(dir, "invalid", "fht-fasta-gzip-truncated.fht.fasta.gz")
+  )))
+  expect_false(FAIRbioHeadersTools:::.bh_gz_stream_truncated(tgt4))
+  a4 <- FAIRbioHeadersTools:::.bh_capture(
+    FAIRbioHeadersTools:::.bh_analyze(tgt4, format = "fht-fasta", draft = "FHT")
+  )
+  expect_true(is.null(a4$error))
+  expect_false(isTRUE(a4$value$valid))
+  expect_true(any(grepl("^R4:", a4$value$issues)))
+  d4 <- run_scratch(s4)$results
+  row4 <- d4[d4$id == "fht-fasta-gzip-truncated", ]
+  expect_equal(row4$status, "error")
+  expect_match(row4$reason, "requires bytes no reader can reach")
+  expect_match(row4$reason, "not evidence of a truncated stream")
+  unlink(s4, recursive = TRUE)
   # and nothing outside the scratch trees moved: the pinned suite is still green
   expect_true(bh_draft_vectors()$ok)
 })
