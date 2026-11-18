@@ -115,16 +115,25 @@ has no decompressed payload to hash and the file is "rejected before any checksu
 comparison" - the same reading the toolkit's FHT lane applies. The runner grounds
 that scoring on **its own re-read of the cited file**
 (`.bh_gz_stream_truncated()`: gzip magic present, member provably unfinished), never
-on a manifest field: per the maintainer ruling that a vector may not certify its own
-unreachability (FAIR-bioHeaders-Tools#146, spec#139 - self-declared `unreachable`
-vectors are excluded from scoring upstream for exactly that circularity), the
+on a manifest field: per the maintainer ruling of 2026-11-18 (round-13 P-6 review,
+recorded on this repository's PR #22 - no org issue number records it; the citations
+FAIR-bioHeaders-Tools#146 and spec#139 in earlier drafts are withdrawn as verified
+wrong, #146 being a Zenodo DOI PR and spec#139 the voucher-specimens issue; verified
+adjacent implementations of the discipline: Java commit 2c35d938, "nothing passes for
+the wrong reason", and FHT-Specification#37 finalizing the field's semantics), the
 manifest's `selfChecksum` label and the vector's R1 label only *narrow* the
-exception. Four standing controls: the pinned vector passes; deleting its
+exception. Five standing controls: the pinned vector passes; deleting its
 declaration turns it to `error` (the label buys nothing alone); replacing the
 R2 missing-checksum fixture with truncated-gzip bytes yields `error`, not the false
 `pass` the first revision produced - a rejection whose required check was never
-reached is not the gzip case; and trailing non-gzip bytes after a *complete*
-member - a refusal to frame, but not a truncation - also stays `error`.
+reached is not the gzip case; trailing non-gzip bytes after a *complete*
+member - a refusal to frame, but not a truncation - also stays `error`; and the
+re-review's counterexample - a complete, readable gzip (valid payload plus one
+newline, recorded checksum untouched) parked on the live R1 vector, which the
+reader PARSES into an R4 mismatch verdict - is reported `error` by the normal-return
+binding, never the generic `pass` the previous head produced. The conjunction binds
+both paths: only independently detected truncation plus the reader's own truncation
+refusal can score this class.
 
 `bh_draft_fhgm_vectors()` runs the **62 FHGM development vectors** published by
 FHGM-Specification, in its own labelled CI job, and never into the 291. That

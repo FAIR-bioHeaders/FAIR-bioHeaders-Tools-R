@@ -82,12 +82,22 @@ gzip magic plus an unfinished member - "there are no decompressed bytes for R1 t
 hash and the file is rejected before any checksum comparison" - the same reading
 the toolkit's FHT lane applies. The manifest's `selfChecksum: unreachable` label
 may narrow the exception but never grounds it: a vector may not certify its own
-unreachability (maintainer ruling, FAIR-bioHeaders-Tools#146 / spec#139). Four
-standing controls, red-first against the first revision of this PR: the pinned
+unreachability (maintainer ruling, 2026-11-18, round-13 P-6 review recorded on this
+PR's thread; no org issue number records it, and the earlier citations
+FAIR-bioHeaders-Tools#146 / spec#139 are withdrawn as verified wrong - #146 is a Zenodo
+DOI PR, spec#139 the voucher-specimens issue; verified adjacent implementations: Java
+commit `2c35d938` ("nothing passes for the wrong reason") and FHT-Specification#37,
+which finalizes the `selfChecksum` field's semantics). Five
+standing controls, red-first against the earlier revisions of this PR: the pinned
 vector passes; the declaration deleted from a scratch manifest -> `error`; the
 R2 missing-checksum fixture replaced with truncated-gzip bytes -> `error` (the
 first revision falsely passed it); a complete member followed by trailing non-gzip
-bytes -> `error` (a refusal to frame is not a truncation). The released reader
+bytes -> `error` (a refusal to frame is not a truncation); and the re-review's
+counterexample - the live R1 vector's bytes replaced with a COMPLETE, readable gzip
+whose payload no longer matches the recorded checksum - -> `error` on the
+normal-return path too, never the generic `pass` at `09241ade` (the R4 rejection is
+not R1's truncation evidence; a vector whose bytes parsed cannot evidence
+unreachability). The released reader
 taxonomy and the released 291 ledger are untouched.
 
 **Review follow-ups on this branch (2026-11-18, same day).** The independent review
@@ -101,10 +111,37 @@ elsewhere in this round - now grounded externally as above; (3) the vendor
 generator initially rewrote `previous` on every run, so an unchanged rerun erased
 the last real pin transition - `previous` now rotates only when the resolved
 digests move, proven by `tools/selftest_vendor_previous.R` (bare-origin fixture
-repos, four generator runs: unchanged rerun byte-identical, one-lane move rotates
-only that lane, a second move rotates to the immediately prior pin), wired as a
+repos, six generator runs: unchanged rerun byte-identical, one-lane move rotates
+only that lane, a second move rotates to the immediately prior pin, and a SUITE-
+manifest move takes `rotate_suite`'s change branch - the branch runs 1-4 never
+exercised - with the other suite's history byte-stable), wired as a
 build step because `tools/` is excluded from the tarball and a skip would violate
-the zero-skip rule. An unchanged-input rerun of the fixed generator against the
+the zero-skip rule. The independent re-review of that head (`gpt-6.1-terra`) found
+the gzip exception still open on the NORMAL-RETURN path - a complete, readable gzip
+with a stale checksum line passed the live R1 vector through the generic verdict
+comparison (reproduced red at `09241ade`: `status: pass`, R4 diagnostic) - and the
+same conjunction now binds both paths: an R1-labelled `unreachable` vector whose
+bytes PARSED is reported error, never passed on a borrowed rejection, while an
+observed `valid` still flows to the normal comparison and fails as a substitution
+should. That re-review also established the `FAIR-bioHeaders-Tools#146` /
+`spec#139` citations were WRONG - #146 is a Zenodo CITATION.cff PR, spec#139 the
+voucher-specimens issue - and they are retracted here, in the code comments, and in
+the amended commit history, leaving the honest form (maintainer ruling, 2026-11-18,
+round-13 P-6 review recorded on this PR's thread; no org issue number records it)
+plus the verified adjacent implementations (Java commit `2c35d938`, "nothing passes
+for the wrong reason"; FHT-Specification#37, which finalizes the `selfChecksum`
+semantics). The citation battery now asserts selection outcomes for the negative
+forms as well, owning the two domain differences instead of claiming universal
+layer identity: v0.4.0 selects as the real released 1.0 contract under V3 while K1
+refuses the transport pairing, and raw main is selection's V1 question, not the
+carrier's. The `draft-pin-freshness` advisory job is NOT cited as corroboration
+anywhere in this record - it is broken per `Tools-R#23` (independently reproduced:
+empty digest extractions, positional `sed -n '2p'` reading FHT's superseded digest
+against FHGM's live manifest), and its fix belongs to a separate branch;
+`native-acceptance.yaml` naming its legs by OS only, collapsing the release and
+oldrel-3 legs into one displayed name, is recorded as a CI-reporting follow-up, not
+bundled here.
+An unchanged-input rerun of the fixed generator against the
 real owning repositories left `inst/VENDORED.json` byte-identical.
 
 **Measured acceptance counts.** The model layer's compared set was not predicted
@@ -123,8 +160,9 @@ singular `rule`, zero unlabelled.
 (`REFUSED`, before any vector runs); re-running against the vendored bytes gives
 82/82 and 62/62-ok again, and `tools/check_vendoring.R` stays clean afterwards.
 
-**Spine.** `tools/run_tests.R`: `tests=1111 failed=0 errors=0 skipped=0`
-(1046 before the PR, 1057 at the first head, +54 more from the review-fix controls);
+**Spine.** `tools/run_tests.R`: `tests=1131 failed=0 errors=0 skipped=0`
+(1046 before the PR, 1111 at the first review-fix head, +20 from the re-review's
+normal-return counterexample and the negative selection assertions);
 `tools/check_duplicate_defs.R` OK; native-path grep clean; `tools/acceptance_native.R`
 291 / 228 / 63 with golden `goldenDifferences=0`; both draft receipts green with
 the literals above; matrix re-renders byte-identically (46 cells); differential
