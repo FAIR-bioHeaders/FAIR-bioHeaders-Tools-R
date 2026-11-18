@@ -7,7 +7,10 @@
 #' trail (the last real pin transition disappears). This script builds three throwaway
 #' git repositories shaped like the owning checkouts, runs the generator twice with no
 #' upstream change, asserts the history field is unchanged, then changes one contract's
-#' bytes and asserts the rotation fires exactly once and carries the true predecessor.
+#' bytes and asserts the rotation fires exactly once and carries the true predecessor,
+#' and finally moves a SUITE manifest to take rotate_suite()'s change branch (runs 5-6)
+#' - the branch the earlier runs never exercised, since both fixture suites had stayed
+#' constant.
 #'
 #' Usage (from the package root): Rscript tools/selftest_vendor_previous.R [script.R]
 #' The optional argument names an alternate vendor_upstream.R to exercise - the
@@ -127,6 +130,7 @@ run_vendor <- function() {
     fht_sha = row("FHT")$sha256, fhgm_sha = row("FHGM")$sha256,
     fht_prev = row("FHT")$previous, fhgm_prev = row("FHGM")$previous,
     suite_prev = prov$draft_vectors$previous,
+    suite_commit = prov$draft_vectors$commit,
     fhgm_suite_prev = prov$draft_fhgm_vectors$previous,
     suite_man = prov$draft_vectors$manifest_sha256
   )
@@ -176,6 +180,33 @@ g(fht_w, "push", "-q", "origin", "HEAD:main")
 r4 <- run_vendor()
 .ok(identical(r4$fht_prev$sha256, r3$fht_sha),
   "run 4: a second genuine move rotates previous to the immediately prior pin"
+)
+
+# --- the suite-lane rotation branch -----
+# rotate_suite()'s on-change branch is shared code (both suites), and runs 1-4 never
+# moved a suite: the branches tested so far were the unchanged-carry and the contract
+# rotation only. Mutating the FHT suite manifest takes the suite's change branch and
+# must rotate the FHT suite's history while leaving the FHGM suite's untouched.
+writeLines('{"vectors":[],"status":"fake draft suite v2"}',
+  file.path(fht_w, "conformance", "manifest.json")
+)
+g(fht_w, "add", "-A")
+g(fht_w, "commit", "-q", "-m", "move-fht-suite-manifest")
+g(fht_w, "push", "-q", "origin", "HEAD:main")
+r5 <- run_vendor()
+.ok(!identical(r5$suite_man, r4$suite_man), "run 5: FHT suite manifest digest moved")
+.ok(!is.null(r5$suite_prev) && identical(r5$suite_prev$manifest_sha256, r4$suite_man),
+  "run 5: suite previous rotated to the superseded manifest digest (change branch)"
+)
+.ok(!identical(r5$suite_commit %||% "", r5$suite_prev$commit %||% ""),
+  "run 5: suite previous names a DIFFERENT commit than the current pin (no self-parent)"
+)
+.ok(identical(r5$fhgm_suite_prev, r4$fhgm_suite_prev),
+  "run 5: the other suite's history is untouched by this lane's move"
+)
+r6 <- run_vendor()
+.ok(identical(r6$suite_prev, r5$suite_prev),
+  "run 6 (unchanged after a rotation): suite previous byte-identical, history stable"
 )
 
 if (.fail > 0L) {

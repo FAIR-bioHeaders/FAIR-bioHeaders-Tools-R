@@ -76,7 +76,9 @@ jobs:
           # Review follow-up (#22). Re-running tools/vendor_upstream.R with unchanged
           # inputs must leave every `previous` field byte-identical; only a genuine
           # digest move rotates the predecessor. The script builds three throwaway
-          # git repositories and runs the generator against them; tools/ is excluded
+          # git repositories and runs the generator against them - including a suite-
+          # manifest move, so rotate_suite's change branch is mutation-tested in both
+          # lanes, not just the contract branch; tools/ is excluded
           # from the package tarball, so this proof lives beside the generator as a
           # build step, not in testthat - where R CMD check could only skip it, and
           # skips fail this job by design (docs/NATIVE-ACCEPTANCE.md).
@@ -93,9 +95,10 @@ jobs:
           # Any failure, any error, ANY skip, or fewer than the floor of assertions
           # fails the build (docs/NATIVE-ACCEPTANCE.md). Floor raised 500 -> 700 with
           # the FHGM model lane and 700 -> 1000 with the 2026-11-18 draft re-pin: the
-          # revision measures 1111 assertions locally (1046 before the re-pin; the
-          # additions are the K1 carrier tests, the shared-grammar citation battery,
-          # and the four declared-class scoring controls), and the floor is the
+          # revision measures 1131 assertions locally (1046 before the re-pin; the
+          # additions are the K1 carrier tests, the citation battery with its negative
+          # selection assertions, and the five declared-class scoring controls), and
+          # the floor is the
           # current real count rounded down, never a number nothing reaches.
           BH_MIN_TESTS=1000 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
           cat tests.properties
