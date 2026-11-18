@@ -82,8 +82,10 @@ NULL
 
 .bh_link_scan <- function(x, keys, out = list()) {
   if (is.list(x) && !is.null(names(x))) {
-    for (nm in names(x)) {
-      v <- x[[nm]]
+    nms <- names(x)
+    for (i in seq_along(x)) {
+      nm <- nms[[i]]
+      v <- x[[i]]
       if (nm %in% keys) {
         # the value can arrive as a character vector (a plain YAML sequence) or as a
         # list of them (.bh_repair_shape wraps sequence keys into lists), so collect
@@ -126,31 +128,25 @@ NULL
   FALSE
 }
 
-#' Rule R11: a plain FASTA header value holding a record marker, which strict readers treat
+#' Rule R11: a FASTA header line holding a raw record marker, which strict readers treat
 #' as the start of a sequence. Reported, never rejected.
+#'
+#' The rule is about the bytes on the line, not about YAML: kseq-style readers split at the
+#' first `>` or `@` anywhere in it, so a quoted value or a comment holding one is reported
+#' too. The fix is the escape inside a double-quoted value (`\\x3E`, `\\x40`), which leaves
+#' no raw character on the line.
 #' @noRd
 .bh_marker_warnings <- function(lines, format) {
   if (!format %in% c("fasta", "fhp-fasta", "fht-fasta")) return(character())
-  out <- character()
-  for (l in lines) {
-    body <- trimws(l)
-    if (!nzchar(body) || startsWith(body, "#")) next
-    item <- grepl("^-([ \t]|$)", body)
-    if (item) body <- trimws(sub("^-([ \t]|$)", "", body))
-    v <- .bh_inline_value(body)
-    if (is.null(v) || !.bh_plain_value(v)) next
-    if (grepl("[>@]", v)) {
-      out <- c(out, paste0(
-        "R11: ", body, " puts ", if (grepl(">", v)) "`>`" else "`@`",
-        " in a plain header value; strict FASTA readers start a record there. Quote the ",
-        "value and write \\x3E or \\x40"
-      ))
-    }
-  }
-  unique(out)
-}
-
-# Is this scalar written plain - no quotes, no block or anchor indicator?
-.bh_plain_value <- function(val) {
-  nzchar(val) && !grepl("^['\"]", val) && !grepl("^[|>&*!]", val)
+  gt <- grepl(">", lines, fixed = TRUE)
+  at <- grepl("@", lines, fixed = TRUE)
+  hit <- which(gt | at)
+  if (!length(hit)) return(character())
+  what <- ifelse(gt[hit] & at[hit], "`>` and `@`", ifelse(gt[hit], "`>`", "`@`"))
+  esc <- ifelse(gt[hit] & at[hit], "\\x3E and \\x40", ifelse(gt[hit], "\\x3E", "\\x40"))
+  paste0(
+    "R11: header line ", hit, " contains a raw ", what,
+    "; strict FASTA readers start a record there. Write ", esc,
+    " in a double-quoted value instead"
+  )
 }

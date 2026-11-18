@@ -6,9 +6,9 @@
 \description{
 Rule R12 says header YAML must read the same under YAML 1.1 and YAML 1.2 core schema,
 which is a statement about the \emph{text}, not about whatever one library happens to
-return - so the portable-scalar check runs on the lines as written. R8 forbids
-duplicate mapping keys, anchors, aliases and merge keys; R13 forbids non-finite
-numbers. docs/SCHEMA-VERSIONS.md adds two requirements the contracts do not express:
+return - so the portable-scalar check runs on the text as written, before parsing (see
+R/yaml-scan.R). R8 forbids duplicate mapping keys, anchors, aliases and merge keys; R13
+forbids non-finite numbers. docs/SCHEMA-VERSIONS.md adds two requirements the contracts do not express:
 required values must be non-empty, and \code{format} must be asserted. The first is a
 warning (rejecting it would invalidate records the released schemas accept); the
 second is enforced in \code{\link[=bh_validate]{bh_validate()}}.
