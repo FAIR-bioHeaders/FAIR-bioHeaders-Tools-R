@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   check:
-    name: R CMD check (${{ matrix.os }})
+    name: R CMD check (${{ matrix.os }}, R ${{ matrix.r }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

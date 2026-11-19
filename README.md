@@ -18,8 +18,15 @@ every read, and **never a support claim** - see `docs/CAPABILITY-MATRIX.md`.
 R CMD build . && R CMD INSTALL FAIRbioHeadersTools_*.tar.gz
 ```
 
-A C compiler is required (the vendored SHA-512/256 core in `src/`; see
-`docs/DIGEST.md` for why it is vendored rather than delegated).
+A C compiler and `zlib` (`-lz` in `src/Makevars` / `src/Makevars.win`, declared in
+`DESCRIPTION` `SystemRequirements`) are required: `src/` compiles both the vendored
+FIPS 180-4 SHA-512/256 core (`src/sha512.c`; see `docs/DIGEST.md` for why it is
+vendored rather than delegated) and the strict gzip transport reader (`src/gz.c`),
+which uses `zlib` directly for rule-R1 member-by-member decompression, CRC-32 and
+length trailer verification, and trailing-byte rejection rather than R's base
+`gzfile()` connection (which silently drops trailing garbage after the last gzip
+member and reports a CRC mismatch or truncated member only as a warning or unclassed
+connection error).
 
 ## Use
 
@@ -57,7 +64,8 @@ bh_draft_fhgm_vectors()                              # the FHGM suite, layer by 
 and `docs/CAPABILITY-MATRIX.md` is that table published. Unfilled cells carry a
 reason and a tracker - in particular the JSON-LD (37 vectors) and microdata
 (26 vectors) readers are **not implemented**, nor is the FHGM checker's cross-record
-layer (K3-K6: 24 of its 31 vectors are reported `not-run`, not passed). FHGM's lane
+layer (K3-K6/B1: 43 of its 62 vectors are reported `not-run`, not passed; 19 are
+compared at the model layer). FHGM's lane
 cells cover reading the transported records and validating each one against the
 pinned draft record contract (K1/K2).
 Acceptance is the federation's shared 291-vector suite; how it is run, guarded,
@@ -73,7 +81,8 @@ the explicit not-verified list are `docs/STATUS.md`.
   `Rscript tools/acceptance_fhgm.R` (FHGM, layer by layer; receipts to
   `BH_DRAFT_RECEIPT` / `BH_FHGM_RECEIPT`)
 - vendored-bytes audit (offline) / draft-pin freshness (online, advisory):
-  `Rscript tools/check_vendoring.R [--fresh --fht <checkout> --fhgm <checkout>]`
+  `Rscript tools/check_vendoring.R [--fresh --fht <checkout> --fhgm <checkout>]` and
+  `Rscript tools/draft_pin_freshness.R [--self-test]`
 - namespace hygiene: `Rscript tools/check_duplicate_defs.R` — fails if any top-level
   name in `R/` is defined twice. R resolves a duplicate silently (the file collated
   later owns the binding, so the earlier copy is dead code) and `R CMD check` says

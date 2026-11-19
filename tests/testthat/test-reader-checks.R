@@ -37,6 +37,28 @@ test_that("a header type the container cannot carry makes the file invalid (H2)"
   # an unsupported citation is rule V4's, not the container rule's
   expect_identical(.bh_family_issue(list(header_type = "FHGFF3", status = "unsupported"),
     "fasta"), character())
+  # .bh_family_allowed is pinned to the reader's format vocabulary (.bh_formats), every
+  # entry is non-empty, and unknown/unsupported format strings error with bh_input rather
+  # than emitting a self-contradictory empty allow-list ("expected  metadata", #21 item 3)
+  expect_identical(names(.bh_family_allowed), names(.bh_formats))
+  for (fmt in names(.bh_formats)) {
+    expect_true(is.character(.bh_family_allowed[[fmt]]) &&
+      length(.bh_family_allowed[[fmt]]) >= 1L &&
+      all(nzchar(.bh_family_allowed[[fmt]])), info = fmt)
+    expect_true(nzchar(.bh_prefix(fmt)), info = fmt)
+    # every known format produces a non-empty allow-list when given an inapplicable type
+    msg <- .bh_family_issue(list(header_type = "UNREGISTERED", status = "released"), fmt)
+    expect_length(msg, 1L)
+    expect_match(msg, "expected [A-Z0-9]+( or [A-Z0-9]+)* metadata$", info = fmt)
+    expect_false(grepl("expected  metadata", msg, fixed = TRUE), info = fmt)
+  }
+  for (bad_fmt in c("jsonld", "microdata", "yaml", "", NA_character_)) {
+    expect_error(
+      .bh_family_issue(list(header_type = "FHR", status = "released"), bad_fmt),
+      "unknown serialization",
+      class = "bh_input"
+    )
+  }
 })
 
 test_that("the verified checksum line must be the record's own checksum (H5)", {

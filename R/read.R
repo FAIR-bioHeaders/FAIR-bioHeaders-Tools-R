@@ -59,10 +59,19 @@ NULL
 # The header types each serialization may carry (docs/FORMAT.md: "A header whose type ...
 # does not match the file it is in makes the file invalid, even when its checksum
 # matches"). FHT joins the FASTA forms only through the draft lane.
-.bh_family_allowed <- list(
-  fasta = c("FHR", "FHP"), `fhp-fasta` = c("FHR", "FHP"), `fht-fasta` = c("FHR", "FHP"),
-  gfa = "FHR", fhgff3 = "FHGFF3"
-)
+.bh_family_allowed <- {
+  # Derived from the reader's own format vocabulary: every name in .bh_formats gets
+  # exactly one entry, decided by the container that name denotes — never by vector
+  # position, so a future format addition fails loudly (the FASTA/GFA/FHGFF3 cases
+  # must be named here) instead of silently recycling a neighbour's allow-list.
+  allowed_for <- function(fmt) {
+    if (fmt %in% c("fasta", "fhp-fasta", "fht-fasta")) c("FHR", "FHP")
+    else if (fmt == "gfa") "FHR"
+    else if (fmt == "fhgff3") "FHGFF3"
+    else "" # unmapped: caught by the non-emptiness guard below, never guessed
+  }
+  setNames(lapply(names(.bh_formats), allowed_for), names(.bh_formats))
+}
 
 #' The container rule: an FHGFF3 header in FASTA, an FHP header in GFA and the like.
 #'
@@ -70,9 +79,16 @@ NULL
 #' checked, as the Python reference does.
 #' @noRd
 .bh_family_issue <- function(selection, format) {
+  if (!is.character(format) || length(format) != 1L || is.na(format) ||
+      !format %in% names(.bh_formats)) {
+    bh_abort("input", paste0("unknown serialization ", sQuote(as.character(format)[1L])))
+  }
   if (is.null(selection) || identical(selection$status, "unsupported")) return(character())
   type <- selection$header_type
   allowed <- .bh_family_allowed[[format]]
+  if (!length(allowed) || any(!nzchar(allowed))) {
+    bh_abort("input", paste0("no allowed header types registered for serialization ", sQuote(format)))
+  }
   if (format %in% c("fasta", "fhp-fasta", "fht-fasta") && identical(selection$status, "draft")) {
     allowed <- c(allowed, "FHT")
   }

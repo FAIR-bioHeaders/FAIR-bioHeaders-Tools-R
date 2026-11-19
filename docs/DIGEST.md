@@ -35,10 +35,20 @@ failure mode the design below exists to make impossible.
 
 Reasons, against the alternatives in the same table:
 
-1. **No new external dependency.** `Imports:` stays `digest, jsonlite, jsonvalidate,
-   yaml` (digest for SHA-256 provenance pins only, never for the file checksum). A C
-   compiler is already required by `SystemRequirements` and is present on CRAN and
-   Bioconductor CI images. No PATH assumptions, no libcrypto symbol-name roulette.
+1. **No new external package dependency, plus `zlib` for strict gzip framing.** `Imports:`
+   stays `digest, jsonlite, jsonvalidate, yaml` (`digest` for SHA-256 provenance pins only,
+   never for the file checksum). A C compiler and `zlib` (`PKG_LIBS = -lz` in `src/Makevars`
+   and `src/Makevars.win`) are declared in `DESCRIPTION` `SystemRequirements` and are present
+   on standard R toolchains and CRAN/Bioconductor CI images. Alongside the vendored SHA-512/256
+   core (`src/sha512.c`), `src/gz.c` uses `zlib` directly for the compressed transport because
+   R's base `gzfile()` connection is too lenient for rule-R1 checksum verification: `gzfile()`
+   silently drops trailing bytes after the last gzip member (so a file with trailing garbage
+   would verify as valid) and surfaces a CRC-32 mismatch or truncated member only as a
+   connection warning or unclassed read error. `src/gz.c` parses each RFC 1952 member header,
+   inflates raw deflate blocks across single- or multi-member streams (including BGZF and
+   permitted zero-byte padding between or after members), verifies every member's CRC-32 and
+   ISIZE length trailer, and raises a classed `bh_input` error on truncation, corruption or
+   non-zero trailing bytes. No PATH assumptions, no libcrypto symbol-name roulette.
 2. **It is self-testing at load time.** `.onLoad` runs `bh_selftest()`
    (`src/entry.c`), which recomputes the published sample digests through the
    *compiled* code: SHA-512/256 of `"abc"` = `53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23`

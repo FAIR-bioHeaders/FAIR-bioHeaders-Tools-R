@@ -1,12 +1,64 @@
 # STATUS — measured state of the R library
 
 Date: **2026-11-14**, with the 2026-11-15 sections below added for #10 and #12, a
-2026-11-16 section for the draft-suite re-pin, and a 2026-11-18 section for the
-round-13 coordinated draft re-pin. Everything in
+2026-11-16 section for the draft-suite re-pin, a 2026-11-18 section for the
+round-13 coordinated draft re-pin, and a 2026-11-19 section for #21 and #23. Everything in
 the table was measured on the commit this document accompanied, on macOS 14 arm64 with
 R 4.6.1, `jsonvalidate` 1.5.0 (V8 8.2.1), `digest` 0.6.39, `yaml` 2.3.12,
 `jsonlite` 2.0.0, `roxygen2` 8.1.0, `testthat` 3.3.2. CI re-measures the same spine on
 ubuntu-latest and macos-latest.
+
+## 2026-11-19 — provenance freshness parsing (#23) and shipped-guidance guards (#21)
+
+Measured on branch `round14/b2-r-provenance-guidance` from `origin/main` at `41f51c6c`,
+macOS arm64, R 4.6.1. No vendored contract, suite manifest or vector byte under
+`inst/schemas/`, `inst/drafts/`, `tests/conformance/` or `tests/draft/` moved.
+
+1. **`draft-pin-freshness` provenance parsing and unusable-input controls (#23).**
+   Replaced the inline `grep`/`sed -n '2p'` shell step in `.github/workflows/build.yml`
+   with `tools/draft_pin_freshness.R`, which parses `inst/VENDORED.json` (and the
+   digest-pinned `tests/draft/fhgm/provenance.json` for the FHGM transport overlay pin)
+   via `jsonlite::fromJSON` by exact object path, verifies local vendored files against
+   their recorded digests first, runs a non-redirecting 404 control probe per owning
+   repository, and prints one labelled row (`TARGET | PINNED | SHIPPED | LIVE | VERDICT`)
+   across all five pinned draft targets (`FHT-contract`, `FHT-suite-manifest`,
+   `FHGM-record-contract`, `FHGM-transport-overlay`, `FHGM-suite-manifest`). Empty,
+   missing or non-64-hex digests, local file mismatches, failed 404 control probes,
+   redirects, or unreadable live reads return `UNUSABLE` (exit 2) and never fall through
+   into the `MOVED` (exit 1) mismatch branch. `Rscript tools/draft_pin_freshness.R --self-test`
+   runs in `build.yml` (both in the primary `build` job and in `draft-pin-freshness`) and
+   is also exercised in `tests/testthat/test-docs-claims.R` when the checkout tree is
+   present.
+2. **Four shipped-guidance defects and compiled-dependency/platform statements (#21).**
+   - `docs/NATIVE-ACCEPTANCE.md` now cites the actual SHA-256 of
+     `tests/testthat/reference/default-behavior-v0.6.0.json`
+     (`02cdf7af3681c96e63c76a2af1bc34459b63a7572f1dc881e0f1c518c9403c41`), and
+     `test-docs-claims.R` asserts that the digest quoted in `docs/NATIVE-ACCEPTANCE.md`
+     equals the live SHA-256 of the golden file.
+   - `README.md` and `docs/STATUS.md` ("Not verified" item 7) now state the current
+     FHGM draft-suite figures (**43 of 62** vectors `not-run`, **19** compared at the
+     model layer), matching `inst/VENDORED.json`, `man/bh_draft_fhgm_vectors.Rd` and
+     `docs/CAPABILITY-MATRIX.md`; `test-docs-claims.R` compares the counts stated in
+     `README.md`, `docs/NATIVE-ACCEPTANCE.md`, `docs/CAPABILITY-MATRIX.md`,
+     `man/bh_draft_vectors.Rd` and `man/bh_draft_fhgm_vectors.Rd` against the pinned
+     records and suite runner counts.
+   - `.bh_family_allowed` (`R/read.R`) is derived with `setNames(..., names(.bh_formats))`
+     so its keys are pinned to the reader's format vocabulary, and `.bh_family_issue()`
+     raises a classed `bh_input` error on any format outside `names(.bh_formats)` rather
+     than producing an empty allow-list (`"expected  metadata"`). Covered in
+     `test-reader-checks.R`.
+   - The `draft-vectors` job in `.github/workflows/build.yml` now uploads
+     `fht-draft-vectors.properties` as artifact `fht-draft-vectors-${{ matrix.os }}`
+     with `if-no-files-found: error`, matching `fhgm-draft-vectors-${{ matrix.os }}`,
+     and `.github/workflows/native-acceptance.yaml` names its matrix legs
+     `R CMD check (${{ matrix.os }}, R ${{ matrix.r }})` so the `release` and `oldrel-3`
+     Ubuntu legs are distinct.
+   - `README.md`, `docs/DIGEST.md`, `docs/STATUS.md` and `docs/CAPABILITY-MATRIX.header.md`
+     (plus regenerated `docs/CAPABILITY-MATRIX.md`) document `zlib` (`-lz` in
+     `src/Makevars` / `src/Makevars.win`, `DESCRIPTION` `SystemRequirements`) for
+     `src/gz.c`'s strict rule-R1 gzip framing and explicitly state that `src/Makevars.win`
+     is provided for standard R `-lz` linking on Windows while Windows is not in the CI
+     matrix (Ubuntu and macOS are tested in CI).
 
 ## 2026-11-18 — round-13 coordinated re-pin: both draft contracts moved, and both suites with them
 
@@ -162,12 +214,28 @@ singular `rule`, zero unlabelled.
 
 **Spine.** `tools/run_tests.R`: `tests=1131 failed=0 errors=0 skipped=0`
 (1046 before the PR, 1111 at the first review-fix head, +20 from the re-review's
-normal-return counterexample and the negative selection assertions);
+normal-return counterexample and the negative selection assertions; **1199 on 2026-11-19
+after round 14 #21/#23** — the freshness self-test wired as a CI step, the prose-claim
+tests, and the format-vocabulary assertions);
 `tools/check_duplicate_defs.R` OK; native-path grep clean; `tools/acceptance_native.R`
 291 / 228 / 63 with golden `goldenDifferences=0`; both draft receipts green with
 the literals above; matrix re-renders byte-identically (46 cells); differential
 `90 inputs, 0 mismatches`; `R CMD check --as-cran --no-manual` (idle machine):
 `Status: 2 NOTEs`, exit 0, packaged tests `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1057 ]`.
+**Re-measured 2026-11-19 at round 14 (#21/#23), same idle-machine discipline**:
+`tests=1199 failed=0 errors=0 skipped=0`; `R CMD check --as-cran --no-manual`
+exit 0 with `Status: 3 NOTEs` — "New submission" (unavoidable), the five upstream
+portable-path names (structural, disclosed below and unchanged), and the
+worktree-local `.git` artifact of running `R CMD build` inside a `git worktree`
+(in the normal main checkout and in CI the directory form is handled the way it
+always was). The earlier `no visible global function definition for 'head'` NOTE
+that the first round-14 run produced is fixed in the same pass: `R/conformance.R`
+now qualifies `utils::head()`. This block's golden reference, stated once so the
+history above reads correctly: the default-behavior golden has been
+`02cdf7af3681c96e63c76a2af1bc34459b63a7572f1dc881e0f1c518c9403c41` since `9fc09203`;
+the dated "still `055da14f...`" sentences above are accurate to their own commits, and
+`docs/NATIVE-ACCEPTANCE.md` — the verification document #21 item 1 was about — now
+cites `02cdf7af...` with a test holding the quoted digest to the real file.
 The first NOTE is the unavoidable "New submission" one. The second is new with
 this pin and structural, not accidental: five of the FHGM suite's new vector file
 names exceed R's 100-character portable-path limit once they sit under
@@ -573,8 +641,13 @@ byte-identical, so `man/conditions.Rd` is the only documentation page this chang
 
 ## What is implemented (native, released types)
 
-- Vendored FIPS 180-4 SHA-512/256 (`src/`), streaming with rule-R3 range exclusion
-  and the rule-R10 line scanner; decision and evidence in docs/DIGEST.md.
+- Vendored FIPS 180-4 SHA-512/256 (`src/sha512.c`), streaming with rule-R3 range exclusion
+  and the rule-R10 line scanner (`src/scan.c`), plus the strict `zlib` gzip reader
+  (`src/gz.c`, linked via `PKG_LIBS = -lz` in `src/Makevars` / `src/Makevars.win` and
+  declared in `DESCRIPTION` `SystemRequirements`) that verifies RFC 1952 member headers,
+  CRC-32 and length trailers, multi-member/BGZF concatenation and zero padding while
+  rejecting truncated members or trailing non-gzip garbage that R's base `gzfile()`
+  silently ignores; decision and evidence in docs/DIGEST.md.
 - Byte-exact framing (rules R1-R7, R10), YAML semantics (R8, R12, R13), warning
   reporting (R11, R14, empty-required), contract validation with `engine = "ajv"`
   asserted and dialect-probed, selection rules V1-V6, parent-link verification
@@ -620,9 +693,12 @@ byte-identical, so `man/conditions.Rd` is the only documentation page this chang
   not evaluated here. Opt-in only,
   warns on every record read, and `schemaVersion`, registry row and w3id URL are all absent,
   as rule V7 requires. Tracked in #3; FHGM publishes as specification v0.8.0.
-- Freshness of both draft pins was last verified 2026-11-18 against the owning
-  repositories' live default branches (advisory CI job `draft-pin-freshness`, which now
-  covers both contracts and both suite manifests).
+- Freshness of all five draft targets (FHT contract, FHT suite manifest, FHGM record
+  contract, FHGM transport overlay, FHGM suite manifest) was last verified 2026-11-19
+  against the owning repositories' live default branches (`tools/draft_pin_freshness.R`,
+  run by the advisory CI job `draft-pin-freshness`, which parses `inst/VENDORED.json`
+  with `jsonlite::fromJSON` by exact object path, verifies local vendored copies first,
+  runs a 404 control probe, and exits 2 on any unusable input).
 
 ## The FHGM re-land (2026-11-14): what this section replaces
 
@@ -694,13 +770,16 @@ lane only; the released path and the golden do not move.
 7. **FHGM cross-record model rules** K3 (modelId uniqueness in a snapshot), K4
    (feature-target resolution against the GFF3 feature layer), K5 (record/file
    reference comparability) and K6 (predecessor-pointer resolution): not ported,
-   named as their own matrix rows, and their 34 vectors are reported `not-run`
+   named as their own matrix rows, and their 43 vectors (out of 62 in the pinned
+   suite; 19 are compared at the model layer) are reported `not-run`
    rather than passed. The upstream checker (`validate_fhgm.py`) stays the
    reference for them and is deliberately not vendored here.
 8. **FHGM revision/curator semantics.** A resolved pointer would only identify a
    predecessor, never accept a revision; that is a curator decision (shared #204)
    and nothing here claims it.
-9. **Windows**: the package declares no OS restriction; not tested.
+9. **Windows**: `src/Makevars.win` is provided for standard R `-lz` linking on
+   Windows and the package declares no OS restriction, but Windows is not in the
+   CI matrix (Ubuntu and macOS are tested in CI) and has not been compiled or tested.
 
 ## Provenance notes
 
