@@ -85,6 +85,14 @@ jobs:
           set -e
           Rscript tools/selftest_vendor_previous.R
 
+      - name: Assert the draft-pin freshness guard parses JSON and can fail
+        run: |
+          # Issue #23. The freshness helper parses inst/VENDORED.json with jsonlite::fromJSON
+          # by exact object path (never grep or positional sed), verifies local vendored
+          # copies first, and returns MOVED (exit 1), UNUSABLE (exit 2), or CURRENT (exit 0).
+          set -e
+          Rscript tools/draft_pin_freshness.R --self-test
+
       - name: Install
         run: |
           R CMD build .
@@ -272,6 +280,13 @@ jobs:
           grep -qx 'suiteManifestSha256=e5a4a5d027259e29a7e3cfb42da5e1ef07fa78d4a0e604ef73f28b8e5a59a508' "$receipt" \
             || { echo "the FHT suite manifest is not the pinned digest" >&2; exit 1; }
           grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; exit 1; }
+      - name: Upload the FHT draft receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fht-draft-vectors-${{ matrix.os }}
+          path: fht-draft-vectors.properties
+          if-no-files-found: error
 
   # Rule V7 evidence, separate and labelled: the FHGM development suite. FHGM is not a
   # header type - its records are transported inside an FHGFF3 header under x-fhgm-models -
@@ -372,32 +387,17 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::digest, any::jsonlite
+          needs: check
+      - name: Self-test the freshness parser and failure controls
+        run: Rscript tools/draft_pin_freshness.R --self-test
       - name: Compare the pinned draft bytes with live raw main
-        run: |
-          set -e
-          # Values are read with grep -oE (no BRE interval escapes) from
-          # inst/VENDORED.json and compared with curl'd live bytes. No -f/-F to any
-          # gh call; plain GETs only.
-          check() { # $1 label, $2 pinned sha, $3 url
-            got=$(curl -sS "$3" | shasum -a 256 | cut -d' ' -f1)
-            if [ "$got" = "$2" ]; then
-              echo "$1: pin unchanged ($2)"
-            else
-              echo "::warning::$1: PIN MOVED - pinned $2, live main $got ($3)"
-              false
-            fi
-          }
-          moved=0
-          pins=inst/VENDORED.json
-          fht_sha=$(grep -oE '"file": "inst/drafts/fht-draft.json"[^}]*"sha256": "[0-9a-f]{64}"' "$pins" | grep -oE '[0-9a-f]{64}' | tail -1)
-          fhgm_sha=$(grep -oE '"file": "inst/drafts/fhgm-model-draft.schema.json"[^}]*"sha256": "[0-9a-f]{64}"' "$pins" | grep -oE '[0-9a-f]{64}' | tail -1)
-          suite_sha=$(grep -oE '"manifest_sha256": "[0-9a-f]{64}"' "$pins" | sed -n '1p' | grep -oE '[0-9a-f]{64}')
-          fhgm_suite_sha=$(grep -oE '"manifest_sha256": "[0-9a-f]{64}"' "$pins" | sed -n '2p' | grep -oE '[0-9a-f]{64}')
-          check FHT "$fht_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/fht.json || moved=1
-          check FHGM "$fhgm_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHGM-Specification/main/development/model/fhgm-model.schema.json || moved=1
-          check FHT-suite-manifest "$suite_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/conformance/manifest.json || moved=1
-          check FHGM-suite-manifest "$fhgm_suite_sha" https://raw.githubusercontent.com/FAIR-bioHeaders/FHGM-Specification/main/development/conformance/manifest.json || moved=1
-          [ "$moved" = 0 ] || echo "draft pins are stale: re-vendor deliberately (tools/vendor_upstream.R), never as a drive-by"
+        run: Rscript tools/draft_pin_freshness.R
 
   # Supplemental differential, labelled and never the gate: the vendored digest core
   # against CPython hashlib. The PRIMARY job above installs no Python; this job

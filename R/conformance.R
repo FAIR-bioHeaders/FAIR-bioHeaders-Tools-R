@@ -233,7 +233,7 @@ NULL
       rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "error", paste0(
         "the record's R1 evidence requires bytes no reader can reach (selfChecksum: ",
         "unreachable), but these bytes parsed and produced a verdict: ",
-        paste(head(a$issues, 3), collapse = " | "), ". Reaching a checksum-line ",
+        paste(utils::head(a$issues, 3), collapse = " | "), ". Reaching a checksum-line ",
         "rejection is not evidence of a truncated stream, and no truncation was ",
         "detected on re-reading them - passing would credit this vector with a ",
         "rejection it never established (maintainer ruling, 2026-11-18, ",

@@ -62,7 +62,7 @@ The baseline ledger, produced identically by the R runner and the Java runner:
 ## The default-behavior golden
 
 `tests/testthat/reference/default-behavior-v0.6.0.json` (SHA-256
-`055da14f6dcbdb8ae9e5fc3880fb5bb56d510defb2e12639bde056edc820a525`) fingerprints
+`02cdf7af3681c96e63c76a2af1bc34459b63a7572f1dc881e0f1c518c9403c41`) fingerprints
 the default reading (`draft = FALSE`) over all 291 vectors - verdict, computed
 checksum, hashed-byte count, selection outcome, issue/warning rule codes, and the
 SHA-256 of the exact JSON the contract validator received - plus 32 V1-V6

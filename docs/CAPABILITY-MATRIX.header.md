@@ -48,3 +48,15 @@ The rows follow. `contract versions` lists what this package bundles and selects
 between; released versions come from the v0.6.0 registry (FHR 2.1, FHP 1.2,
 FHGFF3 1.2) with historical copies (FHR 1, 2.0; FHP 1.0, 1.1; FHGFF3 1.0, 1.1)
 held for rules V2/V3/V6.
+
+Compiled C dependencies and platform CI coverage (`DESCRIPTION` `SystemRequirements`):
+`src/` compiles the vendored FIPS 180-4 SHA-512/256 core (`src/sha512.c`, `src/scan.c`)
+and the strict gzip reader (`src/gz.c`), linking `zlib` (`PKG_LIBS = -lz` in
+`src/Makevars` and `src/Makevars.win`). `src/gz.c` links `zlib` directly rather than
+using R's base `gzfile()` connection so that rule-R1 gzip framing verifies every
+member's RFC 1952 header, CRC-32 and length trailer, permits multi-member/BGZF streams
+and inter-member zero padding, and rejects truncated streams or trailing non-gzip bytes
+as classed `bh_input` errors (`gzfile()` silently drops trailing bytes after the last
+member). `src/Makevars.win` is provided for standard R `-lz` linking on Windows, but
+Windows is **not** in the CI matrix (Ubuntu and macOS are tested in CI; Windows
+compilation is not verified).
