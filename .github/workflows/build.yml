@@ -71,6 +71,20 @@ jobs:
           set -e
           Rscript tools/check_duplicate_defs.R --verbose
 
+      - name: Assert the vendor record rotates its history only on change
+        run: |
+          # Review follow-up (#22). Re-running tools/vendor_upstream.R with unchanged
+          # inputs must leave every `previous` field byte-identical; only a genuine
+          # digest move rotates the predecessor. The script builds three throwaway
+          # git repositories and runs the generator against them - including a suite-
+          # manifest move, so rotate_suite's change branch is mutation-tested in both
+          # lanes, not just the contract branch; tools/ is excluded
+          # from the package tarball, so this proof lives beside the generator as a
+          # build step, not in testthat - where R CMD check could only skip it, and
+          # skips fail this job by design (docs/NATIVE-ACCEPTANCE.md).
+          set -e
+          Rscript tools/selftest_vendor_previous.R
+
       - name: Install
         run: |
           R CMD build .
@@ -80,9 +94,13 @@ jobs:
         run: |
           # Any failure, any error, ANY skip, or fewer than the floor of assertions
           # fails the build (docs/NATIVE-ACCEPTANCE.md). Floor raised 500 -> 700 with
-          # the FHGM model lane: the revision measures 770 assertions locally, and the
-          # floor is the current real count rounded down, never a number nothing reaches.
-          BH_MIN_TESTS=700 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
+          # the FHGM model lane and 700 -> 1000 with the 2026-11-18 draft re-pin: the
+          # revision measures 1131 assertions locally (1046 before the re-pin; the
+          # additions are the K1 carrier tests, the citation battery with its negative
+          # selection assertions, and the five declared-class scoring controls), and
+          # the floor is the
+          # current real count rounded down, never a number nothing reaches.
+          BH_MIN_TESTS=1000 BH_TESTS_RECEIPT=tests.properties Rscript tools/run_tests.R
           cat tests.properties
           for line in failed=0 errors=0 skipped=0; do
             grep -qxF "$line" tests.properties || { echo "expected $line" >&2; exit 1; }
@@ -198,7 +216,7 @@ jobs:
           if-no-files-found: error
 
   # Rule V7 evidence, separate and labelled: the pinned FHT development contract and
-  # its own 72-vector suite. Still native (R only, no Python). A pass here is "the
+  # its own 82-vector suite. Still native (R only, no Python). A pass here is "the
   # pinned draft bytes behave as their own suite expects through this reader", never
   # "FHT is supported": FHT has no released contract, no schemaVersion, no registry
   # row and no w3id URL (docs/CAPABILITY-MATRIX.md).
@@ -242,16 +260,16 @@ jobs:
             exit 1
           fi
           cat "$receipt"
-          grep -qx 'vectorsInManifest=72' "$receipt" || { echo "expected 72 vectors in the manifest" >&2; exit 1; }
-          grep -qx 'vectorsRan=72' "$receipt" || { echo "expected 72 draft vectors to run" >&2; exit 1; }
-          grep -qx 'vectorsPassed=72' "$receipt" || { echo "expected 72 draft vectors to pass" >&2; exit 1; }
-          grep -qx 'contractCommit=226f923c28b680edb3c546e99a751482d06aef1a' "$receipt" \
+          grep -qx 'vectorsInManifest=82' "$receipt" || { echo "expected 82 vectors in the manifest" >&2; exit 1; }
+          grep -qx 'vectorsRan=82' "$receipt" || { echo "expected 82 draft vectors to run" >&2; exit 1; }
+          grep -qx 'vectorsPassed=82' "$receipt" || { echo "expected 82 draft vectors to pass" >&2; exit 1; }
+          grep -qx 'contractCommit=86438f21c3a17a58334c97aed4955be1a2393522' "$receipt" \
             || { echo "the draft suite did not run against the pinned contract commit" >&2; exit 1; }
-          grep -qx 'contractSha256=59ad9641adcb0e5591045c2d894c066d1adc9984cca84c5ff6502f8dad88487e' "$receipt" \
+          grep -qx 'contractSha256=4156353aa6d077fee2d2c69be4e17859b8e4f81bb10824f3c87f6701de196e7a' "$receipt" \
             || { echo "the draft suite did not run against the pinned contract digest" >&2; exit 1; }
-          grep -qx 'suiteCommit=be9bcc825f55db92852fd882ffba4c1c214f53db' "$receipt" \
+          grep -qx 'suiteCommit=86438f21c3a17a58334c97aed4955be1a2393522' "$receipt" \
             || { echo "the suite is not the pinned revision" >&2; exit 1; }
-          grep -qx 'suiteManifestSha256=9fd8c0b2a4638d5ddc0bf9b5d1e96c66778b26bcf8f93975aafb707d8f2b702c' "$receipt" \
+          grep -qx 'suiteManifestSha256=e5a4a5d027259e29a7e3cfb42da5e1ef07fa78d4a0e604ef73f28b8e5a59a508' "$receipt" \
             || { echo "the FHT suite manifest is not the pinned digest" >&2; exit 1; }
           grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; exit 1; }
 
@@ -294,7 +312,7 @@ jobs:
           # As in the FHT job, the receipt is written by the R run itself, which re-digests
           # the vendored bytes against the registry pin before reading a single vector. The
           # literals below are a SECOND, independent statement of the same pins and counts:
-          # drift in either place fails the job. 34 of the 43 vectors are deliberately NOT
+          # drift in either place fails the job. 43 of the 62 vectors are deliberately NOT
           # run at the model layer - their verdicts turn on checker rules K3-K6/B1 that this
           # package does not implement - and an empty or shrinking model layer fails here.
           # The suite is pinned by digest first and count second: the manifest digest and
@@ -308,29 +326,29 @@ jobs:
           fi
           cat "$receipt"
           cat > "${RUNNER_TEMP:-.}/fhgm-expected.txt" <<'EXPECTED'
-          vectorsInManifest=43
-          vectorsEvaluated=43
-          vectorsRan=9
-          vectorsPassed=9
+          vectorsInManifest=62
+          vectorsEvaluated=62
+          vectorsRan=19
+          vectorsPassed=19
           vectorsFailed=0
-          vectorsNotRun=34
-          vectorsNotRunWithReason=34
+          vectorsNotRun=43
+          vectorsNotRunWithReason=43
           vectorsNotRunUnlabelled=0
-          baseLayerAgreement=43/43
-          checksumLayerAgreement=43/43
-          modelLayerCompared=9
+          baseLayerAgreement=62/62
+          checksumLayerAgreement=62/62
+          modelLayerCompared=19
           EXPECTED
           missing=0
           while IFS= read -r line; do
             grep -qxF "$line" "$receipt" || { echo "FHGM ledger: no '$line' line" >&2; missing=1; }
           done < "${RUNNER_TEMP:-.}/fhgm-expected.txt"
-          grep -qx 'contractCommit=ac3d37b3033312844fc3151217731928ae33aa54' "$receipt" \
+          grep -qx 'contractCommit=06176262f9824f26d974a15d8feeebde1fbeb0a8' "$receipt" \
             || { echo "the FHGM lane did not run against the pinned contract commit" >&2; missing=1; }
-          grep -qx 'contractSha256=bf1553cac04dc88d8afaff1d39bc50360342e1ebedac4b73dfe3dff570ff410f' "$receipt" \
+          grep -qx 'contractSha256=b7075e5872e0a5ffce5ae61c590ce182f1f219fa269413cad3b1a966753cfeae' "$receipt" \
             || { echo "the FHGM lane did not run against the pinned contract digest" >&2; missing=1; }
-          grep -qx 'suiteCommit=d443073a6b9d32114fafd9da1d55e5759afc1fc1' "$receipt" \
+          grep -qx 'suiteCommit=06176262f9824f26d974a15d8feeebde1fbeb0a8' "$receipt" \
             || { echo "the FHGM suite is not the pinned revision" >&2; missing=1; }
-          grep -qx 'suiteManifestSha256=0d2790151c4a29551e9b92fb6b3c3c62ea062f2889ffbd00b3c425e7b6da3458' "$receipt" \
+          grep -qx 'suiteManifestSha256=e41f05fd8bb8b8ec175b0192b80832041c84e15c325876aa66a86ba6e59413ce' "$receipt" \
             || { echo "the FHGM suite manifest is not the pinned digest" >&2; missing=1; }
           grep -qx 'note=' "$receipt" || { echo "the receipt carries a note: $receipt" >&2; missing=1; }
           if [ "$missing" -ne 0 ]; then

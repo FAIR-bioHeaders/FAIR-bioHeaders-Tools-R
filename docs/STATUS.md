@@ -1,11 +1,194 @@
 # STATUS — measured state of the R library
 
-Date: **2026-11-14**, with the 2026-11-15 sections below added for #10 and #12 and a
-2026-11-16 section for the draft-suite re-pin. Everything in
+Date: **2026-11-14**, with the 2026-11-15 sections below added for #10 and #12, a
+2026-11-16 section for the draft-suite re-pin, and a 2026-11-18 section for the
+round-13 coordinated draft re-pin. Everything in
 the table was measured on the commit this document accompanied, on macOS 14 arm64 with
 R 4.6.1, `jsonvalidate` 1.5.0 (V8 8.2.1), `digest` 0.6.39, `yaml` 2.3.12,
 `jsonlite` 2.0.0, `roxygen2` 8.1.0, `testthat` 3.3.2. CI re-measures the same spine on
 ubuntu-latest and macos-latest.
+
+## 2026-11-18 — round-13 coordinated re-pin: both draft contracts moved, and both suites with them
+
+Measured on this branch's head (fresh clone of `main` at `2b2f5003`), macOS arm64,
+R 4.6.1, from sibling checkouts of `FHT-Specification`, `FHGM-Specification` and
+`FAIR-bioHeaders-Specification` fetched to `origin/main` first. This is the R half of
+a four-library coordinated re-pin; contract **bytes**, not just suites, moved
+upstream for the first time.
+
+**What was pinned, re-measured twice.** Every value below was measured from bytes
+this pass downloaded or extracted (`shasum -a 256`), then cross-checked against the
+content-addressed git blob (`git hash-object` == the contents API's blob SHA at
+`ref=main`). A media-type artefact of `Accept: application/vnd.github.raw+json`
+(re-encoding `\uXXXX` escapes inside JSON strings) briefly made two API copies
+disagree with the raw bytes; the blob SHAs, not that transport, settled it.
+
+| artifact | bytes | sha256 (16) | last-touch commit | repo head | vectors |
+| --- | --- | --- | --- | --- | --- |
+| FHT contract `fht.json` | 34,396 | `4156353aa6d077fe` | `86438f21` | `0311ddac` | — |
+| FHT suite manifest | 76,939 | `e5a4a5d027259e29` | `86438f21` | `0311ddac` | 82 |
+| FHGM record contract | 11,522 | `b7075e5872e0a5ff` | `06176262` | `b1a82f82` | — |
+| FHGM transport overlay (not vendored here) | 3,191 | `533b3120f4a86590` | `019bc29e` | `b1a82f82` | — |
+| FHGM suite manifest | 69,526 | `e41f05fd8bb8b8ec` | `06176262` | `b1a82f82` | 62 |
+
+All five matched the round-13 snapshot; no divergence to report. FHT 82 = 30 valid /
+52 invalid, rule census C1 31 / C2 4 / C3 10, still **4** vectors marked
+`promotion: candidate-unreviewed`. FHGM 62 = 17 valid / 45 invalid, K1 15 / K2 19 /
+K3 7 / K4 11 (3 valid, 8 invalid) / K5 7 / K6 17 / B1 3.
+
+**Re-vendored with the repo's own tool** (`tools/vendor_upstream.R`, extended in
+this PR to carry the superseded pin into each record's `previous` field and to
+state the limitation paragraph below in the FHGM note). FHT suite 77 → 87 files
+(+10 vectors, 0 removed; 75 of the 77 old files byte-identical to live - only
+`manifest.json` and `README.md` moved, verified by blob comparison, not assumed).
+FHGM suite 28 → 48 files (+19 vectors + `LAYER-SEMANTICS-PROPOSAL.md`, 0 removed;
+only `manifest.json`, `README.md`, `provenance.json` and `base_matrix.json` moved
+among the old 28). Examples: 30 → 30 files, all 30 byte-identical (verified). 10
+upstream `*.py` scripts are left behind (`not_vendored`; the set grew by
+`examples/revision/check_revision.py`, and the drop behaviour is unchanged). The
+released block is untouched: `inst/schemas/`, `tests/conformance/` and the
+293-file / 291-vector / combined `5a05499f...` record are byte-identical, and
+`inst/VENDORED.json`'s `conformance` block did not move in the diff.
+
+**`LAYER-SEMANTICS-PROPOSAL.md` is vendored, deliberately, and disclosed.** The
+tool mirrors the whole upstream non-script conformance subtree; this package
+already vendors upstream prose (`README.md`, `PROMOTION-2026-11-15.md`), and
+excluding one file would put an editorial exception into the byte-mirror rule. The
+file states its own status on its first line - *proposed, not adopted*, refs
+FHGM#22 - and the vendored note, the capability matrix and this section all say
+that its presence is mirror fidelity, not endorsement.
+
+**combined_sha256 reproduced independently.** Recomputed from each record's
+`per_file` map (locale-sorted `"<path> <sha256>"` join, LF): FHT `6ebb39e143ee0059`,
+FHGM `caa494ac9e984c57`, shared `5a05499f2f9d8fe3` - all three reproduce their
+recorded values exactly; on-disk verification: 87/87, 48/48 + 30/30 and 293/293
+files, **0 mismatches, 0 missing, 0 extras**.
+
+**Two behavioural consequences of the new bytes, both in the draft lane only.**
+First, K1's carrier-identity clause - "refuses a citation no registered release
+answers to (raw main, superseded releases)" - had never been exercised: the new
+`carrier-cites-raw-main` vector exposed that `bh_validate_fhgm()` did not evaluate
+it, and it is now implemented and tested (including the two dual-base accept forms
+the re-pin also newly exercises, `v0.6.0-citation-stating-1.1` and
+`fhr-specification-alias-v0.6.0`). The accepted citation shapes come from ONE
+shared grammar (`.bh_release_url_re`, R/selection.R) that selection and K1 both
+consume - the w3id release URL with or without a trailing slash, and the raw tag
+URL under either repository name - which is exactly what the checker's own
+`development/model/base-schemas.json` registers; a test pins the eight registered
+spellings and the cross-layer agreement in both directions. Second,
+`fht-fasta-gzip-truncated` is scored on the R1 condition established EXTERNALLY:
+`.bh_gz_stream_truncated()` re-reads the cited bytes and independently detects the
+gzip magic plus an unfinished member - "there are no decompressed bytes for R1 to
+hash and the file is rejected before any checksum comparison" - the same reading
+the toolkit's FHT lane applies. The manifest's `selfChecksum: unreachable` label
+may narrow the exception but never grounds it: a vector may not certify its own
+unreachability (maintainer ruling, 2026-11-18, round-13 P-6 review recorded on this
+PR's thread; no org issue number records it, and the earlier citations
+FAIR-bioHeaders-Tools#146 / spec#139 are withdrawn as verified wrong - #146 is a Zenodo
+DOI PR, spec#139 the voucher-specimens issue; verified adjacent implementations: Java
+commit `2c35d938` ("nothing passes for the wrong reason") and FHT-Specification#37,
+which finalizes the `selfChecksum` field's semantics). Five
+standing controls, red-first against the earlier revisions of this PR: the pinned
+vector passes; the declaration deleted from a scratch manifest -> `error`; the
+R2 missing-checksum fixture replaced with truncated-gzip bytes -> `error` (the
+first revision falsely passed it); a complete member followed by trailing non-gzip
+bytes -> `error` (a refusal to frame is not a truncation); and the re-review's
+counterexample - the live R1 vector's bytes replaced with a COMPLETE, readable gzip
+whose payload no longer matches the recorded checksum - -> `error` on the
+normal-return path too, never the generic `pass` at `09241ade` (the R4 rejection is
+not R1's truncation evidence; a vector whose bytes parsed cannot evidence
+unreachability). The released reader
+taxonomy and the released 291 ledger are untouched.
+
+**Review follow-ups on this branch (2026-11-18, same day).** The independent review
+of the first head found three blockers, each fixed with red-first proofs and its own
+commit: (1) the K1 clause above initially refused the w3id trailing-slash spelling
+that `R/selection.R:28` has always accepted - one package contradicting itself - now
+resolved by the shared grammar with a battery over both layers; (2) the gzip
+scoring initially keyed on the vector's own declaration, reproducing the
+self-certifying-`unreachable` failure mode the maintainer had already ruled out
+elsewhere in this round - now grounded externally as above; (3) the vendor
+generator initially rewrote `previous` on every run, so an unchanged rerun erased
+the last real pin transition - `previous` now rotates only when the resolved
+digests move, proven by `tools/selftest_vendor_previous.R` (bare-origin fixture
+repos, six generator runs: unchanged rerun byte-identical, one-lane move rotates
+only that lane, a second move rotates to the immediately prior pin, and a SUITE-
+manifest move takes `rotate_suite`'s change branch - the branch runs 1-4 never
+exercised - with the other suite's history byte-stable), wired as a
+build step because `tools/` is excluded from the tarball and a skip would violate
+the zero-skip rule. The independent re-review of that head (`gpt-6.1-terra`) found
+the gzip exception still open on the NORMAL-RETURN path - a complete, readable gzip
+with a stale checksum line passed the live R1 vector through the generic verdict
+comparison (reproduced red at `09241ade`: `status: pass`, R4 diagnostic) - and the
+same conjunction now binds both paths: an R1-labelled `unreachable` vector whose
+bytes PARSED is reported error, never passed on a borrowed rejection, while an
+observed `valid` still flows to the normal comparison and fails as a substitution
+should. That re-review also established the `FAIR-bioHeaders-Tools#146` /
+`spec#139` citations were WRONG - #146 is a Zenodo CITATION.cff PR, spec#139 the
+voucher-specimens issue - and they are retracted here, in the code comments, and in
+the amended commit history, leaving the honest form (maintainer ruling, 2026-11-18,
+round-13 P-6 review recorded on this PR's thread; no org issue number records it)
+plus the verified adjacent implementations (Java commit `2c35d938`, "nothing passes
+for the wrong reason"; FHT-Specification#37, which finalizes the `selfChecksum`
+semantics). The citation battery now asserts selection outcomes for the negative
+forms as well, owning the two domain differences instead of claiming universal
+layer identity: v0.4.0 selects as the real released 1.0 contract under V3 while K1
+refuses the transport pairing, and raw main is selection's V1 question, not the
+carrier's. The `draft-pin-freshness` advisory job is NOT cited as corroboration
+anywhere in this record - it is broken per `Tools-R#23` (independently reproduced:
+empty digest extractions, positional `sed -n '2p'` reading FHT's superseded digest
+against FHGM's live manifest), and its fix belongs to a separate branch;
+`native-acceptance.yaml` naming its legs by OS only, collapsing the release and
+oldrel-3 legs into one displayed name, is recorded as a CI-reporting follow-up, not
+bundled here.
+An unchanged-input rerun of the fixed generator against the
+real owning repositories left `inst/VENDORED.json` byte-identical.
+
+**Measured acceptance counts.** The model layer's compared set was not predicted
+but measured through R's own scope rule over both new manifests via
+`tools/acceptance_fhgm.R`'s receipt: 62 evaluated, base 62/62, checksum 62/62,
+**model layer compared 19** (6 expected passes, 13 expected rejections), **43
+not-run** naming K3 (7) / K4 (11) / K5 (7) / K6 (17) / B1 (3) - labels counted per
+naming, some vectors name two. `n_eval <- 62L`, `n_model <- 19L` in the tool and
+in the workflow's literal ledger. 42 of the 45 invalid vectors pass both the base
+schema and the checksum layer (43 and 44 singly), which is what the capability
+matrix now states. The suite-label census moved 29/14 → 17 `rules` arrays / 45
+singular `rule`, zero unlabelled.
+
+**Pins proven consumed.** Extracting the superseded suites (FHT `be9bcc82`, FHGM
+`d443073a`) and pointing each runner at them refuses with the digest message
+(`REFUSED`, before any vector runs); re-running against the vendored bytes gives
+82/82 and 62/62-ok again, and `tools/check_vendoring.R` stays clean afterwards.
+
+**Spine.** `tools/run_tests.R`: `tests=1131 failed=0 errors=0 skipped=0`
+(1046 before the PR, 1111 at the first review-fix head, +20 from the re-review's
+normal-return counterexample and the negative selection assertions);
+`tools/check_duplicate_defs.R` OK; native-path grep clean; `tools/acceptance_native.R`
+291 / 228 / 63 with golden `goldenDifferences=0`; both draft receipts green with
+the literals above; matrix re-renders byte-identically (46 cells); differential
+`90 inputs, 0 mismatches`; `R CMD check --as-cran --no-manual` (idle machine):
+`Status: 2 NOTEs`, exit 0, packaged tests `[ FAIL 0 | WARN 0 | SKIP 0 | PASS 1057 ]`.
+The first NOTE is the unavoidable "New submission" one. The second is new with
+this pin and structural, not accidental: five of the FHGM suite's new vector file
+names exceed R's 100-character portable-path limit once they sit under
+`FAIRbioHeadersTools/tests/...`. The bytes and their names are vendored upstream
+material - the manifest cites each path and `per_file` digests it - so renaming
+here would edit vendored bytes, which this repository does not do. The `build.yml`
+check step gates WARNINGs and the exit status and prints NOTEs, so this stays a
+reported NOTE, said here rather than smoothed over. The testthat
+floor moved 700 → 1000 with the measured count, per the rule that the floor is
+the real count rounded down.
+
+**Known-stale things deliberately NOT fixed here** (FAIR-bioHeaders-Tools-R#21,
+separate reviews): the stale golden digest `055da14f...` quoted in
+docs/NATIVE-ACCEPTANCE.md, the README's pre-#14 "24 of its 31", the unpinned
+format vocabulary behind `.bh_family_allowed`, and the missing FHT receipt
+artifact. One adjacent staleness this PR does *necessarily* clear: regenerating
+the man pages corrected `man/bh_draft_fhgm_vectors.Rd`, which already said "31
+vectors" while the source said 43 on `main` - the generated docs were stale
+**before** this change; the regeneration is required by the source prose, and the
+pre-existing discrepancy is disclosed so nobody reads the fix as an introduced
+error.
 
 ## 2026-11-16 — issue #12 warning-fallback regression
 
@@ -404,35 +587,40 @@ byte-identical, so `man/conditions.Rd` is the only documentation page this chang
 
 ## Draft state (rule V7; never a support claim)
 
-- FHT: opt-in lane, pinned contract `226f923c28b680edb3c546e99a751482d06aef1a`
-  (SHA-256 `59ad9641adcb0e55...`, 29,430 bytes; re-verified 2026-11-16 unchanged
-  against the owning repository's live `main` = `be9bcc82...`), suite
-  `be9bcc82...` (manifest `9fd8c0b2a4638d5d...`, 65,615 bytes, 72 vectors), 72/72
+- FHT: opt-in lane, pinned contract `86438f21c3a17a58334c97aed4955be1a2393522`
+  (SHA-256 `4156353aa6d077fe...`, 34,396 bytes; re-verified 2026-11-18 by digest and by
+  content-addressed blob against the owning repository's live `main` = `0311ddac...`),
+  suite `86438f21...` - the commit that last touched `conformance/manifest.json`,
+  computed separately from the contract pin and coinciding with it at this pass -
+  (manifest `e5a4a5d027259e29...`, 76,939 bytes, 82 vectors, 87 files), 82/82
   pass; warns on every read; release-shaped FHT URLs stay V5. FHT publishes as
   specification v0.7.0 (FHT-Specification #8/#9/#10). #8's boxes 3/4/6/7 are still
-  open upstream, so this pin is expected to move again.
+  open upstream, so this pin is expected to move again. 4 of the 82 vectors remain
+  marked `promotion: candidate-unreviewed` and are presented as unreviewed.
 - FHGM: **not a header type**. Its records are transported inside an FHGFF3 header under
   `x-fhgm-models` and carry no `schema` field, so the lane selects only the contract applied
-  to the records. Contract bytes registered and digest-pinned (`ac3d37b3...`, SHA-256
-  `bf1553cac04dc88d...`, 9,564 bytes - re-verified 2026-11-16 unchanged against the owning
-  repository's live `main`, whose head is `57118c52...`; the same content-addressed blob
-  `1fb066b8da5bf5bb...` is served at the pinned commit and at head, so the contract did not
-  move while the suite did);
+  to the records. Contract bytes registered and digest-pinned (`06176262f9824f26d974a15d8feeebde1fbeb0a8`,
+  SHA-256 `b7075e5872e0a5ff...`, 11,522 bytes - re-verified 2026-11-18 against the owning
+  repository's live `main`, whose head is `b1a82f82...`);
   the suite bytes are vendored under `tests/draft/fhgm` plus the `tests/draft/examples`
-  files its vectors cite (28 + 30 files, manifest `0d2790151c4a2955...`, 51,114 bytes,
-  43 vectors; suite commit `d443073a...` - the commit that last touched that manifest,
-  deliberately not the contract commit).
+  files its vectors cite (48 + 30 files, manifest `e41f05fd8bb8b8ec...`, 69,526 bytes,
+  62 vectors; suite commit `06176262...` - the commit that last touched that manifest,
+  derived by the same rule as the contract pin and coinciding with it at this pass).
+  10 upstream `*.py` scripts are left behind (`not_vendored`), and the suite's
+  `LAYER-SEMANTICS-PROPOSAL.md` is vendored with the subtree as upstream prose whose
+  status it states itself: proposed, not adopted.
   `bh_fhgm_models()` / `bh_validate_fhgm()` / `bh_draft_fhgm_vectors()` are the lane: they
-  evaluate K1 (transport: one or more records, and no extension at all in an FHGFF3 1.0
-  header) and K2 (each record against the pinned draft contract) and report the model verdict
-  apart from the base FHGFF3 verdict. K3-K6 are **not** ported and stay named gaps with their
-  own matrix rows; 34 of the 43 vectors are `not-run` for exactly that reason (5 K3, 8 K4,
-  7 K5, 14 K6, 2 B1). A vector with no rule label is `not-run` too, never assumed in-scope.
+  evaluate K1 (transport: one or more records, no extension at all in an FHGFF3 1.0
+  header, and - new in the 2026-11-18 pin - a carrier citation a registered FHGFF3 release
+  answers to) and K2 (each record against the pinned draft contract) and report the model
+  verdict apart from the base FHGFF3 verdict. K3-K6 are **not** ported and stay named gaps with their
+  own matrix rows; 43 of the 62 vectors are `not-run` for exactly that reason (7 K3, 11 K4,
+  7 K5, 17 K6, 3 B1; a vector can name two rules). A vector with no rule label is `not-run` too, never assumed in-scope.
   The suite's `base_matrix.json` (FHGFF3 1.2 re-observation lane, twin bytes not vendored) is
   not evaluated here. Opt-in only,
   warns on every record read, and `schemaVersion`, registry row and w3id URL are all absent,
   as rule V7 requires. Tracked in #3; FHGM publishes as specification v0.8.0.
-- Freshness of both draft pins was last verified 2026-11-16 against the owning
+- Freshness of both draft pins was last verified 2026-11-18 against the owning
   repositories' live default branches (advisory CI job `draft-pin-freshness`, which now
   covers both contracts and both suite manifests).
 

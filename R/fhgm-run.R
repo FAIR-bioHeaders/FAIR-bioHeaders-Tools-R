@@ -1,6 +1,6 @@
 #' Runs the FHGM development suite and reports it layer by layer
 #'
-#' FHGM's published draft suite (43 vectors from FHGM-Specification
+#' FHGM's published draft suite (62 vectors from FHGM-Specification
 #' `development/conformance/`) is written differently from the shared one: each vector
 #' records what four independent checks report, because separability is the point - `base`
 #' (the released FHGFF3 contract over the parsed header), `checksum` (whether the file-bound
@@ -16,7 +16,9 @@
 #'   the next layer's outcome.
 #' * `checksum` - native.
 #' * `model` - native only for the rules this package actually evaluates: K1 (transport: the
-#'   key holds one or more records, and an FHGFF3 1.0 header cannot carry it at all) and K2
+#'   key holds one or more records, an FHGFF3 1.0 header cannot carry it at all, and the
+#'   carrier's citation must be a registered FHGFF3 release - raw main and unrecognised
+#'   citation-version pairs are refused) and K2
 #'   (each record against the pinned draft record contract). K3, K4, K5 and K6 are the draft
 #'   checker's cross-record and feature-layer rules - modelId uniqueness within a snapshot,
 #'   featureId resolving to exactly one local gene row, reference comparability against the
@@ -102,10 +104,11 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
     # An unlabelled vector is not a labelled-but-in-scope vector. `rules: []` would mean the
     # suite says this verdict needs nothing this package checks; no label at all means the
     # suite did not say, and the only honest reading of that is not-run. Every vector in the
-    # pinned 43-vector manifest is labelled - 29 in `rules`, 14 in the singular `rule` the
+    # pinned 62-vector manifest is labelled - 17 in `rules`, 45 in the singular `rule` the
     # runner has always accepted - so this guard is a shape rule for future revisions, not a
     # finding about the current bytes; it exists because a suite that dropped its labels
-    # would otherwise move 14 rejection vectors into the compared set silently.
+    # would otherwise move all 45 singular-`rule` rejection vectors into the compared set
+    # silently.
     beyond <- if (unlabelled) "K?" else setdiff(rules, model_rules)
     comparable <- !length(beyond) && !unlabelled
     status <- if (!identical(got_base, v$layers$base) ||

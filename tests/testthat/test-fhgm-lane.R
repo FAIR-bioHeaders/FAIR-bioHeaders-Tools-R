@@ -18,10 +18,10 @@
 
 test_that("the FHGM draft vectors are vendored with their own provenance and count", {
   pinned <- FAIRbioHeadersTools:::.bh_vendored()$draft_fhgm_vectors
-  expect_equal(pinned$vectors, 43L)
+  expect_equal(pinned$vectors, 62L)
   expect_match(pinned$manifest_sha256, "^[0-9a-f]{64}$")
   expect_match(pinned$commit, "^[0-9a-f]{40}$")
-  expect_equal(pinned$files, 28L)
+  expect_equal(pinned$files, 48L)
   expect_equal(pinned$examples, 30L)
   dir <- .bh_fhgm_suite_dir()
   expect_identical(.bh_sha256_hex(.bh_read_all(file.path(dir, "manifest.json"))),
@@ -33,26 +33,26 @@ test_that("the FHGM draft vectors are vendored with their own provenance and cou
   cited <- vapply(man$vectors, function(v) normalizePath(
     file.path(dir, v$file), mustWork = FALSE
   ), "")
-  expect_equal(sum(file.exists(cited)), 43L)
+  expect_equal(sum(file.exists(cited)), 62L)
   # the generator and checker scripts stay upstream; the data does not
   expect_false(any(grepl("[.]py$", list.files(dir, recursive = TRUE))))
   # and the record contract the lane validates against is the pinned draft, not a copy
   pins <- bh_draft_pins()
   row <- pins[pins$header_type == "FHGM", ]
   expect_true(isTRUE(row$digest_ok))
-  expect_equal(row$bytes, 9564L)
+  expect_equal(row$bytes, 11522L)
 })
 
 test_that("base and checksum layers agree with the suite on every vector", {
   y <- .fhgm_run()
-  expect_equal(y$vectors, 43L)
-  expect_equal(sum(y$results$got_base == y$results$expected_base), 43L)
-  expect_equal(sum(y$results$got_checksum == y$results$expected_checksum), 43L)
+  expect_equal(y$vectors, 62L)
+  expect_equal(sum(y$results$got_base == y$results$expected_base), 62L)
+  expect_equal(sum(y$results$got_checksum == y$results$expected_checksum), 62L)
   expect_equal(y$failures, 0L)
   cat(paste0(
     "FHGM draft suite: ", nrow(y$results), " vectors | base ",
-    sum(y$results$got_base == y$results$expected_base), "/43 | checksum ",
-    sum(y$results$got_checksum == y$results$expected_checksum), "/43 | model layer ",
+    sum(y$results$got_base == y$results$expected_base), "/62 | checksum ",
+    sum(y$results$got_checksum == y$results$expected_checksum), "/62 | model layer ",
     "compared and agreeing ", sum(y$results$status == "pass"),
     " | not-run with named rules ", sum(y$results$status == "not-run"), "\n"
   ))
@@ -61,7 +61,7 @@ test_that("base and checksum layers agree with the suite on every vector", {
 test_that("a vector whose model verdict needs a checker rule is not-run, never passed", {
   y <- .fhgm_run()
   nr <- y$results[y$results$status == "not-run", ]
-  expect_equal(nrow(nr), 34L)
+  expect_equal(nrow(nr), 43L)
   expect_true(all(nzchar(nr$reason)))
   expect_true(all(grepl("does not implement", nr$reason)))
   # and each such vector names at least one rule outside this package's model layer
@@ -69,10 +69,10 @@ test_that("a vector whose model verdict needs a checker rule is not-run, never p
   # and no not-run row is here because the suite omitted its label: that case is reported,
   # never counted as in-scope (see vectorsNotRunUnlabelled in tools/acceptance_fhgm.R)
   expect_equal(sum(!nzchar(nr$rules)), 0L)
-  # the pass column is not carrying acceptances only: six of the nine compared vectors
-  # are expected rejections, and this package rejects them
+  # the pass column is not carrying acceptances only: thirteen of the nineteen compared
+  # vectors are expected rejections, and this package rejects them
   cmp <- y$results[y$results$status == "pass", ]
-  expect_equal(nrow(cmp), 9L)
+  expect_equal(nrow(cmp), 19L)
   expect_gte(sum(cmp$expected_model == "reject"), 1L)
   expect_gte(sum(cmp$expected_model == "pass"), 1L)
   expect_true(all(cmp$got_model == cmp$expected_model))
@@ -128,6 +128,126 @@ test_that("an FHGFF3 1.1 header transports records; a 1.0 header cannot", {
     }
   )
   expect_match(paste(warns3, collapse = " | "), "unreleased draft")
+})
+
+test_that("K1 refuses a carrier citation no registered release answers to, and accepts the recognised pairs", {
+  # the clause the 2026-11-18 re-pin first exercises: `carrier-cites-raw-main` names a
+  # citation (raw main) that no registered FHGFF3 release answers to, and the model layer
+  # must reject it, saying K1 rather than failing silently at some other layer
+  rej <- suppressWarnings(bh_validate_fhgm(
+    .bh_fhgm_path("vectors/invalid/carrier-cites-raw-main.fhgff3.gff3")
+  ))
+  expect_false(rej$all_valid)
+  expect_match(paste(rej$records$errors, collapse = " "), "K1: the carrier cites")
+  # and the two dual-base forms the manifest's K1 text recognises must NOT be refused:
+  # a v0.6.0 citation stating 1.1, and a raw tag URL under the historical
+  # FHR-Specification repository name (reject -> accept flips sealed at FHGM#29)
+  for (id in c("v0.6.0-citation-stating-1.1", "fhr-specification-alias-v0.6.0")) {
+    v <- suppressWarnings(bh_validate_fhgm(
+      .bh_fhgm_path(paste0("vectors/valid/", id, ".fhgff3.gff3"))
+    ))
+    expect_true(v$all_valid, info = id)
+  }
+})
+
+test_that("K1 carrier identity is decided by the one shared citation grammar, slash included", {
+  # red-first at 2a6343f: K1 refused `https://w3id.org/fair-bioheaders/fhgff3/v0.6.0/` -
+  # a spelling the selection layer of this same package has always accepted
+  # (.bh_w3id_re) and that the checker's own base registry explicitly registers
+  # (FHGM-Specification development/model/base-schemas.json: "the release's w3id URL
+  # with and without the trailing slash, and its raw tag URL under both repository
+  # names"). K1 now consumes .bh_release_url_re() - one definition, no discipline-kept
+  # pair of regexes - and this test pins the cross-layer agreement in both directions.
+  base <- rawToChar(.bh_read_all(.bh_fhgm_path("vectors/valid/both-reference-forms.fhgff3.gff3")))
+  cited <- "https://w3id.org/fair-bioheaders/fhgff3/v0.5.0"
+  variant <- function(url, sv = NULL) {
+    txt <- sub(cited, url, base, fixed = TRUE)
+    if (!is.null(sv)) {
+      txt <- sub("schemaVersion:[^\n]*", paste0("schemaVersion: ", sv), txt)
+    }
+    # the swap landed, unless this IS the base's own citation (a legitimate variant)
+    if (!identical(url, cited)) expect_false(identical(txt, base))
+    p <- tempfile(fileext = ".fhgff3.gff3")
+    writeLines(strsplit(txt, "\n", fixed = TRUE)[[1L]], p)
+    p
+  }
+  # the eight spellings base-schemas.json registers for the two usable bases
+  registered <- c(
+    paste0("https://w3id.org/fair-bioheaders/fhgff3/v0.5.0", c("", "/")),
+    paste0("https://raw.githubusercontent.com/FAIR-bioHeaders/",
+      c("FAIR-bioHeaders-Specification", "FHR-Specification"),
+      "/v0.5.0/fhgff3.json"),
+    paste0("https://w3id.org/fair-bioheaders/fhgff3/v0.6.0", c("", "/")),
+    paste0("https://raw.githubusercontent.com/FAIR-bioHeaders/",
+      c("FAIR-bioHeaders-Specification", "FHR-Specification"),
+      "/v0.6.0/fhgff3.json")
+  )
+  for (u in registered) {
+    v <- suppressWarnings(bh_validate_fhgm(variant(u)))
+    expect_true(v$all_valid, info = u)
+    sel <- bh_select(u)
+    expect_equal(sel$header_type, "FHGFF3", info = u)
+    expect_equal(sel$release, if (grepl("v0\\.5\\.0", u)) "v0.5.0" else "v0.6.0",
+      info = u
+    )
+  }
+  # and every spelling NEITHER layer admits is refused by BOTH of them, in step:
+  # the raw tag with a trailing slash is not in base-schemas.json's list and does not
+  # match .bh_raw_re either - K1 must refuse it, AND selection must not read it as an
+  # FHGFF3 citation at all (measured: it falls through to V5 as an unknown URL routed
+  # to the current FHR, which is exactly "no release named here"). For the superseded
+  # v0.4.0 the two layers answer DIFFERENT questions and both answers are asserted:
+  # selection resolves the real released 1.0 contract for that URL (V3, schema_version
+  # 1.0 - a contract does exist), while K1 refuses the v0.4.0+1.1 transport pairing.
+  # This is agreement about the pairing, not a claim of universal layer identity: raw
+  # main is the documented deliberate divergence (selection V1 answers "which bytes
+  # validate this header"; K1 answers "may FHGM transport bind to this citation"), and
+  # the assertion below pins even that so neither layer can drift silently.
+  refused_by_both <- c(
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/v0.5.0/fhgff3.json/",
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/v0.6.0/fhgff3.json/"
+  )
+  for (u in refused_by_both) {
+    v <- suppressWarnings(bh_validate_fhgm(variant(u)))
+    expect_false(v$all_valid, info = u)
+    expect_match(paste(v$records$errors, collapse = " "), "K1: the carrier", info = u)
+    sel <- bh_select(u)
+    expect_false(identical(sel$header_type, "FHGFF3"), info = u)
+    expect_equal(sel$rule, "V5", info = u) # unreadable as a release citation -> V5 FHR
+  }
+  # superseded v0.4.0: selection names the 1.0 contract that release actually carries;
+  # K1 refuses the transport pairing. Both outcomes asserted, divergence owned.
+  v40 <- suppressWarnings(bh_validate_fhgm(
+    variant("https://w3id.org/fair-bioheaders/fhgff3/v0.4.0/")
+  ))
+  expect_false(v40$all_valid)
+  expect_match(paste(v40$records$errors, collapse = " "), "citation-version pair")
+  sel40 <- bh_select("https://w3id.org/fair-bioheaders/fhgff3/v0.4.0/")
+  expect_equal(sel40$rule, "V3")
+  expect_equal(sel40$header_type, "FHGFF3")
+  expect_equal(sel40$release, "v0.4.0")
+  expect_equal(sel40$schema_version, "1.0")
+  # raw main: the intended domain split, pinned in both directions
+  vrm <- suppressWarnings(bh_validate_fhgm(.bh_fhgm_path(
+    "vectors/invalid/carrier-cites-raw-main.fhgff3.gff3"
+  )))
+  expect_false(vrm$all_valid)
+  selrm <- bh_select(
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/main/fhgff3.json"
+  )
+  expect_equal(selrm$rule, "V1") # selection answers the released-header question
+  expect_equal(selrm$header_type, "FHGFF3")
+  # the probe of the shared grammar directly: same pattern pair from both layers
+  re <- FAIRbioHeadersTools:::.bh_release_url_re("fhgff3")
+  expect_true(grepl(re$w3id, "https://w3id.org/fair-bioheaders/fhgff3/v0.6.0/", perl = TRUE))
+  expect_true(grepl(re$w3id, "https://w3id.org/fair-bioheaders/fhgff3/v0.6.0", perl = TRUE))
+  expect_false(grepl(re$tag, paste0(
+    "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/",
+    "v0.6.0/fhgff3.json/"
+  ), perl = TRUE))
+  expect_identical(sub(re$w3id, "\\1", "https://w3id.org/fair-bioheaders/fhgff3/v0.5.0/"),
+    "v0.5.0"
+  )
 })
 
 test_that("an empty transport array is a rule-K1 violation, not a vacuous pass", {
@@ -271,7 +391,7 @@ test_that("one byte moved inside checksum coverage turns the labelled draft run 
   expect_equal(sum(as.integer(after) != as.integer(before)), 1L)
 
   y <- suppressWarnings(bh_draft_fhgm_vectors(suite = suite))
-  expect_equal(y$vectors, 43L)
+  expect_equal(y$vectors, 62L)
   expect_equal(y$failures, 1L)
   row <- y$results[y$results$status == "fail", ]
   cat(paste0(
@@ -290,8 +410,8 @@ test_that("one byte moved inside checksum coverage turns the labelled draft run 
 test_that("a model checker that accepts everything is caught, not thanked", {
   # The neutered-loop control, as a standing test. bh_validate_fhgm() is replaced with a
   # version that reports every record valid - the exact failure mode a schema-only port
-  # would have - and the run must turn the four comparable expected-rejection vectors into
-  # failures instead of passing them.
+  # would have - and the run must turn the thirteen comparable expected-rejection vectors
+  # into failures instead of passing them.
   y <- .fhgm_run()
   expect_equal(y$failures, 0L)
   cmp_reject <- sum(y$results$status == "pass" & y$results$expected_model == "reject")
@@ -314,7 +434,7 @@ test_that("a model checker that accepts everything is caught, not thanked", {
     .bh_fhgm_path("vectors/invalid/record-unknown-key.fhgff3.gff3")
   )$all_valid))
   z <- suppressWarnings(bh_draft_fhgm_vectors())
-  expect_equal(z$vectors, 43L)
+  expect_equal(z$vectors, 62L)
   expect_equal(z$failures, cmp_reject)
   bad <- z$results[z$results$status == "fail", ]
   cat(paste0(

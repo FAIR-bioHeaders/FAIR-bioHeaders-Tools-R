@@ -59,6 +59,53 @@ if (!requireNamespace("jsonlite", quietly = TRUE)) {
 
 sha256_bytes <- function(bytes) digest::digest(bytes, algo = "sha256", serialize = FALSE)
 
+# The record being replaced, read before anything is written. A re-pin that overwrote the
+# previous pin's numbers in place would leave a reader unable to say what moved without
+# the git history; the replaced values are carried into the new record under `previous`,
+# the pattern the Java library's suitePinAnnotation established. Rotation happens ONLY on
+# a genuine change - decided by comparing the resolved digests, never the date the run
+# happens on: an unchanged rerun must carry the existing `previous` forward untouched, or
+# the audit trail would restate itself into fiction (the superseded pin would read as the
+# current one, and a later real move would lose its predecessor). This is the same defect
+# class as a pin-currency note that restates rather than records.
+prev_file <- file.path(here, "inst", "VENDORED.json")
+prev <- if (file.exists(prev_file)) {
+  jsonlite::fromJSON(prev_file, simplifyVector = FALSE)
+} else {
+  list()
+}
+prev_contract <- function(type) {
+  hit <- Filter(function(r) {
+    identical(r$header_type, type) && identical(r$kind, "draft-contract")
+  }, prev$files %||% list())
+  if (!length(hit)) return(NULL)
+  hit[[1L]]
+}
+rotate_contract <- function(type, sha, commit, bytes, head) {
+  old <- prev_contract(type)
+  if (is.null(old)) return(NULL) # nothing recorded yet; there is no predecessor to name
+  if (identical(old$sha256, sha)) {
+    return(old$previous) # unchanged bytes: keep the real predecessor, do not restate it
+  }
+  list(ref = old$ref, commit = old$commit, sha256 = old$sha256, bytes = old$bytes,
+    head_at_retrieval = old$head_at_retrieval,
+    vendored_on = prev$vendored %||% old$vendored_on
+  )
+}
+rotate_suite <- function(key, manifest_sha, combined_sha, files, vectors, commit) {
+  p <- prev[[key]]
+  if (is.null(p)) return(NULL)
+  if (identical(p$manifest_sha256, manifest_sha) &&
+      identical(p$combined_sha256, combined_sha)) {
+    return(p$previous)
+  }
+  list(commit = p$commit, head_at_retrieval = p$head_at_retrieval,
+    manifest_sha256 = p$manifest_sha256, combined_sha256 = p$combined_sha256,
+    files = p$files, vectors = p$vectors,
+    vendored_on = prev$vendored %||% p$vendored_on
+  )
+}
+
 # Byte-exact extraction of one file at one revision. A binary pipe is used rather than
 # system2(stdout = <file>) because R replaces an unusable stdout target with TRUE and
 # the result is a 0-byte file that would then be vendored as "the contract".
@@ -145,8 +192,17 @@ vendored_file("inst/drafts/fht-draft.json", fht_repo, fht_commit, "fht.json", "d
   list(
     header_type = "FHT", citation = "https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/fht.json",
     head_at_retrieval = git_out(fht_repo, c("rev-parse", "origin/main")),
-    status = "draft; no released contract, no schemaVersion, no registry row, no w3id URL"
+    status = "draft; no released contract, no schemaVersion, no registry row, no w3id URL",
+    retrieved_by = paste0("Rscript tools/vendor_upstream.R; bytes from `git show ",
+      substr(fht_commit, 1, 8), ":fht.json` in the FHT-Specification checkout")
   )
+)
+# `previous` is resolved AFTER the row exists, from the row's own fresh digest, so an
+# unchanged rerun carries the real predecessor forward instead of restating the current
+# pin as its own parent.
+rows[[length(rows)]]$previous <- rotate_contract(
+  "FHT", rows[[length(rows)]]$sha256, rows[[length(rows)]]$commit,
+  rows[[length(rows)]]$bytes, rows[[length(rows)]]$head_at_retrieval
 )
 fhgm_commit <- git_out(fhgm_repo, c("log", "-1", "--format=%H", "origin/main", "--", fhgm_path))
 vendored_file("inst/drafts/fhgm-model-draft.schema.json", fhgm_repo, fhgm_commit, fhgm_path,
@@ -160,8 +216,14 @@ vendored_file("inst/drafts/fhgm-model-draft.schema.json", fhgm_repo, fhgm_commit
     status = paste0(
       "draft; FHGM is not a header type - these records are model records transported ",
       "inside an FHGFF3 header under x-fhgm-models, and they carry no schema of their own"
-    )
+    ),
+    retrieved_by = paste0("Rscript tools/vendor_upstream.R; bytes from `git show ",
+      substr(fhgm_commit, 1, 8), ":", fhgm_path, "` in the FHGM-Specification checkout")
   )
+)
+rows[[length(rows)]]$previous <- rotate_contract(
+  "FHGM", rows[[length(rows)]]$sha256, rows[[length(rows)]]$commit,
+  rows[[length(rows)]]$bytes, rows[[length(rows)]]$head_at_retrieval
 )
 
 cat("draft vectors (FHT-Specification, development suite, labelled as such upstream)\n")
@@ -204,9 +266,18 @@ dper <- dper[sort(names(dper))] # the record's key order: locale sort
 dman <- jsonlite::fromJSON(file.path(dfh, "manifest.json"), simplifyVector = FALSE)
 fcommit <- git_out(fht_repo, c("log", "-1", "--format=%H", "origin/main", "--",
                                "conformance/manifest.json"))
-cat(sprintf("  %d files, manifest %s, %d vectors (status: %s)\n", length(dper),
-            substr(unname(dper[["manifest.json"]]), 1, 16), length(dman$vectors),
-            substr(unlist(dman$status), 1, 40)))
+# the combined digest is computed once and used for both the record and the rotation
+# decision, so the two can never be compared against different values
+dcombined <- sha256_bytes(charToRaw(paste(sprintf("%s %s", names(dper), unname(dper)),
+                                          collapse = "\n")))
+# how many vectors are still promotion=candidate-unreviewed at this pin - counted from
+# the manifest bytes, never carried forward from the last pin's prose
+fht_unreviewed <- sum(vapply(dman$vectors, function(v) {
+  identical(v$promotion, "candidate-unreviewed")
+}, logical(1L)))
+cat(sprintf("  %d files, manifest %s, %d vectors (%d promotion=candidate-unreviewed, status: %s)\n",
+            length(dper), substr(unname(dper[["manifest.json"]]), 1, 16), length(dman$vectors),
+            fht_unreviewed, substr(unlist(dman$status), 1, 40)))
 
 cat("FHGM draft vectors (FHGM-Specification development suite, layered expectations)\n")
 # Published by the FHGM development repository, not by the shared specification: a suite
@@ -271,6 +342,8 @@ gman <- jsonlite::fromJSON(file.path(gdest, "manifest.json"), simplifyVector = F
 # the revision of the data that was vendored, which is not necessarily the tip of main
 gcommit <- git_out(fhgm_repo, c("log", "-1", "--format=%H", "origin/main", "--",
                                 paste0(fhgm_conformance_path, "/manifest.json")))
+gcombined <- sha256_bytes(charToRaw(paste(sprintf("%s %s", names(gper), unname(gper)),
+                                          collapse = "\n")))
 cat(sprintf("  %d suite files + %d example files, %d upstream scripts left behind, manifest %s, %d vectors\n",
             length(gper), length(esper), length(dropped_g) + length(dropped_e),
             substr(unname(gper[["manifest.json"]]), 1, 16), length(gman$vectors)))
@@ -318,8 +391,9 @@ prov <- list(
   digests = "SHA-256 of the exact bytes stored at `file`. The FAIR-bioHeaders file checksum is SHA-512/256 and is computed by this package's vendored core; SHA-256 here is the family's pinning digest for copied files, a different job.",
   commit_field = paste(
     "For released-contract rows this records the annotated tag OBJECT SHA of the ref",
-    "(v0.6.0's tag object dereferences to commit 0ae18b00); byte identity was verified",
-    "against the dereferenced tag. Draft rows record ordinary commit SHAs."
+    "(e.g. v0.6.0's tag object ab7e3ddd53bfccee9a31d59fc10524eadf32c1da, which",
+    "dereferences to commit 0ae18b00ee4bd71ab2dc28bae706b0f9d195076b); byte identity",
+    "was verified against the dereferenced tag. Draft rows record ordinary commit SHAs."
   ),
   vendored = format(Sys.time(), "%Y-%m-%d"),
   released_baseline = "v0.6.0",
@@ -336,10 +410,17 @@ prov <- list(
     head_at_retrieval = git_out(fht_repo, c("rev-parse", "origin/main")),
     path = "conformance", dest = "tests/draft/fht", files = length(dper),
     manifest_sha256 = unname(dper[["manifest.json"]]),
-    combined_sha256 = sha256_bytes(charToRaw(paste(sprintf("%s %s", names(dper), unname(dper)),
-                                                   collapse = "\n"))),
+    combined_sha256 = dcombined,
     vectors = length(dman$vectors), status = dman$status,
-    note = "development vectors, not part of the 291; expectations derived from rule text upstream",
+    candidates_unreviewed = fht_unreviewed,
+    note = paste0(
+      "development vectors, not part of the 291; expectations derived from rule text ",
+      "upstream; ", fht_unreviewed, " vectors are marked promotion=candidate-unreviewed ",
+      "at this pin and are presented as unreviewed, never as reviewed"
+    ),
+    previous = rotate_suite("draft_vectors",
+      unname(dper[["manifest.json"]]), dcombined,
+      length(dper), length(dman$vectors), fcommit),
     per_file = setNames(as.list(unname(dper)), names(dper))
   ),
   draft_fhgm_vectors = list(
@@ -355,8 +436,7 @@ prov <- list(
       "checker scripts stay there, this package vendors data only"
     ),
     manifest_sha256 = unname(gper[["manifest.json"]]),
-    combined_sha256 = sha256_bytes(charToRaw(paste(sprintf("%s %s", names(gper), unname(gper)),
-                                                   collapse = "\n"))),
+    combined_sha256 = gcombined,
     vectors = length(gman$vectors), status = gman$status,
     examples_dir = "tests/draft/examples", examples = length(esper),
     examples_sha256 = setNames(as.list(unname(esper)), names(esper)),
@@ -366,8 +446,21 @@ prov <- list(
       "tool; every vector is recorded as accept) and model (the draft checker). This ",
       "package reports base, checksum and the K1/K2 model layer natively; the checker's ",
       "cross-record rules K3-K6 and the gff3 layer are not implemented here and their ",
-      "vectors are reported not-run with the rule named."
+      "vectors are reported not-run with the rule named. LIMITATION, stated not implied: ",
+      "the pinned record-contract bytes encode a widened layers.model semantics - a pass ",
+      "additionally implies trimmed, invisible-character-free text, RFC 3986 schemes with ",
+      "a real host, non-blank deposits, NFC-unique identifiers and a root-level gene ",
+      "target - which upstream records in development/conformance/LAYER-SEMANTICS-PROPOSAL.",
+      "md as proposed, not adopted (FHGM-Specification#22, #27 and #28 remain open ",
+      "decisions). That proposal file is vendored only because this suite mirrors the ",
+      "whole upstream non-script conformance subtree; its presence here is not adoption ",
+      "by this package. K4 abstention is unresolved upstream, and K4 stays not-supported-",
+      "yet here by design: this package does not implement the GFF3 feature layer and ",
+      "reports every K4 vector not-run rather than inheriting a contested verdict."
     ),
+    previous = rotate_suite("draft_fhgm_vectors",
+      unname(gper[["manifest.json"]]), gcombined,
+      length(gper), length(gman$vectors), gcommit),
     per_file = setNames(as.list(unname(gper)), names(gper))
   ),
   conformance = list(

@@ -171,12 +171,77 @@ NULL
     }
     res <- .bh_capture(.bh_analyze(path, format = fmt, draft = lane))
     if (!is.null(res$error)) {
+      # One rejection class is established from the file's own bytes rather than from a
+      # reader verdict: R1 hashes the DECOMPRESSED stream, so a truncated gzip member has
+      # no decompressed bytes for it to hash and the file is rejected before any checksum
+      # question arises (the suite's own reason text for fht-fasta-gzip-truncated, and
+      # the same reading the toolkit's FHT lane applies). The grounding is EXTERNAL:
+      # .bh_gz_stream_truncated() re-reads the cited path and independently detects the
+      # gzip magic plus an unrecoverably incomplete member, and the reader's refusal must
+      # be that same truncation refusal - a CRC-corrupt or trailing-garbage refusal is a
+      # refusal to frame, not the R1 condition. The manifest's own words participate only
+      # as narrowing conditions, never as the ground: per the maintainer ruling of
+      # 2026-11-18 (P-6 review, recorded on FAIR-bioHeaders-Tools-R#22) a vector may not
+      # self-certify its own unreachability - the same discipline the Java lane
+      # implements in commit 2c35d938 ("nothing passes for the wrong reason"), with the
+      # field's semantics finalized by FHT-Specification#37. All four conditions must
+      # hold: this vector expects `invalid`, its own rule labels name R1, the bytes are
+      # independently detected truncated, and the reader's refusal was the truncation
+      # refusal. The normal-return path is bound to the same conjunction below: an
+      # R1-labelled unreachable case whose bytes PARSED is reported error there, never
+      # passed on an unrelated checksum-line rejection. Anything else stays an error.
+      if (
+        identical(v$expected, "invalid") && "R1" %in% rules &&
+          identical(v$selfChecksum, "unreachable") &&
+          grepl("truncated: the file ends inside a member", res$error, fixed = TRUE) &&
+          .bh_gz_stream_truncated(path)
+      ) {
+        rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "pass",
+          reason = "", observed = "invalid",
+          diagnostics = paste0(
+            "rejected before any checksum question: R1 has no decompressed payload to ",
+            "hash over a truncated gzip stream; the runner independently re-read the ",
+            "cited bytes and detected the truncation itself ",
+            "(.bh_gz_stream_truncated), and the reader's classed refusal agrees (",
+            res$error, "). The vector's R1 label and selfChecksum=unreachable narrow ",
+            "the exception; neither grounds it - a declaration cannot certify itself ",
+            "(maintainer ruling, 2026-11-18, P-6 review recorded on ",
+            "FAIR-bioHeaders-Tools-R#22; cf. Java 2c35d938)"
+          )
+        )
+        next
+      }
       rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "error",
         paste0("native reader errored: ", res$error))
       next
     }
     a <- res$value
     observed <- if (isTRUE(a$valid)) "valid" else "invalid"
+    # The same conjunction binds the NORMAL-RETURN path. A vector labelled R1 with
+    # selfChecksum unreachable asserts that no reader can reach a checksum question in
+    # these bytes; if this reader RETURNED A VERDICT, the bytes were reachable, and the
+    # only verdict an invalid-expecting case could pass on is a rejection for some other
+    # reason - the false pass the 2026-11-18 review reproduced with a COMPLETE gzip whose
+    # payload no longer matches its recorded checksum line (an R4 mismatch scored as the
+    # R1 truncation evidence). Such a row is reported error, never pass: the rejection
+    # was not established, it was borrowed. An observed `valid` still flows to the normal
+    # comparison and fails there, as a substitution should.
+    if (
+      identical(observed, "invalid") && identical(v$expected, "invalid") &&
+        "R1" %in% rules && identical(v$selfChecksum, "unreachable")
+    ) {
+      rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "error", paste0(
+        "the record's R1 evidence requires bytes no reader can reach (selfChecksum: ",
+        "unreachable), but these bytes parsed and produced a verdict: ",
+        paste(head(a$issues, 3), collapse = " | "), ". Reaching a checksum-line ",
+        "rejection is not evidence of a truncated stream, and no truncation was ",
+        "detected on re-reading them - passing would credit this vector with a ",
+        "rejection it never established (maintainer ruling, 2026-11-18, ",
+        "FAIR-bioHeaders-Tools-R#22; the deletion and substitution controls in ",
+        "test-draft-vectors.R pin this path)"
+      ), observed = observed)
+      next
+    }
     # Rule C3: a cited parent checksum that does not recompute makes the child invalid even
     # though its own bytes and metadata are fine. The suite states which parent file each
     # link points at; without that, the link is unchecked and the verdict is not the
@@ -326,7 +391,7 @@ bh_conformance <- function(suite = NULL, formats = NULL, draft = FALSE, limit = 
 
 #' Runs the FHT development suite through the draft lane
 #'
-#' These 72 vectors are published by FHT-Specification, not by the shared specification, and
+#' These 82 vectors are published by FHT-Specification, not by the shared specification, and
 #' their manifest says its expectations are "derived from the rule text, never from an
 #' implementation under test". They are therefore reported separately, under the rule V7 lane
 #' with the pinned draft bytes, and they never join the 291. A result here is draft evidence:

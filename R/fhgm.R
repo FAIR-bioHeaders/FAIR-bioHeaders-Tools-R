@@ -12,6 +12,13 @@
 #' * the file is routed by its own FHGFF3 citation under V1-V3, with or without the lane;
 #' * the enclosing header must actually allow extension fields, i.e. FHGFF3 1.1 or later
 #'   (R15): a 1.0 header cannot transport FHGM records;
+#' * K1 additionally binds the transport to a **registered** FHGFF3 release: a citation no
+#'   registered release answers to (raw main, superseded or unregistered tags, an
+#'   unrecognised citation-version pair) is refused at the model layer, while v0.5.0 with
+#'   1.1 and v0.6.0 with 1.1 or 1.2 - w3id URL with or without a trailing slash, or raw
+#'   tag URL, under either repository name, exactly the citation shapes selection.R
+#'   recognises - are accepted (maintainer dual-base decision 2026-11-15; registered
+#'   spellings per FHGM-Specification development/model/base-schemas.json);
 #' * the model verdict is reported separately from the base header verdict, and a model
 #'   failure does not rewrite the FHGFF3 result - the upstream suite records its four
 #'   layers apart for exactly that reason (see the `layers` block of each vector);
@@ -28,6 +35,53 @@
 NULL
 
 .bh_fhgm_key <- "x-fhgm-models"
+
+# K1's carrier-identity clause: a file that transports FHGM records "keeps a released
+# FHGFF3 identity", and the checker "refuses a citation no registered release answers to
+# (raw main, superseded releases)". A registered citation is the w3id release URL or the
+# raw TAG URL for fhgff3.json, under either repository name (the current
+# FAIR-bioHeaders-Specification or its historical FHR-Specification alias), and the
+# citation-version pairs the manifest's K1 text recognises are v0.5.0 with schemaVersion
+# 1.1, and v0.6.0 with 1.1 or 1.2 (maintainer dual-base decision 2026-11-15). The pinned
+# suite first exercises this clause at vector `carrier-cites-raw-main`; the evaluation
+# stays inside the draft lane - it reads the carrier's own header and decides only the
+# model-layer question of whether that header may transport records at all.
+.bh_fhgm_carrier_issue <- function(header) {
+  url <- .bh_c(header$schema, NA_character_)
+  sv <- as.character(.bh_c(header$schemaVersion, ""))
+  if (is.na(url) || !nzchar(url)) {
+    return(paste0(
+      "K1: the carrier header names no schema citation, so no registered FHGFF3 ",
+      "release answers to it"
+    ))
+  }
+  # registered citation shapes come from ONE shared definition (.bh_release_url_re,
+  # R/selection.R): the w3id release URL with or without its trailing slash, and the
+  # raw tag URL under either repository name. K1 must not refuse a spelling the
+  # selection layer of this same package accepts.
+  re <- .bh_release_url_re("fhgff3")
+  tag <- sub(re$w3id, "\\1", url)
+  tag <- sub(re$tag, "\\1", tag)
+  if (identical(tag, url)) {
+    return(paste0(
+      "K1: the carrier cites ", url, ", which no registered FHGFF3 release answers ",
+      "to (raw main, superseded releases and unregistered tags are refused; a ",
+      "registered citation is the w3id release URL, with or without a trailing ",
+      "slash, or the raw tag URL for fhgff3.json, under either repository name)"
+    ))
+  }
+  pair_ok <- (identical(tag, "v0.5.0") && identical(sv, "1.1")) ||
+    (identical(tag, "v0.6.0") && sv %in% c("1.1", "1.2"))
+  if (!pair_ok) {
+    return(paste0(
+      "K1: the carrier pairs ", tag, " with schemaVersion ", sv, ", and no ",
+      "registered release answers that citation-version pair (recognised: v0.5.0 ",
+      "with 1.1; v0.6.0 with 1.1 or 1.2 - maintainer dual-base decision 2026-11-15; ",
+      "a file stating FHGFF3 1.0 cannot carry the extension at all)"
+    ))
+  }
+  character()
+}
 
 # A flow array holding exactly one scalar - `"deposit":["doi:10.22002/x"]` - is the shape
 # R's yaml hands back as an atomic vector, after which it is indistinguishable from a
@@ -170,13 +224,22 @@ bh_validate_fhgm <- function(path, format = "fhgff3", compressed = NA) {
       "an x-fhgm-models key there is an unknown key rather than a transported record"
     )
   }
+  # K1 carrier identity, beside the 1.0 clause: the header must cite a registered FHGFF3
+  # release the transport can bind to. First exercised by the re-pinned suite vector
+  # `carrier-cites-raw-main`; recorded as a model-layer rejection, never rewritten into
+  # the base FHGFF3 verdict (the base layer judges this citation under V1 on its own).
+  carrier <- .bh_fhgm_carrier_issue(models$header)
+  if (length(carrier)) {
+    transport_ok <- FALSE
+    transport_note <- c(transport_note, carrier)
+  }
   validator <- .bh_validator(sel$file)
   if (!length(models$records)) {
     # K1: the transport key must hold one or more records. An empty array is a violation of
     # the transport rule, not a vacuous pass over zero records.
     return(list(
       records = .bh_empty_model_rows(), all_valid = FALSE, n_records = 0L,
-      warnings = c(warn, paste0(
+      warnings = c(warn, transport_note, paste0(
         "K1: the header carries ", .bh_fhgm_key, " with no records; transport requires one ",
         "or more"
       )),

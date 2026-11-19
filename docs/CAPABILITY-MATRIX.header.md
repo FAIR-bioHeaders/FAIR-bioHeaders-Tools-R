@@ -1,7 +1,8 @@
 # Capability matrix: type × operation × serialization × contract version
 
-Status date: **2026-11-16** (re-rendered with the FHT/FHGM draft-suite re-pin). This file
-is the published capability statement of the
+Status date: **2026-11-18** (re-rendered with the round-13 coordinated draft re-pin: FHT
+contract `4156353a` and 82-vector suite, FHGM contract `b7075e58` and 62-vector suite).
+This file is the published capability statement of the
 `FAIRbioHeadersTools` R package. It is generated from `bh_capability()` by
 `tools/render_capability_matrix.R`; the code and this table cannot drift apart
 silently, because CI re-renders and compares.
@@ -14,10 +15,25 @@ released form here. They are reachable only through the explicit, digest-pinned,
 warning-emitting opt-in lane. FHGM is additionally **not a header type at all**:
 its records are model records transported inside an FHGFF3 header under
 `x-fhgm-models`, carrying no `schema` field of their own. FHGM's two `draft-lane`
-cells cover the transport rule (K1) and the per-record contract (K2); the
+cells cover the transport rule (K1, including its carrier-identity clause: the
+header must cite a registered FHGFF3 release) and the per-record contract (K2); the
 checker's cross-record rules K3-K6 stay `not-supported-yet` with their own rows,
-and 34 of the 43 vectors in FHGM's own suite are reported `not-run` rather than
+and 43 of the 62 vectors in FHGM's own suite are reported `not-run` rather than
 passed.
+
+Draft-scope limitation, stated rather than inherited (round-13, 2026-11-18): the
+pinned FHGM record-contract bytes incorporate a widened `layers.model` semantics -
+a model `pass` now additionally implies trimmed, invisible-character-free text,
+RFC 3986 schemes with a real host, non-blank deposits, NFC-unique identifiers and a
+root-level gene target. Upstream itself records that semantics in
+`development/conformance/LAYER-SEMANTICS-PROPOSAL.md` as **proposed, not adopted**
+(FHGM-Specification#22, #27 and #28 remain open decisions), and the file is vendored
+in `tests/draft/fhgm/` only because the suite mirrors the whole upstream non-script
+conformance subtree - its presence is not adoption here. K4 abstention is unresolved
+upstream; K4 stays `not-supported-yet` in this package **by design**, and all 11 K4
+vectors are reported not-run. On the FHT side, 4 of the 82 pinned suite vectors are
+marked `promotion: candidate-unreviewed` and are presented as unreviewed candidates,
+never as reviewed expectations.
 
 Cell vocabulary:
 

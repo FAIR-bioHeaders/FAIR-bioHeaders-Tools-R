@@ -18,6 +18,13 @@ chooses only \emph{what validates the records}, never what they are;
 \item the file is routed by its own FHGFF3 citation under V1-V3, with or without the lane;
 \item the enclosing header must actually allow extension fields, i.e. FHGFF3 1.1 or later
 (R15): a 1.0 header cannot transport FHGM records;
+\item K1 additionally binds the transport to a \strong{registered} FHGFF3 release: a citation no
+registered release answers to (raw main, superseded or unregistered tags, an
+unrecognised citation-version pair) is refused at the model layer, while v0.5.0 with
+1.1 and v0.6.0 with 1.1 or 1.2 - w3id URL with or without a trailing slash, or raw
+tag URL, under either repository name, exactly the citation shapes selection.R
+recognises - are accepted (maintainer dual-base decision 2026-11-15; registered
+spellings per FHGM-Specification development/model/base-schemas.json);
 \item the model verdict is reported separately from the base header verdict, and a model
 failure does not rewrite the FHGFF3 result - the upstream suite records its four
 layers apart for exactly that reason (see the \code{layers} block of each vector);

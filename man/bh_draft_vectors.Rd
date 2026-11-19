@@ -19,7 +19,7 @@ name it here, with \code{options(bh.draft_dir = )} or with \code{FAIRBH_DRAFT_DI
 A \code{bh_conformance} object, labelled as draft evidence.
 }
 \description{
-These 72 vectors are published by FHT-Specification, not by the shared specification, and
+These 82 vectors are published by FHT-Specification, not by the shared specification, and
 their manifest says its expectations are "derived from the rule text, never from an
 implementation under test". They are therefore reported separately, under the rule V7 lane
 with the pinned draft bytes, and they never join the 291. A result here is draft evidence:
