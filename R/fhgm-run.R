@@ -71,7 +71,7 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
       # several vectors cite published example files under ../examples/ rather than a copy
       # inside the suite directory; both trees are vendored, so a miss is reported, never
       # guessed at
-      return(.bh_fhgm_row(v, rules, "not-run", paste0(
+      return(.bh_fhgm_row(v, rules, "missing-fixture", paste0(
         "the vector cites ", v$file, " which is not present under ", dir,
         "; vendor FHGM-Specification development/examples/ alongside development/conformance/ ",
         "(tools/vendor_upstream.R) or point suite= at a tree that has both"
@@ -156,8 +156,8 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
   out <- do.call(rbind, rows)
   structure(
     list(
-      results = out, summary = table(out$status), ok = !any(out$status == "fail"),
-      failures = sum(out$status == "fail"), suite = dir, vectors = nrow(out),
+      results = out, summary = table(out$status), ok = !any(out$status %in% c("fail", "error", "missing-fixture")),
+      failures = sum(out$status %in% c("fail", "error", "missing-fixture")), suite = dir, vectors = nrow(out),
       label = paste0(
         "FHGM development suite (draft evidence, rule V7 - not part of the 291); ",
         "base, checksum and the K1/K2 model rules native, checker cross-record rules ",

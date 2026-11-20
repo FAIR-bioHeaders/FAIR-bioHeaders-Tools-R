@@ -174,7 +174,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
         "base FHGFF3 ",
         "verdict. That is the earned scope: of the 62 published vectors, 19 turn on K1/K2 ",
         "alone and are compared; the other 43 turn on K3-K6 or B1 and are reported not-run. ",
-        "earn it. The suite's own manifest records 42 of its 45 invalid vectors passing ",
+        "The suite's own manifest records 42 of its 45 invalid vectors passing ",
         "both the released base schema and the exact-byte checksum (43 pass the base ",
         "layer and 44 the checksum layer singly), so only those cross-record rules ",
         "separate them; passing them on the ",

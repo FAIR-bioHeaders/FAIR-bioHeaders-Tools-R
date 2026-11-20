@@ -31,6 +31,8 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+source("tools/vendor_tree.R")
+
 .options <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) {
   i <- match(name, .options)
@@ -230,7 +232,6 @@ cat("draft vectors (FHT-Specification, development suite, labelled as such upstr
 # These are NOT part of the 291. The FHT manifest's own status field says the expectations
 # are "derived from the rule text, never from an implementation under test", so the results
 # they produce are draft evidence and are reported separately by bh_draft_vectors().
-unlink(file.path(here, "tests", "draft", "fht"), recursive = TRUE)
 dcmd <- paste("git", shQuote("-C"), shQuote(fht_repo),
               "archive --format=tar origin/main conformance >", shQuote(tar <- tempfile()))
 dst <- system2("/bin/sh", c("-c", shQuote(dcmd)), stdout = TRUE, stderr = TRUE)
@@ -239,19 +240,17 @@ if (!is.null(attr(dst, "status")) && attr(dst, "status") != 0) {
 }
 tmp <- tempfile("fhtraw")
 dir.create(tmp)
-system2("tar", c("-xf", shQuote(tar), "-C", shQuote(tmp)))
+if (system2("tar", c("-xf", shQuote(tar), "-C", shQuote(tmp))) != 0L) stop("FHT archive extraction failed")
 unlink(tar)
 # the archive's own directory is conformance/; the destination names the type that owns
 # these bytes, so the draft set cannot be mistaken for the shared suite
 dest <- file.path(here, "tests", "draft")
-unlink(dest, recursive = TRUE) # a stale layout from an interrupted run must not survive
 if (!dir.exists(file.path(tmp, "conformance"))) {
   stop("unexpected FHT archive layout: no conformance/ directory")
 }
 dir.create(dest, showWarnings = FALSE, recursive = TRUE)
 dfh <- file.path(dest, "fht")
-unlink(dfh, recursive = TRUE)
-file.rename(file.path(tmp, "conformance"), dfh)
+replace_vendor_tree(file.path(tmp, "conformance"), dfh)
 unlink(tmp, recursive = TRUE)
 if (!file.exists(file.path(dfh, "manifest.json"))) {
   stop("the FHT draft vectors did not land at ", dfh)
@@ -290,8 +289,6 @@ fhgm_conformance_path <- "development/conformance"
 fhgm_examples_path <- "development/examples"
 gdest <- file.path(here, "tests", "draft", "fhgm")
 edest <- file.path(here, "tests", "draft", "examples")
-unlink(gdest, recursive = TRUE)
-unlink(edest, recursive = TRUE)
 
 archive_subtree <- function(sub, target) {
   t <- tempfile(fileext = ".tar")
@@ -303,11 +300,11 @@ archive_subtree <- function(sub, target) {
   }
   u <- tempfile("fhgmr")
   dir.create(u)
-  system2("tar", c("-xf", shQuote(t), "-C", shQuote(u)))
+  if (system2("tar", c("-xf", shQuote(t), "-C", shQuote(u))) != 0L) stop("FHGM archive extraction failed")
   unlink(t)
   if (!dir.exists(file.path(u, sub))) stop("unexpected FHGM archive layout for ", sub)
   dir.create(dirname(target), showWarnings = FALSE, recursive = TRUE)
-  file.rename(file.path(u, sub), target)
+  replace_vendor_tree(file.path(u, sub), target)
   unlink(u, recursive = TRUE)
   invisible(target)
 }
@@ -349,7 +346,6 @@ cat(sprintf("  %d suite files + %d example files, %d upstream scripts left behin
             substr(unname(gper[["manifest.json"]]), 1, 16), length(gman$vectors)))
 
 cat("shared conformance suite\n")
-unlink(file.path(here, "tests/conformance"), recursive = TRUE)
 # The archive goes through a shell redirect: R replaces an unusable system2 stdout
 # target with TRUE, which would have streamed the tar to the console and left an empty
 # file to be "extracted".
@@ -363,7 +359,16 @@ if (!is.null(attr(st, "status")) && attr(st, "status") != 0) {
 if (is.na(file.info(tar)$size) || file.info(tar)$size < 1) {
   stop("git archive produced an empty tar")
 }
-system2("tar", c("-xf", shQuote(tar), "-C", shQuote(file.path(here, "tests"))))
+shared_stage <- tempfile("shared-suite-")
+dir.create(shared_stage)
+if (system2("tar", c("-xf", shQuote(tar), "-C", shQuote(shared_stage))) != 0L) {
+  stop("shared conformance archive extraction failed")
+}
+if (!file.exists(file.path(shared_stage, "conformance", "manifest.json"))) {
+  stop("unexpected shared conformance archive layout")
+}
+replace_vendor_tree(file.path(shared_stage, "conformance"), file.path(here, "tests/conformance"))
+unlink(shared_stage, recursive = TRUE)
 unlink(tar)
 suite <- file.path(here, "tests/conformance")
 files <- list.files(suite, recursive = TRUE, all.files = TRUE, no.. = TRUE)

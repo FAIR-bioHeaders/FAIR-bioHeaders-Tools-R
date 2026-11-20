@@ -5,7 +5,8 @@
 The [Round 16 policy](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/211#issuecomment-7042896529)
 supersedes the former conditional agent-merge authorization of 2026-11-16/18 and
 the #268 authority links recorded under it. **Agents must never merge pull
-requests in this repository; a human performs every merge.** Do not enable
+requests; a human performs every merge, across all repositories an agent operates
+in, including external upstream repositories and personal forks.** Do not enable
 auto-merge, enter a merge queue, use another agent or service as a merge proxy,
 or push directly to the default branch as a substitute for merging a PR. Model
 review never grants an agent merge authority; preserve platform protections and

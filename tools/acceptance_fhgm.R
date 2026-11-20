@@ -55,7 +55,7 @@ receipt <- list(
   vectorsNotRunUnlabelled = sum(res$status == "not-run" & !nzchar(res$rules)),
   baseLayerAgreement = paste0(base_ok, "/", nrow(res)),
   checksumLayerAgreement = paste0(sum_ok, "/", nrow(res)),
-  modelLayerCompared = sum(!nzchar(res$rule_gaps)),
+  modelLayerCompared = sum(res$status %in% c("pass", "fail") & !nzchar(res$rule_gaps)),
   contractCommit = fhgm$commit,
   contractSha256 = fhgm$sha256,
   suiteCommit = pinned$commit,

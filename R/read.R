@@ -18,12 +18,13 @@
 #' `$warnings`.
 #'
 #' @section Errors:
-#' Everything this package raises is a classed condition (`bh_error` plus a subclass), so
+#' Reader input refusals are classed conditions (`bh_error` plus a subclass), so
 #' `tryCatch(expr, bh_error = handler)` catches the family. An invalid *file* is not an
 #' error: the returned object says so. An unusable *input* is - a missing file, a
 #' serialization the name does not identify, a header block over the reader limit, a
 #' gzip file that is corrupt, truncated or followed by bytes that are not gzip, a
-#' contract this build does not hold.
+#' contract this build does not hold. Ordinary R argument errors and native allocation
+#' failures may retain their original condition classes.
 #'
 #' @name read
 NULL
@@ -123,6 +124,7 @@ NULL
 .bh_analyze <- function(path, format = NULL, compressed = NA,
                         draft = getOption("bh.draft_lane", FALSE), verify_checksum = TRUE,
                         validate_contract = TRUE) {
+  .bh_input_path(path)
   format <- format %||% .bh_guess_format(path)
   if (!format %in% names(.bh_formats)) {
     bh_abort("input", paste0("unknown serialization ", sQuote(format)))
@@ -232,6 +234,7 @@ NULL
 bh_read <- function(path, format = NULL, compressed = NA,
                     draft = getOption("bh.draft_lane", FALSE), verify_checksum = TRUE,
                     validate_contract = TRUE, ...) {
+  if (...length()) bh_abort("input", "unused arguments in bh_read(...)")
   a <- .bh_analyze(path,
     format = format, compressed = compressed, draft = draft,
     verify_checksum = verify_checksum, validate_contract = validate_contract

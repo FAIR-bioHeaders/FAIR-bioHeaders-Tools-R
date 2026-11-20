@@ -100,7 +100,7 @@ NULL
 #' Forces the sequence-valued keys to list shape.
 #'
 #' @param x The parsed record.
-#' @param keys The result of [.bh_sequence_keys()].
+#' @param keys The result of `.bh_sequence_keys()`.
 #' @return The record with those values as lists.
 #' @noRd
 .bh_repair_shape <- function(x, keys) {
