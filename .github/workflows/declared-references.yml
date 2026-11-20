@@ -33,7 +33,7 @@ jobs:
           path: .checker
       - name: Advisory comparison of current native declarations (never re-pin)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: python3 scripts/audit_declared_references.py --checker-root .checker --report-output "$RUNNER_TEMP/reference-report.json"
       - uses: actions/upload-artifact@v4
         if: always()
