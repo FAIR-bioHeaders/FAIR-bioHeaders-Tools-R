@@ -58,7 +58,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
   fhr <- "FHR 1, 2.0, 2.1"
   fhp <- "FHP 1.0, 1.1, 1.2"
   fhg <- "FHGFF3 1.0, 1.1, 1.2"
-  none_yet <- "no released contract (rule V7)"
+  none_yet <- "historical draft pin (rule V7)"
 
   out <- list(
     # --- released types, native file forms ---
@@ -134,13 +134,13 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
 
     # --- draft types, lane only ---
     R("FHT", "draft", "read_header", "fasta (draft)", none_yet, "draft-lane",
-      "no released contract: scheduled as specification v0.7.0; readable only with the V7 lane open, against bytes pinned by commit and SHA-256, warning on every read",
+      "this build retains the historical FHT draft; family FHT 1.0 is published in specification v0.7.0; readable only with the V7 lane open, against bytes pinned by commit and SHA-256, warning on every read",
       "FHT-Specification#8,FHT-Specification#9,FHT-Specification#10"),
     R("FHT", "draft", "validate_contract", "fasta (draft)", none_yet, "draft-lane",
       "as above; a draft result is not a released-contract result and takes no release form",
       "FHT-Specification#9"),
     R("FHT", "draft", "verify_checksum", "fasta (draft)", none_yet, "draft-lane",
-      "the checksum rule is the shared one and runs natively; what is unresolved is selfChecksum/parentLink, which finalize at FHT release",
+      "the checksum rule is the shared one and runs natively; what is unresolved is selfChecksum/parentLink, which belong to this historical draft pin; this build does not adopt the published FHT contract",
       "FHT-Specification#10"),
     R("FHT", "draft", "select_schema_V1_V6", "fasta (draft)", none_yet, "not-applicable",
       "V1-V6 cover released types only; V7 is the lane, and a release-shaped FHT URL stays V5 with the lane open or closed",
@@ -155,7 +155,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       "draft-lane",
       paste0(
         "bh_fhgm_models() returns the transported records and bh_draft_pins() names the ",
-        "bytes they were read against; no released contract: scheduled as specification ",
+        "bytes they were read against; this build retains the historical extension draft; native FHGM 0.1 is published in specification ",
         "v0.8.0. FHGM records carry no schema field, so the file is routed by its own ",
         "FHGFF3 citation under V1-V3 and the lane selects only the contract applied to the ",
         "records. Reads through the shared reader stay uninterpreted extension data (R15); ",
@@ -192,7 +192,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
     R("FHGM", "draft", "resolve_feature_target", "nested in fhgff3 via x-fhgm-models",
       none_yet, "not-supported-yet",
       paste0(
-        "K4 needs the GFF3 feature layer - featureId resolving, percent-decoded, to ",
+        "K4 needs the GFF3 feature layer - featureId as written matching the decoded ID of ",
         "exactly one local gene row - which belongs to gff3-validator, not to this ",
         "package; the 11 vectors that turn on it are reported not-run. Whether the ",
         "model layer may abstain from K4 at all is an open upstream decision ",
@@ -224,7 +224,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       "FHGM is not a file type: its records are covered by the checksum of the FHGFF3 file that transports them",
       NA_character_),
     R("FHGM", "draft", "read_header", "fasta,gfa,fhgff3,jsonld,microdata", none_yet,
-      "not-applicable", "FHGM has no serialization of its own", NA_character_)
+      "not-applicable", "this historical FHGM extension lane has no separate serialization; native FHGM is outside this build", NA_character_)
   )
   do.call(rbind, out)
 }

@@ -290,7 +290,7 @@ fhgm_examples_path <- "development/examples"
 gdest <- file.path(here, "tests", "draft", "fhgm")
 edest <- file.path(here, "tests", "draft", "examples")
 
-archive_subtree <- function(sub, target) {
+archive_subtree <- function(sub, staging) {
   t <- tempfile(fileext = ".tar")
   c1 <- paste("git", shQuote("-C"), shQuote(fhgm_repo),
               "archive --format=tar origin/main", sub, ">", shQuote(t))
@@ -303,15 +303,20 @@ archive_subtree <- function(sub, target) {
   if (system2("tar", c("-xf", shQuote(t), "-C", shQuote(u))) != 0L) stop("FHGM archive extraction failed")
   unlink(t)
   if (!dir.exists(file.path(u, sub))) stop("unexpected FHGM archive layout for ", sub)
-  dir.create(dirname(target), showWarnings = FALSE, recursive = TRUE)
-  replace_vendor_tree(file.path(u, sub), target)
+  destination <- file.path(staging, basename(sub))
+  if (!isTRUE(file.rename(file.path(u, sub), destination))) stop("FHGM archive staging failed")
   unlink(u, recursive = TRUE)
-  invisible(target)
+  destination
 }
-archive_subtree(fhgm_conformance_path, gdest)
+fhgm_stage <- tempfile("fhgm-pair-")
+dir.create(fhgm_stage)
+gsource <- archive_subtree(fhgm_conformance_path, fhgm_stage)
 # Several vectors cite example files one level up (../examples/model/snapshot-v1.fhgff3.gff3
 # and friends), so those bytes are vendored alongside, at the path the citations resolve to.
-archive_subtree(fhgm_examples_path, edest)
+esource <- archive_subtree(fhgm_examples_path, fhgm_stage)
+if (!file.exists(file.path(gsource, "manifest.json"))) stop("FHGM staged manifest missing")
+replace_vendor_trees(c(gsource, esource), c(gdest, edest))
+unlink(fhgm_stage, recursive = TRUE)
 if (!file.exists(file.path(gdest, "manifest.json"))) stop("the FHGM suite did not land at ", gdest)
 
 # The owning repository's generator and checker scripts are not data this package reads;

@@ -71,3 +71,31 @@ test_that("vendoring stages bytes and preserves prior tree on rename failure", {
   env$replace_vendor_tree(source, target)
   expect_equal(readLines(file.path(target, "data")), "new bytes")
 })
+
+test_that("related FHGM trees roll back together on second replacement failure", {
+  env <- new.env(parent = baseenv())
+  sys.source(testthat::test_path("..", "..", "tools", "vendor_tree.R"), envir = env)
+  root <- tempfile("vendor-pair-control")
+  dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  sources <- file.path(root, c("new-conformance", "new-examples"))
+  targets <- file.path(root, c("conformance", "examples"))
+  for (d in c(sources, targets)) dir.create(d)
+  for (i in seq_along(sources)) {
+    writeLines(paste("new", i), file.path(sources[[i]], "data"))
+    writeLines(paste("old", i), file.path(targets[[i]], "data"))
+  }
+  provenance <- file.path(root, "VENDORED.json")
+  writeLines("old provenance", provenance)
+  calls <- 0L
+  fail_second_install <- function(from, to) {
+    calls <<- calls + 1L
+    if (calls == 4L) return(FALSE)
+    file.rename(from, to)
+  }
+  expect_error(env$replace_vendor_trees(sources, targets, rename = fail_second_install), "restored")
+  for (i in seq_along(targets)) expect_equal(readLines(file.path(targets[[i]], "data")), paste("old", i))
+  expect_equal(readLines(provenance), "old provenance")
+  env$replace_vendor_trees(sources, targets)
+  for (i in seq_along(targets)) expect_equal(readLines(file.path(targets[[i]], "data")), paste("new", i))
+})

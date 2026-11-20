@@ -46,3 +46,23 @@ C analysis and workflow/history scans do not substitute for that missing coverag
 The first inherited silent test run reported one failure; a later diagnostic
 rerun passed, and the final changed suite above passed. Failed setup attempts for
 the supplementary policy corpus were retained and corrected, not counted as passes.
+
+
+### Independent integration review and workflow hardening
+
+The continuation received independent review by configured GPT-6.1 Terra,
+separate from the Codex GPT-6 implementation author (exact runtime variant
+unexposed). Review covered all eleven Julia runtime modules, the R/Java
+continuation deltas, and the three workflow hardening changes. Source action
+tag/commit receipts and scan logs are retained in the Round 16 handoff packet.
+Actions are pinned to verified full commit IDs, checkout credential persistence
+is disabled, and Julia CI input boundaries use environment variables. Final
+workflow scans reported zero actionlint and zizmor diagnostics. Human merge is
+required; review does not confer agent merge authority.
+
+The reviewer found that two related FHGM vendor directories could diverge on
+second-tree failure. Both archives are now staged before publication, and both
+previous trees are restored if replacement fails. A second-install failure
+regression checks both previous trees and unchanged provenance. Capability
+prose now distinguishes this consumer's historical draft pins from the
+published family FHT/native FHGM contracts. No pin or vendored bytes changed.
