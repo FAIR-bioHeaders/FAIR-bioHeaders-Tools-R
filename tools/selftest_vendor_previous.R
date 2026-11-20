@@ -106,6 +106,13 @@ invisible(file.copy(script, file.path(pkg, "tools", "vendor_upstream.R"),
   overwrite = TRUE
 ))
 
+# The vendoring script sources its canonical helper. Give each throwaway package
+# the same helper bytes instead of depending on the caller's working directory.
+invisible(dir.create(file.path(pkg, "tests"), recursive = TRUE))
+if (!isTRUE(file.copy("tests/vendor_tree.R", file.path(pkg, "tests", "vendor_tree.R")))) {
+  stop("cannot stage canonical vendor helper for selftest")
+}
+
 run_vendor <- function() {
   owd <- setwd(pkg)
   on.exit(setwd(owd), add = TRUE)
