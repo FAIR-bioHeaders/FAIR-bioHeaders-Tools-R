@@ -169,6 +169,21 @@ NULL
         paste0("not-run: beyond the limit of ", limit, " vectors per format"))
       next
     }
+    # D9: historical noncanonical parents cannot prove the original predicate.
+    # Bind both payloads, then evaluate the explicit canonical counterpart before
+    # crediting its rule. Reports retain historical and evidence IDs separately.
+    crosswalk <- jsonlite::fromJSON(.bh_inst("references", "retirement-crosswalk.json"), simplifyVector = FALSE)
+    retired <- Filter(function(x) identical(x$id, v$id), crosswalk$cases)
+    if (length(retired)) {
+      counterpart <- retired[[1L]]
+      stopifnot(identical(.bh_sha256_hex(.bh_read_all(path)), counterpart$oldSha256))
+      replacement <- .bh_inst("references", "canonical-counterparts", counterpart$replacementFile)
+      stopifnot(identical(.bh_sha256_hex(.bh_read_all(replacement)), counterpart$replacementSha256))
+      v$historicalExpected <- v$expected
+      v$evidenceId <- counterpart$replacedBy
+      v$evidenceFile <- counterpart$replacementFile
+      path <- replacement
+    }
     res <- .bh_capture(.bh_analyze(path, format = fmt, draft = lane))
     if (!is.null(res$error)) {
       # One rejection class is established from the file's own bytes rather than from a
@@ -350,7 +365,7 @@ NULL
 .bh_conf_row <- function(v, rules, status, reason, observed = NA_character_,
                          diagnostics = "", warnings = "") {
   data.frame(
-    id = v$id, format = v$format, expected = v$expected, observed = observed,
+    id = v$id, evidence_id = v$evidenceId %||% v$id, evidence_file = v$evidenceFile %||% v$file, format = v$format, expected = v$expected, historical_expected = v$historicalExpected %||% v$expected, observed = observed,
     status = status, rules = paste(rules, collapse = "+"), reason = reason,
     diagnostics = diagnostics, warnings = warnings,
     stringsAsFactors = FALSE
@@ -425,6 +440,7 @@ print.bh_conformance <- function(x, ...) {
   cat("  vectors accounted for: ", x$vectors,
       if (isTRUE(x$limited)) " (partial run)" else "", "\n", sep = "")
   print(x$summary)
+  cat("  canonical counterpart evidence (not historical payload predicates): ", sum(x$results$evidence_id != x$results$id), "\n", sep="")
   cat("  unexpected results: ", x$failures, "\n", sep = "")
   cat("  vectors whose verdict leaves a rule unverified: ", x$gap_vectors, "\n", sep = "")
   cat("  vectors that also had to report a warning-only rule: ", x$reported_vectors,

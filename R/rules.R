@@ -19,7 +19,7 @@ NULL
 # reported by bh_draft_fhgm_vectors(), on FHGFF3 files read through the draft lane. No
 # released-path reader evaluates them, and no FHGM verdict exists outside that lane.
 .bh_rules_checked <- c(
-  "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R10", "R12", "R13", "R14", "R15",
+  "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R10", "R12", "R13", "R14", "R15", "R17",
   "P1", "P2", "G1", "G2", "G3", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "C1", "C3",
   "K1", "K2"
 )

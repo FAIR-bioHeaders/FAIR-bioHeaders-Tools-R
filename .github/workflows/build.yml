@@ -175,6 +175,8 @@ jobs:
           vectorsTotal=291
           vectorsRun=228
           vectorsPassed=228
+          historicalPayloadsRun=159
+          canonicalCounterpartsRun=69
           vectorsFailed=0
           vectorsNotRun=63
           vectorsDeclaredNotRunWithReason=63

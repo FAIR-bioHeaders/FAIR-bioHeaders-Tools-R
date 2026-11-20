@@ -148,6 +148,16 @@ NULL
 #' @noRd
 .bh_golden_diff <- function(got, want) {
   diffs <- character()
+  changes_path <- file.path(dirname(.bh_golden_path()), "reader-policy-changes.json")
+  if (file.exists(changes_path)) {
+    changes <- jsonlite::fromJSON(changes_path, simplifyVector = FALSE)$changes
+    for (change in changes) {
+      i <- match(change$id, vapply(want$vectors, function(x) x$id, ""))
+      if (is.na(i) || !identical(want$vectors[[i]], change$from)) {
+        diffs <- c(diffs, paste0("policy overlay predecessor differs: ", change$id))
+      } else want$vectors[[i]] <- change$to
+    }
+  } else diffs <- c(diffs, "missing explicit reader-policy golden delta")
   brief <- function(x) {
     s <- tryCatch(
       as.character(jsonlite::toJSON(x, auto_unbox = TRUE)),

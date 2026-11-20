@@ -827,3 +827,38 @@ lane only; the released path and the golden do not move.
   (single-host measurement; the digest route in this repo supersedes its open
   question as a **decision**, with the alternatives and why they were rejected
   recorded in docs/DIGEST.md).
+
+## November 19, 2026 adopted reader-policy implementation
+
+This source implements D9/D10 from shared #211: schema selection precedes
+validation; R4 canonical encoding is checked for root and standard derivedFrom
+checksums without inspecting arbitrary extension payloads; YAML directives and
+document-start wrappers are refused; gzip trailing garbage is rejected, trailing
+NUL padding is accepted, and FHCRC is verified when present. Native supplementary
+runner commands and their exact shared-source pin are in the reader-policy CI
+workflow and `references/reader-policy.json`. This is runtime implementation,
+not a rewrite of frozen released schema patterns.
+
+The historical 291 manifest, fixtures and default golden remain unchanged. A
+byte-bound shared retirement crosswalk records the 30 formerly valid synthetic
+parent fixtures now rejected under R4. Historical expectations remain readable;
+the native historical runner explicitly reports the new effective rejection.
+The existing golden is compared through exact predecessor/new-row policy deltas,
+not regenerated. Current canonical-parent counterparts exercise the original
+predicates independently. Supplementary/current-source results are distinct from
+the v0.6.0 ledger, draft FHT/FHGM receipts and any publication/support claim.
+
+`references/README.md` documents the dynamic advisory reference audit; it never
+refreshes contract/suite/carrier pins automatically. Existing dated 82/62 draft
+receipts are historical, not accepted93/92 or published support.
+
+Review correction: the historical-manifest runner now verifies each original
+retired payload digest and evaluates its separately named canonical counterpart
+before crediting the original predicate. Its rows retain `id`, `evidence_id`,
+`evidence_file` and historical expectations. The receipt splits159 original
+payload results from69 byte-bound canonical counterparts (nine other crosswalk
+entries are JSON-LD/microdata and remain explicitly not-run); neither the old48
+invalid fixtures' R4 rejections nor the old30 positives prove those predicates.
+The frozen fixture/golden bytes remain unchanged. The policy/current-carrier
+runner requires three-way unsupported-version verdicts and accepts only two
+named gzip transport error causes; other errors stop execution.

@@ -458,6 +458,8 @@ NULL
       next
     }
     if (marker_v[[li]]) {
+      if (grepl("^%|^---(?:[ \t]|$)", l, perl = TRUE))
+        flag("R12: YAML directives and document-start markers are forbidden", structural = TRUE)
       finish_plain()
       next
     }

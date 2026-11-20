@@ -1,0 +1,2026 @@
+{
+  "decision": "shared #211 D9; shared #258 option1",
+  "changes": [
+    {
+      "id": "fhp-fasta-lf",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-lf",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      },
+      "to": {
+        "id": "fhp-fasta-lf",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      }
+    },
+    {
+      "id": "fhp-fasta-crlf",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-crlf",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "kFopN0MNS3kRrcpgm7N1rF6OQlg9Qbwq8iBa3UnCWoA=",
+        "checksum_computed": "kFopN0MNS3kRrcpgm7N1rF6OQlg9Qbwq8iBa3UnCWoA=",
+        "checksum_bytes": 733,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "df828be13a4bb43596ae3d17bef0b45459a8ad2d96e9006a0afc1b3f0e1c37d8"
+      },
+      "to": {
+        "id": "fhp-fasta-crlf",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "kFopN0MNS3kRrcpgm7N1rF6OQlg9Qbwq8iBa3UnCWoA=",
+        "checksum_computed": "kFopN0MNS3kRrcpgm7N1rF6OQlg9Qbwq8iBa3UnCWoA=",
+        "checksum_bytes": 733,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "df828be13a4bb43596ae3d17bef0b45459a8ad2d96e9006a0afc1b3f0e1c37d8"
+      }
+    },
+    {
+      "id": "fhp-fasta-no-final-newline",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-no-final-newline",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "06Y9cjeP5vmuQ8NfgiFzpcxtE7dx8fpaQeFTAwcLkZI=",
+        "checksum_computed": "06Y9cjeP5vmuQ8NfgiFzpcxtE7dx8fpaQeFTAwcLkZI=",
+        "checksum_bytes": 712,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "43a915a24fae2d0a06eea121682fd40285521b69f4781c9bfecae63f261ca140"
+      },
+      "to": {
+        "id": "fhp-fasta-no-final-newline",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "06Y9cjeP5vmuQ8NfgiFzpcxtE7dx8fpaQeFTAwcLkZI=",
+        "checksum_computed": "06Y9cjeP5vmuQ8NfgiFzpcxtE7dx8fpaQeFTAwcLkZI=",
+        "checksum_bytes": 712,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "43a915a24fae2d0a06eea121682fd40285521b69f4781c9bfecae63f261ca140"
+      }
+    },
+    {
+      "id": "fhp-fasta-comments-and-blank-lines",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-comments-and-blank-lines",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "H42XXYI7m5XVZcDQRYFL1fpz5UGCCbwcXugSZ8Jkn+4=",
+        "checksum_computed": "H42XXYI7m5XVZcDQRYFL1fpz5UGCCbwcXugSZ8Jkn+4=",
+        "checksum_bytes": 754,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "9153bcf98aa8ebdd3a94a20e6a114a3d39d6d7ccd11d5cc8190dab2856043fdb"
+      },
+      "to": {
+        "id": "fhp-fasta-comments-and-blank-lines",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "H42XXYI7m5XVZcDQRYFL1fpz5UGCCbwcXugSZ8Jkn+4=",
+        "checksum_computed": "H42XXYI7m5XVZcDQRYFL1fpz5UGCCbwcXugSZ8Jkn+4=",
+        "checksum_bytes": 754,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "9153bcf98aa8ebdd3a94a20e6a114a3d39d6d7ccd11d5cc8190dab2856043fdb"
+      }
+    },
+    {
+      "id": "fhp-fasta-escaped-record-markers",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-escaped-record-markers",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "MzKJfkBFGNsy96UljmFYWpuuW1zkmWfW5ZdR1xpbJZQ=",
+        "checksum_computed": "MzKJfkBFGNsy96UljmFYWpuuW1zkmWfW5ZdR1xpbJZQ=",
+        "checksum_bytes": 693,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "92e1d0848c97a4a436522f26a1aaaea9a5bb3c13d99345019c1fadec88fbb3c9"
+      },
+      "to": {
+        "id": "fhp-fasta-escaped-record-markers",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "MzKJfkBFGNsy96UljmFYWpuuW1zkmWfW5ZdR1xpbJZQ=",
+        "checksum_computed": "MzKJfkBFGNsy96UljmFYWpuuW1zkmWfW5ZdR1xpbJZQ=",
+        "checksum_bytes": 693,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "92e1d0848c97a4a436522f26a1aaaea9a5bb3c13d99345019c1fadec88fbb3c9"
+      }
+    },
+    {
+      "id": "fhp-fasta-gzip",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-gzip",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      },
+      "to": {
+        "id": "fhp-fasta-gzip",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      }
+    },
+    {
+      "id": "fhp-fasta-bgzf",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-bgzf",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      },
+      "to": {
+        "id": "fhp-fasta-bgzf",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      }
+    },
+    {
+      "id": "fhp-fasta-mixed-sources",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-mixed-sources",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "swhZYZowXQm+9ho9Djd7+gvKBbJlBLw/l9PZOevRQPs=",
+        "checksum_computed": "swhZYZowXQm+9ho9Djd7+gvKBbJlBLw/l9PZOevRQPs=",
+        "checksum_bytes": 889,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "e2d34e28843c6ecd6e94c29e44b64a24b61deb89213d3cd89d8dc71d05ef666f"
+      },
+      "to": {
+        "id": "fhp-fasta-mixed-sources",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "swhZYZowXQm+9ho9Djd7+gvKBbJlBLw/l9PZOevRQPs=",
+        "checksum_computed": "swhZYZowXQm+9ho9Djd7+gvKBbJlBLw/l9PZOevRQPs=",
+        "checksum_bytes": 889,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "e2d34e28843c6ecd6e94c29e44b64a24b61deb89213d3cd89d8dc71d05ef666f"
+      }
+    },
+    {
+      "id": "fhp-fasta-rich",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-rich",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "8PFQl3axuAdJna/Thr/VqST9jtoUdK7Hy5wXv4HdMwc=",
+        "checksum_computed": "8PFQl3axuAdJna/Thr/VqST9jtoUdK7Hy5wXv4HdMwc=",
+        "checksum_bytes": 1187,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "a2419896a98abf3a9d52ff2bba1a5675b2ad61aa07f3efbe37162c445eb65967"
+      },
+      "to": {
+        "id": "fhp-fasta-rich",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "8PFQl3axuAdJna/Thr/VqST9jtoUdK7Hy5wXv4HdMwc=",
+        "checksum_computed": "8PFQl3axuAdJna/Thr/VqST9jtoUdK7Hy5wXv4HdMwc=",
+        "checksum_bytes": 1187,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "a2419896a98abf3a9d52ff2bba1a5675b2ad61aa07f3efbe37162c445eb65967"
+      }
+    },
+    {
+      "id": "fhp-fasta-busco-lineage-dotted",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-busco-lineage-dotted",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "wVckjyO2MygTdILNVtSbTORFkw3zWSX5xaOG903164I=",
+        "checksum_computed": "wVckjyO2MygTdILNVtSbTORFkw3zWSX5xaOG903164I=",
+        "checksum_bytes": 878,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "2c704e2466c2cf5a8dafaa9fb89f9417145e00f0469b0b8a5e0c0bcdc4cdaf67"
+      },
+      "to": {
+        "id": "fhp-fasta-busco-lineage-dotted",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "wVckjyO2MygTdILNVtSbTORFkw3zWSX5xaOG903164I=",
+        "checksum_computed": "wVckjyO2MygTdILNVtSbTORFkw3zWSX5xaOG903164I=",
+        "checksum_bytes": 878,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "2c704e2466c2cf5a8dafaa9fb89f9417145e00f0469b0b8a5e0c0bcdc4cdaf67"
+      }
+    },
+    {
+      "id": "fhgff3-minimal-checksum-link",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-minimal-checksum-link",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_bytes": 705,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      },
+      "to": {
+        "id": "fhgff3-minimal-checksum-link",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_bytes": 705,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      }
+    },
+    {
+      "id": "fhgff3-both-links",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-both-links",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "hRwS7IGOdgKUar114haeNjHVEHFDgEzX+2EIjXTq5N4=",
+        "checksum_computed": "hRwS7IGOdgKUar114haeNjHVEHFDgEzX+2EIjXTq5N4=",
+        "checksum_bytes": 845,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "b2520cbae0c1c69744958933fa9e3e2f583ddd377e3f787d3dd9ad712818d8da"
+      },
+      "to": {
+        "id": "fhgff3-both-links",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "hRwS7IGOdgKUar114haeNjHVEHFDgEzX+2EIjXTq5N4=",
+        "checksum_computed": "hRwS7IGOdgKUar114haeNjHVEHFDgEzX+2EIjXTq5N4=",
+        "checksum_bytes": 845,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "b2520cbae0c1c69744958933fa9e3e2f583ddd377e3f787d3dd9ad712818d8da"
+      }
+    },
+    {
+      "id": "fhgff3-directives-interleaved",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-directives-interleaved",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "lQmsVoa3t+LaGtXmHN7AvKvp1D7BD1cpkYFuDBjzK90=",
+        "checksum_computed": "lQmsVoa3t+LaGtXmHN7AvKvp1D7BD1cpkYFuDBjzK90=",
+        "checksum_bytes": 870,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "60e039212ae282fa9339c018d80b9ff6f393b865454f1fd1df8ddd7add809088"
+      },
+      "to": {
+        "id": "fhgff3-directives-interleaved",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "lQmsVoa3t+LaGtXmHN7AvKvp1D7BD1cpkYFuDBjzK90=",
+        "checksum_computed": "lQmsVoa3t+LaGtXmHN7AvKvp1D7BD1cpkYFuDBjzK90=",
+        "checksum_bytes": 870,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "60e039212ae282fa9339c018d80b9ff6f393b865454f1fd1df8ddd7add809088"
+      }
+    },
+    {
+      "id": "fhgff3-directives-after-header",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-directives-after-header",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "jn7guoHrU8ax9NnX1GTKqHKQgCuSZH0Kb/jTpgAFOEo=",
+        "checksum_computed": "jn7guoHrU8ax9NnX1GTKqHKQgCuSZH0Kb/jTpgAFOEo=",
+        "checksum_bytes": 781,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "14cbbfbee2e1058a4e647b6d001c5d430f3592bc6ce2ab153ed775e233fa3022"
+      },
+      "to": {
+        "id": "fhgff3-directives-after-header",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "jn7guoHrU8ax9NnX1GTKqHKQgCuSZH0Kb/jTpgAFOEo=",
+        "checksum_computed": "jn7guoHrU8ax9NnX1GTKqHKQgCuSZH0Kb/jTpgAFOEo=",
+        "checksum_bytes": 781,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "14cbbfbee2e1058a4e647b6d001c5d430f3592bc6ce2ab153ed775e233fa3022"
+      }
+    },
+    {
+      "id": "fhgff3-triple-hash-before-features",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-triple-hash-before-features",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "y3135nAVbCiWXWafTPLGjJc2qZO4e0/+mBw/Zn9PAtg=",
+        "checksum_computed": "y3135nAVbCiWXWafTPLGjJc2qZO4e0/+mBw/Zn9PAtg=",
+        "checksum_bytes": 709,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "b0b35fccd9c48c98cc511f212792a6bd6567d61e151aefdcd32b38ee3ef852e6"
+      },
+      "to": {
+        "id": "fhgff3-triple-hash-before-features",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "y3135nAVbCiWXWafTPLGjJc2qZO4e0/+mBw/Zn9PAtg=",
+        "checksum_computed": "y3135nAVbCiWXWafTPLGjJc2qZO4e0/+mBw/Zn9PAtg=",
+        "checksum_bytes": 709,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "b0b35fccd9c48c98cc511f212792a6bd6567d61e151aefdcd32b38ee3ef852e6"
+      }
+    },
+    {
+      "id": "fhgff3-embedded-fasta",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-embedded-fasta",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "ETqM44J8vEqJxLdxvE29CyQnQsT27b/wF4GVUtFiiJw=",
+        "checksum_computed": "ETqM44J8vEqJxLdxvE29CyQnQsT27b/wF4GVUtFiiJw=",
+        "checksum_bytes": 740,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "c679a865b0b7950b618b8b392c4c839c90d6e4376ceedfd6aacb8f6a0cec5122"
+      },
+      "to": {
+        "id": "fhgff3-embedded-fasta",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "ETqM44J8vEqJxLdxvE29CyQnQsT27b/wF4GVUtFiiJw=",
+        "checksum_computed": "ETqM44J8vEqJxLdxvE29CyQnQsT27b/wF4GVUtFiiJw=",
+        "checksum_bytes": 740,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "c679a865b0b7950b618b8b392c4c839c90d6e4376ceedfd6aacb8f6a0cec5122"
+      }
+    },
+    {
+      "id": "fhgff3-header-only",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-header-only",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "AkD3S0MaDJfO0fK4A4PhB6EDCTsWwi7JK16E9eyza2w=",
+        "checksum_computed": "AkD3S0MaDJfO0fK4A4PhB6EDCTsWwi7JK16E9eyza2w=",
+        "checksum_bytes": 561,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "47a42108ddeb8a4775a94a7cab826b42380e28905b53ce5df68f797f0348ae30"
+      },
+      "to": {
+        "id": "fhgff3-header-only",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "AkD3S0MaDJfO0fK4A4PhB6EDCTsWwi7JK16E9eyza2w=",
+        "checksum_computed": "AkD3S0MaDJfO0fK4A4PhB6EDCTsWwi7JK16E9eyza2w=",
+        "checksum_bytes": 561,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "47a42108ddeb8a4775a94a7cab826b42380e28905b53ce5df68f797f0348ae30"
+      }
+    },
+    {
+      "id": "fhgff3-version-3-1-26",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-version-3-1-26",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "quXvIKm2ZDCWtCF4DC9TiG5a/+Z/svA+xjY/fq+4l0Q=",
+        "checksum_computed": "quXvIKm2ZDCWtCF4DC9TiG5a/+Z/svA+xjY/fq+4l0Q=",
+        "checksum_bytes": 710,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "4e27df2f8369d37fc58b03e0da6b5c0a0a1b0b410549d3075d69506e9f4ddaee"
+      },
+      "to": {
+        "id": "fhgff3-version-3-1-26",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "quXvIKm2ZDCWtCF4DC9TiG5a/+Z/svA+xjY/fq+4l0Q=",
+        "checksum_computed": "quXvIKm2ZDCWtCF4DC9TiG5a/+Z/svA+xjY/fq+4l0Q=",
+        "checksum_bytes": 710,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "4e27df2f8369d37fc58b03e0da6b5c0a0a1b0b410549d3075d69506e9f4ddaee"
+      }
+    },
+    {
+      "id": "fhgff3-version-3-trailing-whitespace",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-version-3-trailing-whitespace",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "AZKTL2vPK6JZRJN5EmCOVWGaaZrnC+w/m2SVWtXz2WQ=",
+        "checksum_computed": "AZKTL2vPK6JZRJN5EmCOVWGaaZrnC+w/m2SVWtXz2WQ=",
+        "checksum_bytes": 707,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "7a4e8920dfd61042863f1f5f05d6b075254a77a8f847bbcf26990fe4f8e6d433"
+      },
+      "to": {
+        "id": "fhgff3-version-3-trailing-whitespace",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "AZKTL2vPK6JZRJN5EmCOVWGaaZrnC+w/m2SVWtXz2WQ=",
+        "checksum_computed": "AZKTL2vPK6JZRJN5EmCOVWGaaZrnC+w/m2SVWtXz2WQ=",
+        "checksum_bytes": 707,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "7a4e8920dfd61042863f1f5f05d6b075254a77a8f847bbcf26990fe4f8e6d433"
+      }
+    },
+    {
+      "id": "fhgff3-crlf",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-crlf",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "fZYxQtxOb8F/zOzD7DYOWE/76FypNufTCRyp9Ju2eUk=",
+        "checksum_computed": "fZYxQtxOb8F/zOzD7DYOWE/76FypNufTCRyp9Ju2eUk=",
+        "checksum_bytes": 724,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "10646295f30569df46bd9de16c039c5feb341e555f028dbbe8759bb5f94aeca7"
+      },
+      "to": {
+        "id": "fhgff3-crlf",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "fZYxQtxOb8F/zOzD7DYOWE/76FypNufTCRyp9Ju2eUk=",
+        "checksum_computed": "fZYxQtxOb8F/zOzD7DYOWE/76FypNufTCRyp9Ju2eUk=",
+        "checksum_bytes": 724,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "10646295f30569df46bd9de16c039c5feb341e555f028dbbe8759bb5f94aeca7"
+      }
+    },
+    {
+      "id": "fhgff3-gzip",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-gzip",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_bytes": 705,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      },
+      "to": {
+        "id": "fhgff3-gzip",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_bytes": 705,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      }
+    },
+    {
+      "id": "fhgff3-bgzf",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-bgzf",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_bytes": 705,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      },
+      "to": {
+        "id": "fhgff3-bgzf",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_bytes": 705,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      }
+    },
+    {
+      "id": "fhgff3-nested-parent-checksum",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-nested-parent-checksum",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "T1C1rV3KPPpv3zaHaXrHkyWC2pGVtHkCLgi711a+qoc=",
+        "checksum_computed": "T1C1rV3KPPpv3zaHaXrHkyWC2pGVtHkCLgi711a+qoc=",
+        "checksum_bytes": 820,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "321fe43ad785ad92b140147fede907297e738824a061708f8852bad91b6d009a"
+      },
+      "to": {
+        "id": "fhgff3-nested-parent-checksum",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "T1C1rV3KPPpv3zaHaXrHkyWC2pGVtHkCLgi711a+qoc=",
+        "checksum_computed": "T1C1rV3KPPpv3zaHaXrHkyWC2pGVtHkCLgi711a+qoc=",
+        "checksum_bytes": 820,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "321fe43ad785ad92b140147fede907297e738824a061708f8852bad91b6d009a"
+      }
+    },
+    {
+      "id": "fhgff3-busco-lineage-dotted",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-busco-lineage-dotted",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "LrjUSzXWiq8RGhdN175fMb6sP97wK92Z+Z+FC/28SH4=",
+        "checksum_computed": "LrjUSzXWiq8RGhdN175fMb6sP97wK92Z+Z+FC/28SH4=",
+        "checksum_bytes": 860,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "50257e20c809de9ecfa42f9c63c644e897cfaf32bcc3eeb541119010eebe0bf6"
+      },
+      "to": {
+        "id": "fhgff3-busco-lineage-dotted",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "LrjUSzXWiq8RGhdN175fMb6sP97wK92Z+Z+FC/28SH4=",
+        "checksum_computed": "LrjUSzXWiq8RGhdN175fMb6sP97wK92Z+Z+FC/28SH4=",
+        "checksum_bytes": 860,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "50257e20c809de9ecfa42f9c63c644e897cfaf32bcc3eeb541119010eebe0bf6"
+      }
+    },
+    {
+      "id": "fhp-fasta-schema-canonical-raw-main",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-schema-canonical-raw-main",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "b2+lbyBeQZ0AwzRVS1rIBN5OgaVe4BexhQ/AIyt2BBI=",
+        "checksum_computed": "b2+lbyBeQZ0AwzRVS1rIBN5OgaVe4BexhQ/AIyt2BBI=",
+        "checksum_bytes": 763,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V1",
+          "header_type": "FHP",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "350bcf0514cb9e0586f51c06edc1ef6fd1c753009c83a0df80b83b15eb85b901"
+      },
+      "to": {
+        "id": "fhp-fasta-schema-canonical-raw-main",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "b2+lbyBeQZ0AwzRVS1rIBN5OgaVe4BexhQ/AIyt2BBI=",
+        "checksum_computed": "b2+lbyBeQZ0AwzRVS1rIBN5OgaVe4BexhQ/AIyt2BBI=",
+        "checksum_bytes": 763,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V1",
+          "header_type": "FHP",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "350bcf0514cb9e0586f51c06edc1ef6fd1c753009c83a0df80b83b15eb85b901"
+      }
+    },
+    {
+      "id": "fhgff3-schema-canonical-raw-main",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-schema-canonical-raw-main",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "gGlU8Loh35l1DIFA9U6Qi/nszM2CRfw/FKoqXBgGDHE=",
+        "checksum_computed": "gGlU8Loh35l1DIFA9U6Qi/nszM2CRfw/FKoqXBgGDHE=",
+        "checksum_bytes": 755,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V1",
+          "header_type": "FHGFF3",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "85bd1ea77e87e872ce22f772def8653463db5deca98538402b9c4a7afea5a165"
+      },
+      "to": {
+        "id": "fhgff3-schema-canonical-raw-main",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "gGlU8Loh35l1DIFA9U6Qi/nszM2CRfw/FKoqXBgGDHE=",
+        "checksum_computed": "gGlU8Loh35l1DIFA9U6Qi/nszM2CRfw/FKoqXBgGDHE=",
+        "checksum_bytes": 755,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V1",
+          "header_type": "FHGFF3",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "85bd1ea77e87e872ce22f772def8653463db5deca98538402b9c4a7afea5a165"
+      }
+    },
+    {
+      "id": "fhp-fasta-schema-raw-tag",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-schema-raw-tag",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "5s+pgLaxWa46DzZHU7ObzoUvz7KAlTowCXEv4h8ltZc=",
+        "checksum_computed": "5s+pgLaxWa46DzZHU7ObzoUvz7KAlTowCXEv4h8ltZc=",
+        "checksum_bytes": 753,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V2",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "21e066ee48f748964d05d60ce7ae7b41f417a37bc3539269ac7e7e77724f9a54"
+      },
+      "to": {
+        "id": "fhp-fasta-schema-raw-tag",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "5s+pgLaxWa46DzZHU7ObzoUvz7KAlTowCXEv4h8ltZc=",
+        "checksum_computed": "5s+pgLaxWa46DzZHU7ObzoUvz7KAlTowCXEv4h8ltZc=",
+        "checksum_bytes": 753,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V2",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "21e066ee48f748964d05d60ce7ae7b41f417a37bc3539269ac7e7e77724f9a54"
+      }
+    },
+    {
+      "id": "fhgff3-schema-raw-main",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-schema-raw-main",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "ubDdlbWYhSfh/7ofmosNnc+pdsDBPFA/0bYblwZupvA=",
+        "checksum_computed": "ubDdlbWYhSfh/7ofmosNnc+pdsDBPFA/0bYblwZupvA=",
+        "checksum_bytes": 743,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V1",
+          "header_type": "FHGFF3",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "4f66a5a087eb08b8d9be818c2a9f16d3260760e5d899cb90520d0b5a268495d0"
+      },
+      "to": {
+        "id": "fhgff3-schema-raw-main",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "ubDdlbWYhSfh/7ofmosNnc+pdsDBPFA/0bYblwZupvA=",
+        "checksum_computed": "ubDdlbWYhSfh/7ofmosNnc+pdsDBPFA/0bYblwZupvA=",
+        "checksum_bytes": 743,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V1",
+          "header_type": "FHGFF3",
+          "release": "v0.6.0",
+          "schema_version": "1.2",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "4f66a5a087eb08b8d9be818c2a9f16d3260760e5d899cb90520d0b5a268495d0"
+      }
+    },
+    {
+      "id": "fhp-fasta-extension-fields",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-extension-fields",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "FTlHBeBO/h236zLVyppc8qPn9lWt/jGU4Pr7gIIu56s=",
+        "checksum_computed": "FTlHBeBO/h236zLVyppc8qPn9lWt/jGU4Pr7gIIu56s=",
+        "checksum_bytes": 767,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.5.0",
+          "schema_version": "1.1",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "c2af4d80c22bf04e40939ed65bb0e59e21a804016b132d3ff54b57e6b7945153"
+      },
+      "to": {
+        "id": "fhp-fasta-extension-fields",
+        "format": "fhp-fasta",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "FTlHBeBO/h236zLVyppc8qPn9lWt/jGU4Pr7gIIu56s=",
+        "checksum_computed": "FTlHBeBO/h236zLVyppc8qPn9lWt/jGU4Pr7gIIu56s=",
+        "checksum_bytes": 767,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.5.0",
+          "schema_version": "1.1",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "c2af4d80c22bf04e40939ed65bb0e59e21a804016b132d3ff54b57e6b7945153"
+      }
+    },
+    {
+      "id": "fhgff3-extension-fields",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-extension-fields",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "valid",
+        "checksum_recorded": "z+xHAzS6jl4kC654SHZar5+oKs2xA++L1xrTPoJ3ECQ=",
+        "checksum_computed": "z+xHAzS6jl4kC654SHZar5+oKs2xA++L1xrTPoJ3ECQ=",
+        "checksum_bytes": 769,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.5.0",
+          "schema_version": "1.1",
+          "status": "released"
+        },
+        "issue_codes": [],
+        "warning_codes": [],
+        "record_json_sha256": "bba05c0225188a8d43eac50a3b107f195215156814743d04602ecac5fa477b01"
+      },
+      "to": {
+        "id": "fhgff3-extension-fields",
+        "format": "fhgff3",
+        "expected": "valid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "z+xHAzS6jl4kC654SHZar5+oKs2xA++L1xrTPoJ3ECQ=",
+        "checksum_computed": "z+xHAzS6jl4kC654SHZar5+oKs2xA++L1xrTPoJ3ECQ=",
+        "checksum_bytes": 769,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.5.0",
+          "schema_version": "1.1",
+          "status": "released"
+        },
+        "issue_codes": "rule",
+        "warning_codes": [],
+        "record_json_sha256": "bba05c0225188a8d43eac50a3b107f195215156814743d04602ecac5fa477b01"
+      }
+    },
+    {
+      "id": "fasta-noncanonical-checksum",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fasta-noncanonical-checksum",
+        "format": "fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": null,
+        "checksum_computed": null,
+        "checksum_bytes": null,
+        "late_header_lines": null,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHR",
+          "release": "v0.4.0",
+          "schema_version": "2.0",
+          "status": "released"
+        },
+        "issue_codes": "R5",
+        "warning_codes": [],
+        "record_json_sha256": "09da68df2c34bcc43a9b4041ef1c855ea7071cb1531edfecfb91b467445af031"
+      },
+      "to": {
+        "id": "fasta-noncanonical-checksum",
+        "format": "fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": null,
+        "checksum_computed": null,
+        "checksum_bytes": null,
+        "late_header_lines": null,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHR",
+          "release": "v0.4.0",
+          "schema_version": "2.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R5",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "09da68df2c34bcc43a9b4041ef1c855ea7071cb1531edfecfb91b467445af031"
+      }
+    },
+    {
+      "id": "gfa-noncanonical-checksum",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "gfa-noncanonical-checksum",
+        "format": "gfa",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": null,
+        "checksum_computed": null,
+        "checksum_bytes": null,
+        "late_header_lines": null,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHR",
+          "release": "v0.4.0",
+          "schema_version": "2.0",
+          "status": "released"
+        },
+        "issue_codes": "R5",
+        "warning_codes": [],
+        "record_json_sha256": "9f8ac0f49fb24e180f7b31a08a99eaf61389ae704babd8308795276434fb4b84"
+      },
+      "to": {
+        "id": "gfa-noncanonical-checksum",
+        "format": "gfa",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": null,
+        "checksum_computed": null,
+        "checksum_bytes": null,
+        "late_header_lines": null,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHR",
+          "release": "v0.4.0",
+          "schema_version": "2.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R5",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "9f8ac0f49fb24e180f7b31a08a99eaf61389ae704babd8308795276434fb4b84"
+      }
+    },
+    {
+      "id": "fhp-fasta-sequence-tampered",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-sequence-tampered",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "yQn9y4v93Nq+LAyjDHdk/b9ag8DbBPXGI/6NMHEHbxo=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "R4",
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      },
+      "to": {
+        "id": "fhp-fasta-sequence-tampered",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_computed": "yQn9y4v93Nq+LAyjDHdk/b9ag8DbBPXGI/6NMHEHbxo=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R4",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "542f152f1d36dbc8fc34b590aeaedb2274ff3f5adf873b61ec77a011f90f2d37"
+      }
+    },
+    {
+      "id": "fhp-fasta-stop-normalized-checksum",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-stop-normalized-checksum",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "txFFGTn9JHrXzIqhDr3EJJM1SwhUZE+Asp4/sFFkiaE=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "R4",
+        "warning_codes": [],
+        "record_json_sha256": "11df9db5f6abeb381b9e22dd412be89f91413f68dda04258a67212ba2cd0567c"
+      },
+      "to": {
+        "id": "fhp-fasta-stop-normalized-checksum",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "txFFGTn9JHrXzIqhDr3EJJM1SwhUZE+Asp4/sFFkiaE=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R4",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "11df9db5f6abeb381b9e22dd412be89f91413f68dda04258a67212ba2cd0567c"
+      }
+    },
+    {
+      "id": "fhp-fasta-case-normalized-checksum",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-case-normalized-checksum",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "rLMv9+WecuoFwqHBn7iiqj9igW4pHQuzes4UqJZLViU=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "R4",
+        "warning_codes": [],
+        "record_json_sha256": "25583bdae3d44e93b418f1abdb217e23fbed3f93aed1077fd7412e7b7eddfbc6"
+      },
+      "to": {
+        "id": "fhp-fasta-case-normalized-checksum",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "rLMv9+WecuoFwqHBn7iiqj9igW4pHQuzes4UqJZLViU=",
+        "checksum_computed": "n35sS+hcfZDQ7HOg1UhFktleFPIqv0MGdY2s/b2e8K0=",
+        "checksum_bytes": 713,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R4",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "25583bdae3d44e93b418f1abdb217e23fbed3f93aed1077fd7412e7b7eddfbc6"
+      }
+    },
+    {
+      "id": "fhp-fasta-header-after-record",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhp-fasta-header-after-record",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "H+KWvEYSHOv3teMW3g/PKG0LGyTguY3tLhdp9JHXFYw=",
+        "checksum_computed": "H+KWvEYSHOv3teMW3g/PKG0LGyTguY3tLhdp9JHXFYw=",
+        "checksum_bytes": 756,
+        "late_header_lines": 1,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "R10",
+        "warning_codes": [],
+        "record_json_sha256": "21c07366d861cdb1df79f54f9ee5d634105001c61510033954c11253a04ca140"
+      },
+      "to": {
+        "id": "fhp-fasta-header-after-record",
+        "format": "fhp-fasta",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "H+KWvEYSHOv3teMW3g/PKG0LGyTguY3tLhdp9JHXFYw=",
+        "checksum_computed": "H+KWvEYSHOv3teMW3g/PKG0LGyTguY3tLhdp9JHXFYw=",
+        "checksum_bytes": 756,
+        "late_header_lines": 1,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHP",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R10",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "21c07366d861cdb1df79f54f9ee5d634105001c61510033954c11253a04ca140"
+      }
+    },
+    {
+      "id": "fhgff3-fasta-tampered",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-fasta-tampered",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "ETqM44J8vEqJxLdxvE29CyQnQsT27b/wF4GVUtFiiJw=",
+        "checksum_computed": "FOut5SZYrYi0sQLpPPsxzO3IrfxCpkEZuOFoG6+X3GY=",
+        "checksum_bytes": 740,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "R4",
+        "warning_codes": [],
+        "record_json_sha256": "c679a865b0b7950b618b8b392c4c839c90d6e4376ceedfd6aacb8f6a0cec5122"
+      },
+      "to": {
+        "id": "fhgff3-fasta-tampered",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "ETqM44J8vEqJxLdxvE29CyQnQsT27b/wF4GVUtFiiJw=",
+        "checksum_computed": "FOut5SZYrYi0sQLpPPsxzO3IrfxCpkEZuOFoG6+X3GY=",
+        "checksum_bytes": 740,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R4",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "c679a865b0b7950b618b8b392c4c839c90d6e4376ceedfd6aacb8f6a0cec5122"
+      }
+    },
+    {
+      "id": "fhgff3-header-after-feature",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-header-after-feature",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "iekMBhpd48CctYAaXIeP7f+lEQW+iO+uhnz6jX2bbuY=",
+        "checksum_computed": "iekMBhpd48CctYAaXIeP7f+lEQW+iO+uhnz6jX2bbuY=",
+        "checksum_bytes": 741,
+        "late_header_lines": 1,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "R10",
+        "warning_codes": [],
+        "record_json_sha256": "c367c6f0fcf4f0b195d3dc3a4237725c97befb6b4a917374e7500766ef1e4502"
+      },
+      "to": {
+        "id": "fhgff3-header-after-feature",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "iekMBhpd48CctYAaXIeP7f+lEQW+iO+uhnz6jX2bbuY=",
+        "checksum_computed": "iekMBhpd48CctYAaXIeP7f+lEQW+iO+uhnz6jX2bbuY=",
+        "checksum_bytes": 741,
+        "late_header_lines": 1,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R10",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "c367c6f0fcf4f0b195d3dc3a4237725c97befb6b4a917374e7500766ef1e4502"
+      }
+    },
+    {
+      "id": "fhgff3-header-after-fasta",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-header-after-fasta",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "wjGIwumuCRaoepNT5QLWdHPzc/M6Dfw1DNLIKY1J9Yo=",
+        "checksum_computed": "wjGIwumuCRaoepNT5QLWdHPzc/M6Dfw1DNLIKY1J9Yo=",
+        "checksum_bytes": 617,
+        "late_header_lines": 1,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "R10",
+        "warning_codes": [],
+        "record_json_sha256": "ea34598938f6c556f520f6630213eb1fcf2219bc63580a8065ea6031e70b2351"
+      },
+      "to": {
+        "id": "fhgff3-header-after-fasta",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "wjGIwumuCRaoepNT5QLWdHPzc/M6Dfw1DNLIKY1J9Yo=",
+        "checksum_computed": "wjGIwumuCRaoepNT5QLWdHPzc/M6Dfw1DNLIKY1J9Yo=",
+        "checksum_bytes": 617,
+        "late_header_lines": 1,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R10",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "ea34598938f6c556f520f6630213eb1fcf2219bc63580a8065ea6031e70b2351"
+      }
+    },
+    {
+      "id": "fhgff3-concatenated",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-concatenated",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "graI8vYvN+lEND/FnexnAluy5TRcIP/cG0efTG6PgvU=",
+        "checksum_bytes": 1467,
+        "late_header_lines": 16,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R10",
+          "R4"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      },
+      "to": {
+        "id": "fhgff3-concatenated",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "EUNVNynadF9SZugxxVE5qDnF8r8fc+uyfylccG2UeRQ=",
+        "checksum_computed": "graI8vYvN+lEND/FnexnAluy5TRcIP/cG0efTG6PgvU=",
+        "checksum_bytes": 1467,
+        "late_header_lines": 16,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "R10",
+          "R4",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "dbfa9e58d2f29bc4a5ae69b67a9d73a40738cae439a987f2fc21c2d5330c2787"
+      }
+    },
+    {
+      "id": "fhgff3-version-30",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-version-30",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "+Ov9+E0X8DfmJ7ZIhNx/aNLDfE1W2JrIAQkXBrXdl90=",
+        "checksum_computed": "+Ov9+E0X8DfmJ7ZIhNx/aNLDfE1W2JrIAQkXBrXdl90=",
+        "checksum_bytes": 706,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "G1",
+        "warning_codes": [],
+        "record_json_sha256": "2b2ddb204b73155cb8fe3b99adfbfcfafd8397958da8d02ac2025cbb2a523762"
+      },
+      "to": {
+        "id": "fhgff3-version-30",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "+Ov9+E0X8DfmJ7ZIhNx/aNLDfE1W2JrIAQkXBrXdl90=",
+        "checksum_computed": "+Ov9+E0X8DfmJ7ZIhNx/aNLDfE1W2JrIAQkXBrXdl90=",
+        "checksum_bytes": 706,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "G1",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "2b2ddb204b73155cb8fe3b99adfbfcfafd8397958da8d02ac2025cbb2a523762"
+      }
+    },
+    {
+      "id": "fhgff3-version-3x",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-version-3x",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "7xnJ+fRVLJuUU6FjKj5RoGOJcw6mJVKZSgBWVJKAgMk=",
+        "checksum_computed": "7xnJ+fRVLJuUU6FjKj5RoGOJcw6mJVKZSgBWVJKAgMk=",
+        "checksum_bytes": 706,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "G1",
+        "warning_codes": [],
+        "record_json_sha256": "57b0fcd9f4ad7d72fc3ffc6ec273fa0384153ce763a337841262a3067e9650f1"
+      },
+      "to": {
+        "id": "fhgff3-version-3x",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "7xnJ+fRVLJuUU6FjKj5RoGOJcw6mJVKZSgBWVJKAgMk=",
+        "checksum_computed": "7xnJ+fRVLJuUU6FjKj5RoGOJcw6mJVKZSgBWVJKAgMk=",
+        "checksum_bytes": 706,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "G1",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "57b0fcd9f4ad7d72fc3ffc6ec273fa0384153ce763a337841262a3067e9650f1"
+      }
+    },
+    {
+      "id": "fhgff3-version-3-1",
+      "reason": "D9: runtime R4 rejects noncanonical standard checksums; historical fixture/golden preserved.",
+      "from": {
+        "id": "fhgff3-version-3-1",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "BL0vdM7HHx9kDImk9CAMxkzM8XXEFapZjV4GpGEou9Q=",
+        "checksum_computed": "BL0vdM7HHx9kDImk9CAMxkzM8XXEFapZjV4GpGEou9Q=",
+        "checksum_bytes": 707,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": "G1",
+        "warning_codes": [],
+        "record_json_sha256": "f142041141f35842b6f2c341d6aa99c62eab44d9ed421e514689532889331f73"
+      },
+      "to": {
+        "id": "fhgff3-version-3-1",
+        "format": "fhgff3",
+        "expected": "invalid",
+        "ran": true,
+        "observed": "invalid",
+        "checksum_recorded": "BL0vdM7HHx9kDImk9CAMxkzM8XXEFapZjV4GpGEou9Q=",
+        "checksum_computed": "BL0vdM7HHx9kDImk9CAMxkzM8XXEFapZjV4GpGEou9Q=",
+        "checksum_bytes": 707,
+        "late_header_lines": 0,
+        "selection": {
+          "rule": "V3",
+          "header_type": "FHGFF3",
+          "release": "v0.4.0",
+          "schema_version": "1.0",
+          "status": "released"
+        },
+        "issue_codes": [
+          "G1",
+          "rule"
+        ],
+        "warning_codes": [],
+        "record_json_sha256": "f142041141f35842b6f2c341d6aa99c62eab44d9ed421e514689532889331f73"
+      }
+    }
+  ]
+}

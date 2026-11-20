@@ -1,0 +1,412 @@
+{
+  "repository": "FAIR-bioHeaders/FAIR-bioHeaders-Specification",
+  "commit": "9b5269de0b00186718b07f42b0c48123341ff4de",
+  "files": [
+    {
+      "path": "conformance/reader-policy/cases.json",
+      "local": null,
+      "sha256": "b42d9c545d47ff9654f72b38a294f08640ed0e42aa4ff7fc756b0c33217db7c7"
+    },
+    {
+      "path": "conformance/reader-policy/retirement-crosswalk.json",
+      "local": "inst/references/retirement-crosswalk.json",
+      "sha256": "c648601b6dc7589fa3efd40e870cc053385636e0f58ac6a73f429ff6abaabc4b"
+    },
+    {
+      "path": "conformance/manifest.json",
+      "local": null,
+      "sha256": "7c10fb83bbac5c5739240bff695e5469730ac26a066a51a44d5275598b2df3f6"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-lf-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-lf-canonical-parent.fhp.fasta",
+      "sha256": "1824d5601727ccb3d5a543ea72eb6516fd2a945a40658dabe55dc1bbf3535b25"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-crlf-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-crlf-canonical-parent.fhp.fasta",
+      "sha256": "5cc872e504907e9b45ac890ea885745e2920f1e0cf8ffb862767650bfd86104a"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-no-final-newline-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-no-final-newline-canonical-parent.fhp.fasta",
+      "sha256": "b50a11203a3ad9602f2d6466d155779e7cb9fc6ec38fcd442e50245fb0c4a643"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-comments-and-blank-lines-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-comments-and-blank-lines-canonical-parent.fhp.fasta",
+      "sha256": "005ed1de0712afdacd0d49c52902209e1557b85bdf0402bef2ef6021d120328f"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-escaped-record-markers-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-escaped-record-markers-canonical-parent.fhp.fasta",
+      "sha256": "e565320e31e047860c2285a80851decb9a30319ea93564a695265a6bf837b81e"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-gzip-canonical-parent.fhp.fasta.gz",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-gzip-canonical-parent.fhp.fasta.gz",
+      "sha256": "6af518f224f3dc0f5d1b25cfc32b1b55915c03c4d2f0fe793dd3b35897c2b288"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-bgzf-canonical-parent.fhp.fasta.gz",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-bgzf-canonical-parent.fhp.fasta.gz",
+      "sha256": "00052e3fa341a568986a1760d062de727bfd070b6480f5a291533a797df475a3"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-mixed-sources-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-mixed-sources-canonical-parent.fhp.fasta",
+      "sha256": "06f1f916a54b61a0b412354a5e3403fd13738285a807c5b696818363e8c8df6a"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-rich-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-rich-canonical-parent.fhp.fasta",
+      "sha256": "1758db757a27fa58b4fbfe10abed0a69b414d28d09f9327b81e8b11f46369afb"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-busco-lineage-dotted-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-busco-lineage-dotted-canonical-parent.fhp.fasta",
+      "sha256": "7b48e8638ef044b6e81069cf7d249b15b85b22c672aeb6447c927fe06da5d079"
+    },
+    {
+      "path": "conformance/valid/fhgff3-minimal-checksum-link-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-minimal-checksum-link-canonical-parent.fhgff3.gff3",
+      "sha256": "6980a808989e0afda649b1788c5154ea298b6be171d2cb14761eda767e2e4061"
+    },
+    {
+      "path": "conformance/valid/fhgff3-both-links-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-both-links-canonical-parent.fhgff3.gff3",
+      "sha256": "b7d09b44f923743f76971f928f13ec303032c967e85ff000932b10b1b18bf2dc"
+    },
+    {
+      "path": "conformance/valid/fhgff3-directives-interleaved-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-directives-interleaved-canonical-parent.fhgff3.gff3",
+      "sha256": "a7631c6ddcab474c66b4249a07cc82611ceaf655caeedd23f4e8442e57045844"
+    },
+    {
+      "path": "conformance/valid/fhgff3-directives-after-header-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-directives-after-header-canonical-parent.fhgff3.gff3",
+      "sha256": "c34a75f9f637f1b1284dee3a82dfa517974b05b9c0526b9db0f9d618a84358ed"
+    },
+    {
+      "path": "conformance/valid/fhgff3-triple-hash-before-features-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-triple-hash-before-features-canonical-parent.fhgff3.gff3",
+      "sha256": "7cbb45d7f3d3a64d7c158de3c4fe559ccdf6be8b0b21c8f9dc3df33dac233b4e"
+    },
+    {
+      "path": "conformance/valid/fhgff3-embedded-fasta-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-embedded-fasta-canonical-parent.fhgff3.gff3",
+      "sha256": "343aab686f0d086180d2303f31b935fa281f6f15bf8a82e774962b97aee2db55"
+    },
+    {
+      "path": "conformance/valid/fhgff3-header-only-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-header-only-canonical-parent.fhgff3.gff3",
+      "sha256": "f9471535f9f5d37bd6b087f84ec3540d292eaa0821a021367582ed481658ae78"
+    },
+    {
+      "path": "conformance/valid/fhgff3-version-3-1-26-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-version-3-1-26-canonical-parent.fhgff3.gff3",
+      "sha256": "2c322ce88b1e18df7c1788e99d5f45bd38aedc7dba05c374842676a42019c4e6"
+    },
+    {
+      "path": "conformance/valid/fhgff3-version-3-trailing-whitespace-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-version-3-trailing-whitespace-canonical-parent.fhgff3.gff3",
+      "sha256": "05dfbe6f27ac96b890f75d2992223364361fa57e190eae95a4ecb78e46f9953a"
+    },
+    {
+      "path": "conformance/valid/fhgff3-crlf-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-crlf-canonical-parent.fhgff3.gff3",
+      "sha256": "563294aa084088fa42076e61e09c695fd585652c42b72b62f2a354e4a02829b7"
+    },
+    {
+      "path": "conformance/valid/fhgff3-gzip-canonical-parent.fhgff3.gff3.gz",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-gzip-canonical-parent.fhgff3.gff3.gz",
+      "sha256": "ed88ae5fca1c3c7f701b5c7028cc680d69d78b4586d36883002edec0d590118b"
+    },
+    {
+      "path": "conformance/valid/fhgff3-bgzf-canonical-parent.fhgff3.gff3.gz",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-bgzf-canonical-parent.fhgff3.gff3.gz",
+      "sha256": "7b65e1100211d614cd2861a6ae708d186854e02a0aa5c01cd5bef497a8765c61"
+    },
+    {
+      "path": "conformance/valid/fhgff3-nested-parent-checksum-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-nested-parent-checksum-canonical-parent.fhgff3.gff3",
+      "sha256": "b16b4a5c8b729dc2bdb40b8dbbda25542e01277706c56c5ed01056c90fb16a93"
+    },
+    {
+      "path": "conformance/valid/fhgff3-busco-lineage-dotted-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-busco-lineage-dotted-canonical-parent.fhgff3.gff3",
+      "sha256": "254beeb5347a4b368d6e46f350e1b337e98cc82c901dcc059e08a5fdc2b6b071"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-schema-canonical-raw-main-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-schema-canonical-raw-main-canonical-parent.fhp.fasta",
+      "sha256": "ad18dc08b769c0bc11f88d2277511340567f1572e7e8e3ff4563fc70d95c9773"
+    },
+    {
+      "path": "conformance/valid/fhgff3-schema-canonical-raw-main-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-schema-canonical-raw-main-canonical-parent.fhgff3.gff3",
+      "sha256": "2d6c42780e1f2f71d6d39189fd98cc7cd628bb9f174c5ad433f47cd9196c0d61"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-schema-raw-tag-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-schema-raw-tag-canonical-parent.fhp.fasta",
+      "sha256": "392dc1de7a1a21e39767d03638b82563cd0b727a16165cc50e7fed832601e923"
+    },
+    {
+      "path": "conformance/valid/fhgff3-schema-raw-main-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-schema-raw-main-canonical-parent.fhgff3.gff3",
+      "sha256": "a0299ce54c957c130bdad5a206fcd6e3de1930782a0073cdb4bf68d1ce693cd1"
+    },
+    {
+      "path": "conformance/valid/fhp-fasta-extension-fields-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/valid/fhp-fasta-extension-fields-canonical-parent.fhp.fasta",
+      "sha256": "aecb93eb132cdbf599d8150cc4109f1a7bac35629598ef9216460eb85501c5e3"
+    },
+    {
+      "path": "conformance/valid/fhgff3-extension-fields-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/valid/fhgff3-extension-fields-canonical-parent.fhgff3.gff3",
+      "sha256": "97204b46e8ab65a604c73f54d0cac8dc12264da3bb538dee5aa01c276edf855a"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-busco-lineage-dotted-version-1-0-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-busco-lineage-dotted-version-1-0-canonical-parent.fhp.fasta",
+      "sha256": "7f3e4d50026db3db7a052416d4fd3c008d0df584b0b9d3e0f6b64833714a04ed"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-busco-lineage-dotted-version-1-1-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-busco-lineage-dotted-version-1-1-canonical-parent.fhp.fasta",
+      "sha256": "8985b7dbedae65e0cf6887a2951cf4598ab7a71832c78f1ac1500c286e0b1153"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-sequence-tampered-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-sequence-tampered-canonical-parent.fhp.fasta",
+      "sha256": "9f54672e8babcac8a0477bcd14ed44fb7d7f1926f57257676354ceed420c8893"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-stop-normalized-checksum-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-stop-normalized-checksum-canonical-parent.fhp.fasta",
+      "sha256": "43d15eebcdb880479017989992efd382f062d9fc3acb409963e8407aec202ace"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-case-normalized-checksum-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-case-normalized-checksum-canonical-parent.fhp.fasta",
+      "sha256": "d69feeaf8f7a570fa904256573c541a3c30803894bd38489d859210e370514ff"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-two-checksum-lines-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-two-checksum-lines-canonical-parent.fhp.fasta",
+      "sha256": "c5b68c9c37bcfc12fcc11846a1e5afb289657ea4d8bd7b4959a8d28362713f0e"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-header-after-record-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-header-after-record-canonical-parent.fhp.fasta",
+      "sha256": "b486de17dc3cd395f9670886e373ebdb260c049648a1dbdfd95ad9c69e7cd570"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-missing-source-type-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-missing-source-type-canonical-parent.fhp.fasta",
+      "sha256": "9ce816b68953dd7ecc62642de1a6f7716015e0fc78dadba196821dc2b043c121"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-curated-source-type-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-curated-source-type-canonical-parent.fhp.fasta",
+      "sha256": "887789470b1d123563343180d89bd0c30e1f9db1dc9b380e2d78375b33682e61"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-genome-key-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-genome-key-canonical-parent.fhp.fasta",
+      "sha256": "f054e10d68f59d738a010a7aa0869e22521c364678f38154248b8cedc73150fa"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-derived-from-bad-relationship-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-derived-from-bad-relationship-canonical-parent.fhp.fasta",
+      "sha256": "23e5806ea262deca50c1e21140014f026af6e23c5a311ddfb257a094fcb1da7a"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-source-without-name-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-source-without-name-canonical-parent.fhp.fasta",
+      "sha256": "44e19c1a7b0c12fe9c2ebb25909f6be9c58efe8036182d13ccf2bfe482f42ba4"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-unused-genetic-code-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-unused-genetic-code-canonical-parent.fhp.fasta",
+      "sha256": "905f2c44c265524fc28525afe2a1a532daaced2a36d54a29a9930fbadc0217ed"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-busco-no-lineage-version-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-busco-no-lineage-version-canonical-parent.fhp.fasta",
+      "sha256": "c8d4b1d2f23f913449706cb19508f27fa19fdc07eabecb8c62d3601c13a2a457"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-busco-lineage-trailing-dot-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-busco-lineage-trailing-dot-canonical-parent.fhp.fasta",
+      "sha256": "dd95fc41fd4e4cdae7ef5c2efc02ab2b6e2532be3e825b1e77f572ff69ee5f27"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-busco-lineage-leading-dot-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-busco-lineage-leading-dot-canonical-parent.fhp.fasta",
+      "sha256": "453edf6da7533d85b5f602afdca915239099cf81bb944c3e3c9451b8e2530f20"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-busco-lineage-letter-component-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-busco-lineage-letter-component-canonical-parent.fhp.fasta",
+      "sha256": "bb46f56d71f660c3b7cbad8c0f946ca798236b7903d8af671f6455b6450394ae"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-busco-lineage-uppercase-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-busco-lineage-uppercase-canonical-parent.fhp.fasta",
+      "sha256": "c5c784e5bf26675ac16eb77004e2eed94fde9f5adfd51c432ae1cdd764a03b48"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-pattern-trailing-newline-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-pattern-trailing-newline-canonical-parent.fhp.fasta",
+      "sha256": "98151fdd91f5586753bc06d43f73ed94783a4a93842493ea89edab22b057af3a"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-cites-fhr-schema-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-cites-fhr-schema-canonical-parent.fhp.fasta",
+      "sha256": "2d4f5e8dfefcf6a8cb6a8b7c2307378dd147caa1d6cc069f9cb66fc6119ca52c"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-busco-lineage-dotted-version-1-0-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-busco-lineage-dotted-version-1-0-canonical-parent.fhgff3.gff3",
+      "sha256": "05d0e3989508ac99832609f386660bb043b70f4417323e07b9a908f78060876c"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-busco-lineage-dotted-version-1-1-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-busco-lineage-dotted-version-1-1-canonical-parent.fhgff3.gff3",
+      "sha256": "84a4b24cc2d008e3673235031c9741c41ff683580f1c1968f2797f0f0d849ee2"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-fasta-tampered-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-fasta-tampered-canonical-parent.fhgff3.gff3",
+      "sha256": "bbb0583ff721965a349d689f02545e1c09d6ca119ee9e6ffe85d0b19f65677c9"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-two-checksum-lines-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-two-checksum-lines-canonical-parent.fhgff3.gff3",
+      "sha256": "5f4ba0fe08cb99a1347ce59ef18d64c65746fd044d66dc2028b8f6f89225d27b"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-header-after-feature-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-header-after-feature-canonical-parent.fhgff3.gff3",
+      "sha256": "d414c6182cbbe961984cab09bfb23f5e9587ae6dfedbcfff060d958ee017f693"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-header-after-fasta-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-header-after-fasta-canonical-parent.fhgff3.gff3",
+      "sha256": "83bd4cc61db8cd16ce801876a4391efe59f7ace080f4bc640190332f3610ce05"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-concatenated-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-concatenated-canonical-parent.fhgff3.gff3",
+      "sha256": "5c969d7e71838eebe9ff428b45badde4bcab5d82217a20f75bd817fd2aa3f44c"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-header-before-version-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-header-before-version-canonical-parent.fhgff3.gff3",
+      "sha256": "b9e2d4a24a7f5ea115e239d12e4b3cd9c9d33d062cba930fd703fc4e0a605e76"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-version-30-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-version-30-canonical-parent.fhgff3.gff3",
+      "sha256": "fc383a8e361ddcfc80265a03f8bd6bf18333c1b8f66355a503f6690a1526c63c"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-version-3x-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-version-3x-canonical-parent.fhgff3.gff3",
+      "sha256": "49448135a2ded11c1f1d2f88399a4d5fe85935dae747adbea906df7fc394d30f"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-version-3-1-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-version-3-1-canonical-parent.fhgff3.gff3",
+      "sha256": "136948593f8426cc87f8ae817137d3da4e4d5289f98e12d4e408e7c18e962765"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-two-annotates-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-two-annotates-canonical-parent.fhgff3.gff3",
+      "sha256": "0fc1a54cfeae39d783ad27f72dba1b852334bd828b36f6933c0f5c2607306467"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-annotates-fhp-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-annotates-fhp-canonical-parent.fhgff3.gff3",
+      "sha256": "686f7f4b65e3a2c53c7cccf20135f06c24244c960fa42e2236a69cbae5126191"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-fhr-only-key-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-fhr-only-key-canonical-parent.fhgff3.gff3",
+      "sha256": "47c291b8dd777b0b47b3f3b653f0a11b6a2979c7f740d1c45fae84c8cd442376"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-busco-lineage-trailing-dot-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-busco-lineage-trailing-dot-canonical-parent.fhgff3.gff3",
+      "sha256": "9c3d30ea8c269109d215f63d30016a046d7b16e3f3bd360f39036b62186090b2"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-cites-fhr-schema-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-cites-fhr-schema-canonical-parent.fhgff3.gff3",
+      "sha256": "21604aca9a46f7961482a35ad71231b1bc6569c2e390a573c01fc4c992972499"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-schema-release-without-type-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-schema-release-without-type-canonical-parent.fhp.fasta",
+      "sha256": "cf062e97b8e59962a0e5a6745c5159c5f0f6a062991d94ccded008edfe15d769"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-schema-unknown-release-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-schema-unknown-release-canonical-parent.fhgff3.gff3",
+      "sha256": "acfdaea2e7f97c6df22fcff3feba8e2b9bc14c993a8a7cde4154c29a562b5cac"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-extension-older-version-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-extension-older-version-canonical-parent.fhp.fasta",
+      "sha256": "b4d929cef8d91e6e89a09f1d60c62d23bf34fd479bd02c43200458262d7afc5d"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-extension-older-version-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-extension-older-version-canonical-parent.fhgff3.gff3",
+      "sha256": "fe5da869c9ed3c2c1f4e7ac80867622e4ae9b85b4bbef533024ac4c8691cd839"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-extension-older-release-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-extension-older-release-canonical-parent.fhp.fasta",
+      "sha256": "2e8a0fc6cb98712aac3d2da58cd79b1882141749b7facab594ab2e4ee63e3a54"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-extension-older-release-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-extension-older-release-canonical-parent.fhgff3.gff3",
+      "sha256": "3caad140aad762870ce7ff6fdfef01f8cc49737e5656fec39e072a90db4672fc"
+    },
+    {
+      "path": "conformance/invalid/fhp-fasta-extension-nested-canonical-parent.fhp.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fhp-fasta-extension-nested-canonical-parent.fhp.fasta",
+      "sha256": "944cb538ac75dbc4b3d49e5629c91120b047f31753843f7cd13302fdc80b7136"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-extension-nested-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-extension-nested-canonical-parent.fhgff3.gff3",
+      "sha256": "4ee20b130cf3c7d90a7500491add701a37aaf682390974e2e3c6e58aea33911c"
+    },
+    {
+      "path": "conformance/invalid/fasta-fhgff3-header-canonical-parent.fhr.fasta",
+      "local": "inst/references/canonical-counterparts/invalid/fasta-fhgff3-header-canonical-parent.fhr.fasta",
+      "sha256": "37731d4005e7ac8caf1f6f5ec9d2129d44e65f421c3c18791c54bfbcb335254a"
+    },
+    {
+      "path": "conformance/invalid/gfa-fhgff3-header-canonical-parent.fhr.gfa",
+      "local": "inst/references/canonical-counterparts/invalid/gfa-fhgff3-header-canonical-parent.fhr.gfa",
+      "sha256": "b7dcdd2e2f4e8f5c8fa018e03874ba33703b8a9f5b4ec8e888b1a19817e10e3e"
+    },
+    {
+      "path": "conformance/invalid/gfa-fhp-header-canonical-parent.fhr.gfa",
+      "local": "inst/references/canonical-counterparts/invalid/gfa-fhp-header-canonical-parent.fhr.gfa",
+      "sha256": "1c37e6da620a00403678ba074c30bf719dbed4e3dada6e55e701f61ecf53e3ff"
+    },
+    {
+      "path": "conformance/invalid/fhgff3-fhp-header-canonical-parent.fhgff3.gff3",
+      "local": "inst/references/canonical-counterparts/invalid/fhgff3-fhp-header-canonical-parent.fhgff3.gff3",
+      "sha256": "200c4c49578e2dd8e4f013c3c6727620e7314eb4e4c4dd5c14ae32bcd1fcf0c0"
+    }
+  ],
+  "status": "Supplementary adopted-policy and current carrier evidence, separate from immutable released291."
+}

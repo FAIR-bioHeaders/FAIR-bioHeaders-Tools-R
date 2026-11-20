@@ -174,8 +174,9 @@ bh_dialect_probe <- function() {
       "the selected contract rejected the record"
     }
   }
+  errors <- c(errors, .bh_canonical_checksums(record))
   list(
-    valid = isTRUE(res), errors = errors, warnings = selection$warnings,
+    valid = isTRUE(res) && !length(errors), errors = errors, warnings = selection$warnings,
     contract = contract
   )
 }
@@ -199,4 +200,21 @@ bh_dialect_probe <- function() {
       is.character(d) && length(d) == 1L && grepl("^[A-Za-z][A-Za-z0-9+.-]*:$", d)
   }, NA)
   errs[!bare, , drop = FALSE]
+}
+
+# R4 runtime obligation, independent of immutable schema patterns. Extension
+# payloads are opaque: their arbitrary checksum properties are not header fields.
+.bh_canonical_checksums <- function(record) {
+  out <- character()
+  check <- function(value, location) {
+    if (is.character(value) && length(value) == 1L &&
+        !grepl("^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=$", value, perl = TRUE))
+      out <<- c(out, paste0("R4: ", location, " is not canonical SHA-512/256 base64"))
+  }
+  check(record$checksum, "/checksum")
+  if (is.list(record$derivedFrom)) for (i in seq_along(record$derivedFrom)) {
+    parent <- record$derivedFrom[[i]]
+    if (is.list(parent)) check(parent$checksum, paste0("/derivedFrom/", i - 1L, "/checksum"))
+  }
+  out
 }

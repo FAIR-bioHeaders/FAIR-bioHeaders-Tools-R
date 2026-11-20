@@ -28,6 +28,8 @@ ledger <- list(
   vectorsTotal = 291L,
   vectorsRun = sum(res$status %in% c("pass", "fail", "error", "missing-fixture")),
   vectorsPassed = sum(res$status == "pass"),
+  historicalPayloadsRun = sum(res$status == "pass" & res$evidence_id == res$id),
+  canonicalCounterpartsRun = sum(res$status == "pass" & res$evidence_id != res$id),
   vectorsFailed = sum(res$status %in% c("fail", "error", "missing-fixture")),
   vectorsNotRun = sum(res$status == "not-run"),
   vectorsDeclaredNotRunWithReason = sum(res$status == "not-run" & nzchar(res$reason)),
