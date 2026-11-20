@@ -47,7 +47,7 @@ test_that("missing FHGM fixtures and reader errors never yield ok", {
 })
 
 test_that("vendoring stages bytes and preserves prior tree on rename failure", {
-  helper <- testthat::test_path("..", "..", "tools", "vendor_tree.R")
+  helper <- testthat::test_path("..", "vendor_tree.R")
   env <- new.env(parent = baseenv())
   sys.source(helper, envir = env)
   root <- tempfile("vendor-stage-control")
@@ -74,7 +74,7 @@ test_that("vendoring stages bytes and preserves prior tree on rename failure", {
 
 test_that("related FHGM trees roll back together on second replacement failure", {
   env <- new.env(parent = baseenv())
-  sys.source(testthat::test_path("..", "..", "tools", "vendor_tree.R"), envir = env)
+  sys.source(testthat::test_path("..", "vendor_tree.R"), envir = env)
   root <- tempfile("vendor-pair-control")
   dir.create(root)
   on.exit(unlink(root, recursive = TRUE), add = TRUE)

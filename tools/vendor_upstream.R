@@ -31,7 +31,7 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
-source("tools/vendor_tree.R")
+source("tests/vendor_tree.R")
 
 .options <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) {
