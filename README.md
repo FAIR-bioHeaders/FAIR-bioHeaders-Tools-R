@@ -9,14 +9,26 @@ the checksum and the YAML rules are R and vendored C. JSON Schema validation use
 
 Released contracts, validated as JSON Schema draft/2020-12 with asserted `format`
 (specification v0.6.0): **FHR 2.1, FHP 1.2, FHGFF3 1.2**.
-FHT and FHGM are drafts under selection rule V7: opt-in, digest-pinned, warned on
-every read, and **never a support claim** - see `docs/CAPABILITY-MATRIX.md`.
+This package was built while FHT and FHGM were drafts under selection rule V7
+(opt-in, digest-pinned, warned on every read, never a support claim) and it
+still carries them that way: it recognises neither by default and claims no
+released-contract support for either. The family has since published FHT 1.0
+(specification v0.7.0, 2026-11-20) and FHGM 0.1 as a native model contract
+(v0.8.0, `model-contracts/fhgm/0.1/` — not a header type, so no header-registry
+row); promoting this consumer's pins to those released forms is a separate
+deliberate dated change, not implied. See `docs/CAPABILITY-MATRIX.md`.
 
 ## Install
 
 ```sh
 R CMD build . && R CMD INSTALL FAIRbioHeadersTools_*.tar.gz
 ```
+
+Not on CRAN (checked against the CRAN index and its archive on 2026-11-20: not
+present, no GitHub Release either); this is a source install, and `main` tracks
+development. Measured on 2026-11-20 with R 4.6.1 on macOS (Apple clang, system
+zlib): build, install, the 1200+ test suite and `tools/acceptance_native.R` all
+run clean from a fresh temporary library.
 
 A C compiler and `zlib` (`-lz` in `src/Makevars` / `src/Makevars.win`, declared in
 `DESCRIPTION` `SystemRequirements`) are required: `src/` compiles both the vendored

@@ -22,3 +22,8 @@ A list with \code{rule}, \code{header_type}, \code{release}, \code{file}, \code{
 \description{
 Chooses the contract for a \code{schema} value.
 }
+
+\examples{
+bh_select("https://w3id.org/fair-bioheaders/fhr/v0.6.0", "2.1")  # V3, released FHR
+bh_select("https://example.org/unknown/1", NULL)                 # refused, not guessed
+}
