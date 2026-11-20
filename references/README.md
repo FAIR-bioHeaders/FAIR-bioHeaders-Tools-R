@@ -12,7 +12,8 @@ Run `python3 scripts/audit_declared_references.py --checker-root CHECKER`.
 are advisory and include negative probe controls. Missing metadata is not FRESH;
 bootstrap/network errors produce QUERY_FAILED, and workflow artifacts are retained.
 Strict engine controls use independent temporary Git authorities, never current
-moving drafts. Draft results are not acceptance, curator review or publication.
+moving drafts. The fixed-authority controls run in a separate required job;
+only real-reference findings are non-gating advisory results. Draft results are not acceptance, curator review or publication.
 
 The generated inventory explicitly lists coverage gaps. Source/suite pins remain
 separate. Full external suite payload completeness is not asserted from a manifest
