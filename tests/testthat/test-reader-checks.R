@@ -124,12 +124,12 @@ test_that("gzip: members, padding, and every corruption is a classed error", {
   # sniffed, the file has no gzip magic, so it is read as plain bytes: no header block
   expect_false(suppressWarnings(bh_read(lead))$valid)
 
-  # a header CRC (FHCRC) is skipped, not checked, as the reference does; a name and a
-  # comment field are read past
+  # Adopted R1/D10 verifies FHCRC after all optional name/comment bytes.
+  # This historical synthetic header intentionally has an incorrect CRC.
   stopifnot(one[4] == as.raw(0))
   flagged <- c(one[1:3], as.raw(2 + 8 + 16), one[5:10], charToRaw("n.fa"), as.raw(0),
     charToRaw("c"), as.raw(0), as.raw(c(0xde, 0xad)), one[-(1:10)])
-  expect_true(suppressWarnings(bh_read(write_gz(flagged)))$valid)
+  expect_error(suppressWarnings(bh_read(write_gz(flagged))), "FHCRC mismatch", class = "bh_input")
 
   bad_crc <- one
   k <- length(bad_crc) - 7L

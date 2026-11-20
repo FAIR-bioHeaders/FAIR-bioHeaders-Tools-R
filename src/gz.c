@@ -11,8 +11,7 @@
  * It accepts what the Python reference's gzip module accepts: one or more members back to
  * back (BGZF is such a file), with zero bytes allowed as padding between or after them.
  * Each member's header is parsed here (RFC 1952), its deflate data is inflated raw, and its
- * CRC-32 and length trailer are checked against the bytes produced. As in the reference,
- * the optional 16-bit header CRC is skipped rather than checked. Anything else after a
+ * CRC-32 and length trailer are checked against the bytes produced. The optional 16-bit header CRC is checked when present (adopted R1 policy). Anything else after a
  * member, a member that does not end before the file does, and a trailer that does not
  * match are errors.
  */
@@ -105,38 +104,54 @@ static int bh_gz_byte(bh_gz *g) {
 }
 
 /* Reads a member header after its first byte (0x1f) was seen. Returns NULL or an error. */
+static int bh_gz_header_byte(bh_gz *g, uLong *crc) {
+  int c = bh_gz_byte(g);
+  if (c >= 0) {
+    unsigned char byte = (unsigned char)c;
+    *crc = crc32(*crc, &byte, 1);
+  }
+  return c;
+}
+
 static const char *bh_gz_header(bh_gz *g) {
   int c, flg, i;
-  if (bh_gz_byte(g) != 0x8b) return "bytes that are not a gzip member follow a gzip member";
-  c = bh_gz_byte(g);
+  unsigned char first = 0x1f;
+  uLong hcrc = crc32(0L, Z_NULL, 0);
+  hcrc = crc32(hcrc, &first, 1);
+  if (bh_gz_header_byte(g, &hcrc) != 0x8b) return "bytes that are not a gzip member follow a gzip member";
+  c = bh_gz_header_byte(g, &hcrc);
   if (c < 0) return "the gzip data is truncated: the file ends inside a member header";
   if (c != 8) return "the gzip member uses an unknown compression method";
-  flg = bh_gz_byte(g);
+  flg = bh_gz_header_byte(g, &hcrc);
   if (flg < 0) return "the gzip data is truncated: the file ends inside a member header";
+  if (flg & 0xe0) return "reserved gzip header flags are set";
   for (i = 0; i < 6; i++) /* MTIME, XFL, OS */
-    if (bh_gz_byte(g) < 0) return "the gzip data is truncated: the file ends inside a member header";
+    if (bh_gz_header_byte(g, &hcrc) < 0) return "the gzip data is truncated: the file ends inside a member header";
   if (flg & 4) { /* FEXTRA */
-    int lo = bh_gz_byte(g), hi = bh_gz_byte(g);
+    int lo = bh_gz_header_byte(g, &hcrc), hi = bh_gz_header_byte(g, &hcrc);
     long xlen;
     if (lo < 0 || hi < 0) return "the gzip data is truncated: the file ends inside a member header";
     for (xlen = lo | (hi << 8); xlen > 0; xlen--)
-      if (bh_gz_byte(g) < 0) return "the gzip data is truncated: the file ends inside a member header";
+      if (bh_gz_header_byte(g, &hcrc) < 0) return "the gzip data is truncated: the file ends inside a member header";
   }
   if (flg & 8) { /* FNAME */
     do {
-      c = bh_gz_byte(g);
+      c = bh_gz_header_byte(g, &hcrc);
       if (c < 0) return "the gzip data is truncated: the file ends inside a member header";
     } while (c != 0);
   }
   if (flg & 16) { /* FCOMMENT */
     do {
-      c = bh_gz_byte(g);
+      c = bh_gz_header_byte(g, &hcrc);
       if (c < 0) return "the gzip data is truncated: the file ends inside a member header";
     } while (c != 0);
   }
-  if (flg & 2) { /* FHCRC: skipped, not checked, as the reference does */
-    if (bh_gz_byte(g) < 0 || bh_gz_byte(g) < 0)
+  if (flg & 2) { /* FHCRC is the low 16 bits of the CRC-32 of all header bytes. */
+    int lo = bh_gz_byte(g), hi = bh_gz_byte(g);
+    if (lo < 0 || hi < 0)
       return "the gzip data is truncated: the file ends inside a member header";
+    if ((unsigned long)(lo | (hi << 8)) != (hcrc & 0xffffUL))
+      return "the gzip header CRC is corrupt (FHCRC mismatch)";
   }
   return NULL;
 }

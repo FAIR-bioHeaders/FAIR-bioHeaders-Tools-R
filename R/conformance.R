@@ -169,6 +169,17 @@ NULL
         paste0("not-run: beyond the limit of ", limit, " vectors per format"))
       next
     }
+    # D9 policy overlay: preserve the historical manifest and bind each changed
+    # expectation to its exact original bytes. No other vector is reinterpreted.
+    crosswalk <- jsonlite::fromJSON(.bh_inst("references", "retirement-crosswalk.json"), simplifyVector = FALSE)
+    retired <- Filter(function(x) identical(x$id, v$id), crosswalk$cases)
+    if (length(retired) && identical(v$expected, "valid")) {
+      stopifnot(identical(.bh_sha256_hex(.bh_read_all(path)), retired[[1]]$oldSha256))
+      v$historicalExpected <- v$expected
+      v$expected <- "invalid"
+      v$rule <- "R4"
+      rules <- "R4"
+    }
     res <- .bh_capture(.bh_analyze(path, format = fmt, draft = lane))
     if (!is.null(res$error)) {
       # One rejection class is established from the file's own bytes rather than from a
@@ -350,7 +361,7 @@ NULL
 .bh_conf_row <- function(v, rules, status, reason, observed = NA_character_,
                          diagnostics = "", warnings = "") {
   data.frame(
-    id = v$id, format = v$format, expected = v$expected, observed = observed,
+    id = v$id, format = v$format, expected = v$expected, historical_expected = v$historicalExpected %||% v$expected, observed = observed,
     status = status, rules = paste(rules, collapse = "+"), reason = reason,
     diagnostics = diagnostics, warnings = warnings,
     stringsAsFactors = FALSE

@@ -1,0 +1,22 @@
+{
+  "repository": "FAIR-bioHeaders/FAIR-bioHeaders-Specification",
+  "commit": "9b5269de0b00186718b07f42b0c48123341ff4de",
+  "files": [
+    {
+      "path": "conformance/reader-policy/cases.json",
+      "local": null,
+      "sha256": "b42d9c545d47ff9654f72b38a294f08640ed0e42aa4ff7fc756b0c33217db7c7"
+    },
+    {
+      "path": "conformance/reader-policy/retirement-crosswalk.json",
+      "local": "inst/references/retirement-crosswalk.json",
+      "sha256": "c648601b6dc7589fa3efd40e870cc053385636e0f58ac6a73f429ff6abaabc4b"
+    },
+    {
+      "path": "conformance/manifest.json",
+      "local": null,
+      "sha256": "7c10fb83bbac5c5739240bff695e5469730ac26a066a51a44d5275598b2df3f6"
+    }
+  ],
+  "status": "Supplementary adopted-policy and current carrier evidence, separate from immutable released291."
+}

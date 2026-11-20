@@ -1,0 +1,33 @@
+name: Declared references (advisory)
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  advisory:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: FAIR-bioHeaders/FAIR-bioHeaders-Specification
+          ref: 6dee4c8baba723ec5cad825d521db2dbbc1921ae
+          path: .checker
+      - name: Current-declaration adapter mutation controls
+        run: python3 scripts/check_reference_controls.py
+      - name: Independent fixed-authority engine controls
+        run: python3 -m unittest discover -s .checker/tests -p test_references.py -v
+      - name: Advisory comparison of current native declarations (never re-pin)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/audit_declared_references.py --checker-root .checker --report-output "$RUNNER_TEMP/reference-report.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: declared-reference-findings
+          path: ${{ runner.temp }}/reference-report.json
+          if-no-files-found: error
