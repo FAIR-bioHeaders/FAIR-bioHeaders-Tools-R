@@ -9,6 +9,15 @@ stopifnot(length(manifest$cases) == 64L)
 probe <- jsonlite::fromJSON(file.path(root,manifest$cases[[1L]]$file),simplifyVector=FALSE)
 probe[["x-probe"]] <- list(checksum=paste0(strrep("B",43),"="))
 stopifnot(isTRUE(FAIRbioHeadersTools:::.bh_validate_record(probe,bh_select(probe$schema,probe$schemaVersion))$valid))
+# Only the two named gzip-policy negatives are unreadable in this corpus.
+transport_rejection <- function(error, case, file) {
+  expected <- c("fasta-policy-gzip-trailing-garbage"="follow the last gzip member",
+    "fasta-policy-gzip-fhcrc-wrong"="FHCRC mismatch")
+  reason <- expected[case$id]
+  if (inherits(error,"bh_input") && !is.na(reason) && grepl(reason,conditionMessage(error),fixed=TRUE))
+    return("invalid")
+  stop(error)
+}
 failed <- 0L
 for (case in manifest$cases) {
   file <- file.path(root, case$file)
@@ -17,19 +26,20 @@ for (case in manifest$cases) {
     if (identical(case$operation, "metadata")) {
       if (identical(case$serialization, "yaml")) {
         parsed <- FAIRbioHeadersTools:::.bh_parse_record(readLines(file, warn = FALSE))
-        if (!parsed$ok) FALSE else {
+        if (!parsed$ok) "invalid" else {
           rec <- parsed$record
           sel <- bh_select(rec$schema, rec$schemaVersion)
-          isTRUE(FAIRbioHeadersTools:::.bh_validate_record(rec, sel)$valid)
+          if (identical(sel$status,"unsupported")) "unsupported-version" else if (isTRUE(FAIRbioHeadersTools:::.bh_validate_record(rec, sel)$valid)) "valid" else "invalid"
         }
       } else {
         rec <- jsonlite::fromJSON(file, simplifyVector = FALSE)
         sel <- bh_select(rec$schema, rec$schemaVersion)
-        isTRUE(FAIRbioHeadersTools:::.bh_validate_record(rec, sel)$valid)
+        if (identical(sel$status,"unsupported")) "unsupported-version" else if (isTRUE(FAIRbioHeadersTools:::.bh_validate_record(rec, sel)$valid)) "valid" else "invalid"
       }
-    } else isTRUE(suppressWarnings(bh_read(file, format = case$format)$valid))
-  }, bh_error = function(e) FALSE)
-  ok <- identical(valid, identical(case$expected, "valid"))
+    } else if (isTRUE(suppressWarnings(bh_read(file, format = case$format)$valid))) "valid" else "invalid"
+  }, bh_error = function(e) transport_rejection(e,case,file))
+  expected <- if (!is.null(case$result)) case$result else case$expected
+  ok <- identical(valid,expected)
   cat(case$id, if (ok) "PASS" else "FAIL", "\n")
   failed <- failed + !ok
 }
@@ -43,8 +53,13 @@ carriers <- jsonlite::fromJSON(file.path(carrier_root, "manifest.json"), simplif
 ran <- failed <- not_run <- 0L
 for (case in carriers$vectors) {
   if (!case$format %in% c("fasta","gfa","fhp-fasta","fhgff3")) {not_run <- not_run + 1L; next}
-  result <- tryCatch(suppressWarnings(FAIRbioHeadersTools:::.bh_analyze(
-    file.path(carrier_root,case$file),format=case$format)), bh_error=function(e) list(valid=FALSE))
+  file <- file.path(carrier_root,case$file)
+  stopifnot(file.exists(file))
+  crosswalk <- jsonlite::fromJSON(system.file("references","retirement-crosswalk.json",package="FAIRbioHeadersTools"),simplifyVector=FALSE)$cases
+  replacement <- Filter(function(x) identical(x$replacedBy,case$id),crosswalk)
+  if (length(replacement)) stopifnot(identical(case$file,replacement[[1L]]$replacementFile),
+    identical(digest::digest(file=file,algo="sha256"),replacement[[1L]]$replacementSha256))
+  result <- suppressWarnings(FAIRbioHeadersTools:::.bh_analyze(file,format=case$format))
   ok <- identical(isTRUE(result$valid), identical(case$expected,"valid"))
   ran <- ran+1L; failed <- failed+!ok
   if (!ok) cat(case$id,"FAIL\n")

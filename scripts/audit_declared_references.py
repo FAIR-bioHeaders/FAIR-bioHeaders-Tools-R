@@ -27,12 +27,16 @@ def inventory(root=ROOT):
         raw = (root / p).read_bytes(); records.append({"path":p,"sha256":digest(raw)})
         return json.loads(raw)
     revisions = load("references/authority-revisions.json")
-    def add(identifier, repo, revision, commit, kind, files, material="released", **extra):
+    def add(identifier, repo, revision, commit, kind, files, material="released", native_tag_object=False, **extra):
         repo = repository(repo)
         tag = bool(re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", revision or ""))
         # Recorded annotated tag OBJECTS remain in native provenance. Their
         # separately reviewed dereferenced commit is metadata, never a pin move.
-        if tag: commit = revisions.get(repo, {}).get(revision)
+        if tag and native_tag_object:
+            extra.update(tagObject=commit,requiresTagObject=True)
+            commit=revisions.get(repo,{}).get(revision)
+        elif tag and not commit:
+            commit=revisions.get(repo,{}).get(revision)
         refs.append(dict(id=identifier, consumer=CONSUMER, repository=repo, revision=revision,
             revisionKind="tag" if tag else "commit", commit=commit, **{"class":kind},
             materialStatus=material, files=files, **extra))
@@ -42,18 +46,23 @@ def inventory(root=ROOT):
     for n,row in enumerate(data["files"]):
         kind = "draft-contract" if "draft" in row.get("kind","") else "released-contract"
         add("vendored-"+str(n),row["repository"],row["ref"] if kind=="released-contract" else row["commit"],row["commit"],kind,
-            [file(row["file"],row.get("source_path"),row.get("sha256"))],"draft" if kind=="draft-contract" else "released")
+            [file(row["file"],row.get("source_path"),row.get("sha256"))],"draft" if kind=="draft-contract" else "released", native_tag_object=kind=="released-contract")
     for name in ("conformance","draft_vectors","draft_fhgm_vectors"):
         row=data[name]; dest=row.get("dest", "tests/conformance" if name=="conformance" else None)
+        if row["per_file"].get("manifest.json") != row.get("manifest_sha256"):
+            raise ValueError("suite per-file and native manifest checksum disagree: "+name)
         add(name,row["repository"],row["ref"] if name=="conformance" else row["commit"],row["commit"],"conformance-suite",
-            [file(dest+"/"+p,row["path"]+"/"+p,sha) for p,sha in row["per_file"].items()],"released" if name=="conformance" else "draft", localTree=dest)
+            [file(dest+"/"+p,row["path"]+"/"+p,sha) for p,sha in row["per_file"].items()],"released" if name=="conformance" else "draft", localTree=dest, native_tag_object=name=="conformance")
         if row.get("examples_sha256"):
             add(name+"-examples",row["repository"],row["commit"],row["commit"],"copied-tree",
                 [file(row["examples_dir"]+"/"+p,"development/examples/"+p,sha) for p,sha in row["examples_sha256"].items()],"draft")
-    for row in data["files"]:
-        if row.get("header_type")=="FHGFF3" and row.get("ref") in ("v0.5.0","v0.6.0"):
-            add("fhgm-base-"+row["ref"],row["repository"],row["ref"],row["commit"],"base-carrier",
-                [file(row["file"],row.get("source_path"),row.get("sha256"))])
+    suite_provenance=load("tests/draft/fhgm/provenance.json")
+    for name in ("baseSchema","matrixBaseSchema"):
+        base=suite_provenance[name]
+        installed=[r for r in data["files"] if r.get("header_type")=="FHGFF3" and r.get("ref")==base.get("ref")]
+        if len(installed)!=1: raise ValueError("suite base has no unique declared installed copy: "+name)
+        add("fhgm-"+name,base["repository"],base.get("ref"),base.get("commit"),"base-carrier",
+            [file(installed[0]["file"],base.get("path"),base.get("sha256"))],tagObject=base.get("tagObject"),requiresTagObject=True)
     policy=load("references/reader-policy.json")
     add("reader-policy",policy["repository"],policy["commit"],policy["commit"],"conformance-suite",
         [file(f.get("local"),f.get("path"),f.get("sha256")) for f in policy["files"]],"draft")
@@ -82,6 +91,43 @@ def verify_checker(checkout, metadata):
     return immutable
 
 
+
+def tag_identity_findings(table, mappings):
+    """Verify recorded native annotated-tag objects independently of tag commits."""
+    import urllib.request, urllib.error
+    checkouts = dict(value.split("=",1) for value in mappings)
+    out = {}
+    for row in table["references"]:
+        if "tagObject" not in row and not row.get("requiresTagObject"): continue
+        expected = row.get("tagObject")
+        if not isinstance(expected,str) or not re.fullmatch(r"[0-9a-f]{40}",expected):
+            out[row["id"]] = {"verdict":"ABSENT","reason":"native annotated-tag object is absent or malformed"}
+            continue
+        try:
+            repo,tag=row["repository"],row["revision"]
+            if repo in checkouts:
+                env={**os.environ,"GIT_NO_REPLACE_OBJECTS":"1","GIT_NO_LAZY_FETCH":"1","GIT_TERMINAL_PROMPT":"0"}
+                command=["git","-C",str(Path(checkouts[repo]).resolve()),"rev-parse","--verify"]
+                control=subprocess.run(command+["refs/tags/__fair_bioheaders_missing_tag_control__"],env=env,capture_output=True)
+                if control.returncode==0: raise RuntimeError("native tag negative control unexpectedly resolved")
+                actual=subprocess.check_output(command+["refs/tags/"+tag],env=env,stderr=subprocess.PIPE).decode().strip()
+            else:
+                def get_tag(name):
+                    request=urllib.request.Request("https://api.github.com/repos/"+repo+"/git/ref/tags/"+name,headers={"Accept":"application/vnd.github+json"})
+                    token=os.environ.get("GITHUB_TOKEN")
+                    if token: request.add_header("Authorization","Bearer "+token)
+                    with urllib.request.urlopen(request,timeout=30) as response: return json.load(response)
+                try: get_tag("__fair_bioheaders_missing_tag_control__")
+                except urllib.error.HTTPError as error:
+                    if error.code!=404: raise
+                else: raise RuntimeError("native tag negative control unexpectedly resolved")
+                actual=get_tag(tag)["object"]["sha"]
+            if not re.fullmatch(r"[0-9a-f]{40}",actual): raise RuntimeError("empty/invalid native tag object measurement")
+            out[row["id"]]={"verdict":"FRESH" if actual==expected else "DRIFT", "nativeTagObject":expected,"measuredTagObject":actual,"negativeControl":"confirmed-missing"}
+        except (OSError,ValueError,KeyError,RuntimeError,subprocess.SubprocessError) as error:
+            out[row["id"]]={"verdict":"QUERY_FAILED","reason":"native tag object could not be verified: "+str(error)}
+    return out
+
 def audit(checkout, mappings=(), root=ROOT, strict=False):
     metadata = json.loads((root / "references/checker.json").read_text())
     checker_bytes = verify_checker(checkout, metadata)
@@ -103,6 +149,12 @@ def audit(checkout, mappings=(), root=ROOT, strict=False):
     report = json.loads(result.stdout)
     if len(report.get("references", [])) != len(table["references"]):
         raise RuntimeError("checker did not report every declared reference group")
+    native_tags=tag_identity_findings(table,mappings)
+    for row in report["references"]:
+        if row["id"] in native_tags:
+            finding=native_tags[row["id"]]
+            row["nativeTagIdentity"]=finding
+            if finding["verdict"]!="FRESH": row["verdict"]=finding["verdict"]
     report.update(consumer=CONSUMER, checkerSource=metadata,
                   declarationRecords=table["declarationRecords"])
     return report, int(strict and any(row["verdict"] != "FRESH" for row in report["references"]))

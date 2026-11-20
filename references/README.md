@@ -32,3 +32,9 @@ Neither a local self-consistency pass nor this note changes DRIFT to FRESH.
 No byte-identical copy, automatic repin or source-authorized transformation is
 invented; a future deliberate provenance change can classify the adapted
 README boundaries separately while preserving historical receipts.
+
+Review hardening verifies any recorded native annotated-tag object separately
+from its dereferenced commit, including a same-commit retag negative control.
+An existing native commit is never replaced by companion metadata. Native
+manifest and base-schema declarations are inventoried independently; missing
+or conflicting measurements cannot become FRESH.

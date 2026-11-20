@@ -851,3 +851,14 @@ the v0.6.0 ledger, draft FHT/FHGM receipts and any publication/support claim.
 `references/README.md` documents the dynamic advisory reference audit; it never
 refreshes contract/suite/carrier pins automatically. Existing dated 82/62 draft
 receipts are historical, not accepted93/92 or published support.
+
+Review correction: the historical-manifest runner now verifies each original
+retired payload digest and evaluates its separately named canonical counterpart
+before crediting the original predicate. Its rows retain `id`, `evidence_id`,
+`evidence_file` and historical expectations. The receipt splits159 original
+payload results from69 byte-bound canonical counterparts (nine other crosswalk
+entries are JSON-LD/microdata and remain explicitly not-run); neither the old48
+invalid fixtures' R4 rejections nor the old30 positives prove those predicates.
+The frozen fixture/golden bytes remain unchanged. The policy/current-carrier
+runner requires three-way unsupported-version verdicts and accepts only two
+named gzip transport error causes; other errors stop execution.
