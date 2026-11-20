@@ -11,9 +11,12 @@ jobs:
     name: Fixed-authority reference controls
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
           repository: FAIR-bioHeaders/FAIR-bioHeaders-Specification
           ref: 6dee4c8baba723ec5cad825d521db2dbbc1921ae
           path: .checker
@@ -25,9 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
           repository: FAIR-bioHeaders/FAIR-bioHeaders-Specification
           ref: 6dee4c8baba723ec5cad825d521db2dbbc1921ae
           path: .checker
@@ -35,7 +41,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 scripts/audit_declared_references.py --checker-root .checker --report-output "$RUNNER_TEMP/reference-report.json"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: declared-reference-findings
