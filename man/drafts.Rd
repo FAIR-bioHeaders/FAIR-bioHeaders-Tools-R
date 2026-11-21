@@ -17,8 +17,8 @@ outcome is byte-for-byte what it was before V7 existed - \code{\link[=bh_draft_d
 asserts exactly that.
 \item Only the raw-main URL of the owning development repository is in the lane. A
 release-shaped URL for an unregistered type - \verb{https://w3id.org/fair-bioheaders/fht/ v0.7.0}, or a raw tag URL - is not a draft citation and is not read as one, with
-the lane open or closed: no release number is invented for a draft, and an
-unpublished type has no row in \code{inst/schemas/versions.json}.
+the lane open or closed: no release number is invented for a draft, and this
+consumer has no row for it in \code{inst/schemas/versions.json}.
 \item Pinned by commit and SHA-256. Selection runs against the bytes this package was
 built with, recorded in \code{inst/VENDORED.json}; if the file on disk no longer matches
 its recorded digest the lane says so instead of quietly reading something newer.
@@ -26,6 +26,11 @@ its recorded digest the lane says so instead of quietly reading something newer.
 digest, and saying the result is not a released-contract result.
 }
 
-Reading a draft recognises a proposal; it does not adopt one. FHT publishes as its own
-release, FHGM as another, and until then nothing here gives either a released form.
+Reading this lane does not adopt a released form. The family has published FHT 1.0
+and native FHGM 0.1; this consumer retains explicit development-snapshot selection
+and does not silently repin or adopt publication merely because it exists.
+
+Complete FHT BUSCO count sums are verified only within this reader's exact
+integer range (0 through 2^53 - 1). Larger counts raise \code{bh_limit}, a consumer
+precision limitation rather than an upstream schema maximum.
 }

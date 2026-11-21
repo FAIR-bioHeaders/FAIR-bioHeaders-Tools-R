@@ -18,6 +18,15 @@ released-contract support for either. The family has since published FHT 1.0
 row); promoting this consumer's pins to those released forms is a separate
 deliberate dated change, not implied. See `docs/CAPABILITY-MATRIX.md`.
 
+The user-requested CI repair on November 20 deliberately refreshed this development
+lane to FHT contract `eb6c36d3` (93 vectors at suite `e6ba1c73`) and FHGM suite
+`e8e26d7c` (92 vectors). FHGM record/overlay bytes and all released bundles stay
+unchanged. FHT C1 completeness sums are now checked explicitly, with exact
+arithmetic within the reader's exact-integer range (at most `2^53 - 1` per
+count); larger counts raise `bh_limit` instead of trusting rounded values. This
+is a consumer precision limit, not a schema maximum. The FHGM model scope remains K1/K2 and keeps every other required rule
+labelled not-run. See the dated entry in `docs/STATUS.md`.
+
 ## Install
 
 ```sh
@@ -76,7 +85,7 @@ bh_draft_fhgm_vectors()                              # the FHGM suite, layer by 
 and `docs/CAPABILITY-MATRIX.md` is that table published. Unfilled cells carry a
 reason and a tracker - in particular the JSON-LD (37 vectors) and microdata
 (26 vectors) readers are **not implemented**, nor is the FHGM checker's cross-record
-layer (K3-K6/B1: 43 of its 62 vectors are reported `not-run`, not passed; 19 are
+layer (K3-K6/B1: 55 of its 92 vectors are reported `not-run`, not passed; 37 are
 compared at the model layer). FHGM's lane
 cells cover reading the transported records and validating each one against the
 pinned draft record contract (K1/K2).

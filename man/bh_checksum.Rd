@@ -21,7 +21,6 @@ bh_verify(path, ...)
 \description{
 Verifies a file's checksum, and nothing else
 }
-
 \examples{
 f <- tempfile(fileext = ".fasta")
 writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0", ">seq1", "ACGT"), f)

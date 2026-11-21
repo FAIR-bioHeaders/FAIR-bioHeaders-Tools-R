@@ -49,13 +49,11 @@ Reads a file's header, checksum and contract verdict
 
 Validates a file against the contract its own \code{schema} value selects
 }
-
 \examples{
 # A file whose header citation selects the released FHR 2.1 contract:
 f <- tempfile(fileext = ".fasta")
 writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0",
-             ";~schemaVersion: \\"2.1\\"",
-             ">seq1", "ACGT"), f)
+             ';~schemaVersion: "2.1"', ">seq1", "ACGT"), f)
 x <- bh_read(f)
 x$selection          # which selection rule chose which contract
 x$valid              # FALSE here: the header carries no checksum line - a

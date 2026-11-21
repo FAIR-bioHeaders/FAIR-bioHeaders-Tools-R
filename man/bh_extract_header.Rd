@@ -23,7 +23,6 @@ contract validator sees; it needs a header that parses, so a header the YAML rul
 reject (R8, R12, R13, a parse error) raises a \code{bh_input} error naming why. Neither form
 verifies the checksum or validates the contract: use \code{\link[=bh_read]{bh_read()}} for that.
 }
-
 \examples{
 f <- tempfile(fileext = ".fasta")
 writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0",

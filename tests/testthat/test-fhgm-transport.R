@@ -39,7 +39,7 @@ test_that("the model layer is claimed only for K1/K2, and the rest is still a ga
   expect_match(val, "K1")
   expect_match(val, "K2")
   expect_match(val, "not-run")
-  expect_match(val, "43", fixed = TRUE)
+  expect_match(val, "55", fixed = TRUE)
   # the rules the run cannot evaluate are named operations with their own reason, not
   # folded into the cells above
   gaps <- m[m$header_type == "FHGM" & m$support == "not-supported-yet", ]

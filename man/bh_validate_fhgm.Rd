@@ -19,5 +19,5 @@ notice) and \code{contract} (the pinned commit and digest the records were read 
 \description{
 The base file is validated separately by \code{\link[=bh_validate]{bh_validate()}}; this reports the model layer
 only, per record, so a result can never be read as "the file is a valid FHGM file" -
-FHGM has no released contract and no such verdict exists.
+this historical extension lane does not evaluate the published native FHGM model contract.
 }

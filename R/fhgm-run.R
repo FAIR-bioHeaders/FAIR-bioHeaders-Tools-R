@@ -1,6 +1,6 @@
 #' Runs the FHGM development suite and reports it layer by layer
 #'
-#' FHGM's published draft suite (62 vectors from FHGM-Specification
+#' FHGM's published draft suite (92 vectors from FHGM-Specification
 #' `development/conformance/`) is written differently from the shared one: each vector
 #' records what four independent checks report, because separability is the point - `base`
 #' (the released FHGFF3 contract over the parsed header), `checksum` (whether the file-bound
@@ -104,10 +104,10 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
     # An unlabelled vector is not a labelled-but-in-scope vector. `rules: []` would mean the
     # suite says this verdict needs nothing this package checks; no label at all means the
     # suite did not say, and the only honest reading of that is not-run. Every vector in the
-    # pinned 62-vector manifest is labelled - 17 in `rules`, 45 in the singular `rule` the
+    # pinned 92-vector manifest is labelled - 24 in `rules`, 68 in the singular `rule` the
     # runner has always accepted - so this guard is a shape rule for future revisions, not a
     # finding about the current bytes; it exists because a suite that dropped its labels
-    # would otherwise move all 45 singular-`rule` rejection vectors into the compared set
+    # would otherwise move all singular-`rule` rejection vectors into the compared set
     # silently.
     beyond <- if (unlabelled) "K?" else setdiff(rules, model_rules)
     comparable <- !length(beyond) && !unlabelled
@@ -182,7 +182,7 @@ bh_draft_fhgm_vectors <- function(suite = NULL, limit = NULL) {
     "all named in the manifest's own rules block"
   ),
   K3 = "modelId uniqueness within one snapshot (checker rule 1)",
-  K4 = "featureId resolving, percent-decoded, to exactly one local gene row in the enclosing file (checker rule 2, which needs the GFF3 feature layer)",
+  K4 = "featureId as written matching the decoded ID of exactly one local gene row in the enclosing file (checker rule 2, which needs the GFF3 feature layer)",
   K5 = "record reference comparable with, and not contradicting, the file genome link (checker rule 3)",
   K6 = "predecessor pointer resolution against explicitly supplied prior snapshots (checker rule 4)",
   B1 = "the boundary rule: a rejection reported here comes from base plus checksum rather than from a model-level gap, and this package states the two layers apart"

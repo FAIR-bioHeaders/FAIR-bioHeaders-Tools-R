@@ -88,26 +88,16 @@ provably additive.
 
 ## The rule V7 draft lane is separate, labelled, and never acceptance
 
-`bh_draft_vectors()` runs the **82 FHT development vectors** published by
-FHT-Specification (vendored at the pinned suite commit, re-digested before use)
-through the native reader with the lane open. A pass is draft evidence against
-pinned unreleased bytes, not support for FHT; the label says so; the shared
-ledger's numbers do not include them; CI runs them in a separate, labelled job
-whose receipt pins contract commit `86438f21...`, SHA-256 `4156353a...`, suite
-commit `86438f21...` and manifest digest `e5a4a5d0...`. The advisory
-`draft-pin-freshness` job compares the pins with the owning repositories' live
-default branches and reports drift without gating released acceptance.
-
-The contract pin and the suite pin are different objects and move separately.
-At this pin both derive to the same commit - `86438f21...` last touched both
-`fht.json` and `conformance/manifest.json` - but they are *computed* separately:
-the first is the commit that last touched the contract file, the second the commit
-that last touched the suite manifest. A re-pin that advanced the contract while
-the suite moved for unrelated reasons - or, worse, one that collapsed the two
-fields onto whichever revision was checked out at the time - would destroy exactly
-the distinction that lets a reader say "the contract did not change, the vectors
-did". Four of the 82 suite vectors are marked `promotion: candidate-unreviewed`
-and are scored as unreviewed candidates, not as reviewed expectations.
+`bh_draft_vectors()` runs the **93 FHT development vectors** published by
+FHT-Specification, separately from the frozen 291. The user-requested November 20
+refresh pins contract `eb6c36d3...` (SHA-256 `b62c4e22...`) and independently pins
+suite `e6ba1c73...` (manifest `d0147d3a...`). The live freshness job verifies those
+current bytes; it does not rewrite them automatically. There are no
+`candidate-unreviewed` entries in this snapshot. C1 completeness arithmetic is
+checked in the explicit FHT lane with integral-number semantics, excluding
+booleans. Counts above `2^53 - 1` raise the reader's `bh_limit` because raw numeric
+precision cannot be proven; this is not an upstream schema maximum. Bounded
+subtraction verifies supported sums exactly without overflow or rounding.
 
 One vector scores by a rule the suite states about its *bytes*, established
 externally: `fht-fasta-gzip-truncated`'s stream ends inside the gzip trailer, so R1
@@ -135,40 +125,30 @@ binding, never the generic `pass` the previous head produced. The conjunction bi
 both paths: only independently detected truncation plus the reader's own truncation
 refusal can score this class.
 
-`bh_draft_fhgm_vectors()` runs the **62 FHGM development vectors** published by
-FHGM-Specification, in its own labelled CI job, and never into the 291. That
-suite records four independent layers per vector (`base`, `checksum`, `gff3`,
-`model`), so the run reports them separately: base and checksum are compared on
-all 62, the model layer only on the 19 whose rule labels are inside what this
-package evaluates (K1 transport - including its carrier-identity clause, which
-the re-pinned suite first exercises through `carrier-cites-raw-main` - and K2 the
-pinned record contract). The other 43
-turn on K3-K6 or B1 and are `not-run` with the rule named - never passed on the
-strength of the schema layer. A vector carrying no rule label at all is also
-`not-run`: an absent label does not establish that the verdict needs only K1/K2,
-so the run refuses to assume it and the receipt's
-`vectorsNotRunUnlabelled=0` line states that the pinned manifest needed no such
-refusal. FHGM is not a header type: its records ride inside
-an FHGFF3 header under `x-fhgm-models` and carry no `schema` field, so the lane
-selects only the contract applied to the records. The receipt pins contract
-commit and SHA-256 (`06176262...` / `b7075e58...`), the suite commit
-(`06176262...`, the commit that last touched the suite manifest; like FHT's,
-derived separately from the contract pin and coinciding with it at this pass)
-and its
-manifest digest (`e41f05fd...`), and the workflow asserts the counts as fixed
-strings, so a model layer that silently shrank or started over-claiming fails
-the job. The suite's `base_matrix.json` lane - every sealed vector re-observed
-as an FHGFF3 1.2 twin by the upstream runner - is vendored but **not evaluated
-here**: the twin bytes are not, so this package judges the sealed 1.1 lane only.
+`bh_draft_fhgm_vectors()` runs the **92 FHGM development vectors**, again outside
+the 291. It reports the layers separately: base and checksum are compared on
+all 92, the model layer only on the 37 whose labels lie inside K1/K2.
+The other 55
+turn on K3-K6 or B1 and are `not-run` with actual named reasons. No record-schema
+pass substitutes for those required checks. An absent rule label is also not-run,
+never assumed to be covered. All 92 current vectors have labels.
 
-The pinned FHGM bytes carry one thing no digest of them can show: they encode the
-widened `layers.model` semantics that FHGM-Specification's own
-`LAYER-SEMANTICS-PROPOSAL.md` records as **proposed, not adopted** (#22, #27 and
-#28 are open). This package pins the bytes, scores the sealed expectations through
-them, and says out loud - here, in the capability matrix and in
-`inst/VENDORED.json` - that the proposal is not accepted, that K4 remains
-`not-supported-yet` **by design** with all 11 K4 vectors not-run, and that
-pinning bytes is not inheriting a contested verdict.
+The record contract remains `06176262...` / `b7075e58...`; the separate suite
+pin is now `e8e26d7c...` / `d42b6211...`. Expected model results among the 37
+compared vectors are 6 passes and 31 rejections. Gap categories overlap: K3 in
+8 vectors, K4 in 18, K5 in 8, K6 in 21, B1 in 3. The suite's `base_matrix.json`
+identity-rewritten twin lane remains not evaluated: the twin bytes are not
+vendored. This consumer reports the sealed input lane and its measured subset.
+The manifest's historical `layers.model` checker outcomes are separate from its
+newer earned full-model expectations; partial R evidence is never labelled a
+complete model pass.
+
+Vendored upstream documents keep their original bytes. DECISIONS-2026-11-19.md
+is present alongside the copied suite. Some upstream relative links point beyond
+that data slice; use the [pinned upstream staging record](https://github.com/FAIR-bioHeaders/FHGM-Specification/blob/bebcc4dbcb113fdd64f8cfa69b07b8882e097286/development/SHARED-STAGING-2026-11-19.md)
+for the complete context rather than interpreting this partial mirror as a
+standalone documentation site. Neither the refresh nor those documents adopt
+published FHT/native FHGM selection forms into this consumer.
 
 ## Controls that must go red
 
@@ -178,14 +158,14 @@ conclusion from it:
 
 1. **One byte inside checksum coverage.** A valid vector is copied to a scratch
    tree, one feature-line byte changes (`ID=toy-a` to `ID=toy-A`), and the test
-   asserts the bytes differ, then that the labelled run reports 62 vectors with
+   asserts the bytes differ, then that the labelled run reports 92 vectors with
    exactly **1 failure** - base still `accept`, checksum `stale`.
 2. **A zeroed recorded pin.** `draft_fhgm_vectors$manifest_sha256` is replaced
    with zeros in the provenance cache; the run **aborts** (`bh_conformance`
    error) and writes no receipt, rather than reporting not-run or pass.
 3. **A neutered model checker.** `bh_validate_fhgm()` is bound to a stub that
    reports every record valid. The test first shows the stub live on a fixture
-   the real code rejects, then requires the 13 comparable expected-rejection
+   the real code rejects, then requires the 31 comparable expected-rejection
    vectors to become failures reading `model pass vs expected reject`, with base
    and checksum still agreeing. If the stub were not on the called path, this
    control would be vacuous, so that check is asserted rather than assumed.

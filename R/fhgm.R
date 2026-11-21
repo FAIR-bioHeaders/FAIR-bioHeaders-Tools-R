@@ -189,7 +189,7 @@ bh_fhgm_models <- function(path, format = "fhgff3", compressed = NA,
 #'
 #' The base file is validated separately by [bh_validate()]; this reports the model layer
 #' only, per record, so a result can never be read as "the file is a valid FHGM file" -
-#' FHGM has no released contract and no such verdict exists.
+#' this historical extension lane does not evaluate the published native FHGM model contract.
 #'
 #' @param path An FHGFF3 file whose header transports model records.
 #' @param format,compressed Passed to the reader.

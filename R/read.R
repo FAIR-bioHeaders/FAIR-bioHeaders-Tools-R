@@ -228,8 +228,16 @@ NULL
 #' @return An object of class `bh_read`: a list with `record`, `format`, `header_type`,
 #'   `selection`, `checksum`, `validation`, `issues`, `warnings`, `valid`, `path`.
 #' @examples
-#' f <- system.file("VENDORED.json", package = "FAIRbioHeadersTools")
-#' file.exists(f)
+#' # A file whose header citation selects the released FHR 2.1 contract:
+#' f <- tempfile(fileext = ".fasta")
+#' writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0",
+#'              ';~schemaVersion: "2.1"', ">seq1", "ACGT"), f)
+#' x <- bh_read(f)
+#' x$selection          # which selection rule chose which contract
+#' x$valid              # FALSE here: the header carries no checksum line - a
+#' x$issues             # reader reports that loudly; never hand-edit a checksum,
+#' x$checksum$computed  # recombine with `bioheaders combine` instead.
+#' # bh_validate shares the result shape for the contract layer alone.
 #' @export
 bh_read <- function(path, format = NULL, compressed = NA,
                     draft = getOption("bh.draft_lane", FALSE), verify_checksum = TRUE,
@@ -289,6 +297,12 @@ print.bh_read <- function(x, ...) {
 #' @param ... Passed to [bh_read()]'s reader.
 #' @return `bh_checksum()` returns a list with `recorded`, `computed`, `valid`, `bytes`
 #'   (hashed), `late_header_lines` and `why`; `bh_verify()` returns the single logical.
+#' @examples
+#' f <- tempfile(fileext = ".fasta")
+#' writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0", ">seq1", "ACGT"), f)
+#' cs <- bh_checksum(f)         # the byte layer: what the file must state vs what it is
+#' names(cs)                    # recorded, computed, valid, bytes, late_header_lines, why
+#' bh_verify(f)                 # one logical: does the stated checksum match?
 #' @export
 bh_checksum <- function(path, ...) {
   a <- .bh_analyze(path, validate_contract = FALSE, ...)
@@ -333,6 +347,12 @@ bh_validate <- function(path, format = NULL, compressed = NA,
 #' @param as `"yaml"` (default) or `"json"`.
 #' @param format,compressed As for [bh_read()].
 #' @return A length-1 character string.
+#' @examples
+#' f <- tempfile(fileext = ".fasta")
+#' writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0",
+#'              ';~taxon: "Example organism"', ">seq1", "ACGT"), f)
+#' bh_extract_header(f)              # prefixes removed, YAML text
+#' bh_extract_header(f, as = "json") # the parsed record as a JSON string
 #' @export
 bh_extract_header <- function(path, as = c("yaml", "json"), format = NULL, compressed = NA) {
   as <- match.arg(as)

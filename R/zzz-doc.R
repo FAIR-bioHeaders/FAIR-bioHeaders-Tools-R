@@ -12,9 +12,11 @@
 #'
 #' @section Support statement:
 #' Released contracts: FHR 2.1, FHP 1.2 and FHGFF3 1.2 (specification v0.6.0).
-#' FHT and FHGM have no released contract: no `schemaVersion`, no registry row and
-#' no w3id URL. They are reachable only through the explicit rule V7 draft lane
-#' ([bh_draft_lane()]), and this package makes no released-support claim for either.
+#' The family has published FHT 1.0 and native FHGM 0.1, but this consumer does
+#' not select those released forms. Its FHT development snapshot carries
+#' `schemaVersion: 1.0`; FHGM here is the historical embedded-record extension.
+#' Both are reachable only through the explicit, pinned rule V7 lane
+#' ([bh_draft_lane()]), without released-support claims for either.
 #'
 #' @keywords internal
 #' @useDynLib FAIRbioHeadersTools, .registration = TRUE, .fixes = "C_"

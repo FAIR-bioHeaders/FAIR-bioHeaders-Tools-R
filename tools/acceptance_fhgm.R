@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 #' Rule V7 draft-lane acceptance: the FHGM development suite, run natively, layer by layer.
 #'
-#' Separate, labelled, and never merged into the shared ledger: these 62 vectors are
+#' Separate, labelled, and never merged into the shared ledger: these 92 vectors are
 #' published by FHGM-Specification against an UNRELEASED model contract (rule V7). FHGM is
 #' not a header type - its records are transported inside an FHGFF3 header under
 #' `x-fhgm-models` and carry no `schema` field - so this run compares the layers that suite
@@ -14,7 +14,7 @@
 #'
 #' A pass here says the pinned draft bytes behave as their own suite expects through this
 #' reader, for the rules in scope. It is not, and never becomes, a claim that FHGM is
-#' supported: FHGM has no schemaVersion, no registry row and no w3id URL (see
+#' supported: this consumer does not adopt the published native FHGM contract (see
 #' docs/CAPABILITY-MATRIX.md).
 #'
 #' This script needs only R, this package and the data vendored in the repository. It exits
@@ -72,12 +72,12 @@ for (nm in names(receipt)) say(nm, "=", receipt[[nm]])
 # The run is only evidence if it actually compared what it claims to compare: every vector
 # accounted for, the two layers that are in scope for all of them agreeing on all of them,
 # and not one vector more or less judged at the model layer. The counts below are the
-# re-pinned expectations for manifest e41f05fd8bb8b8ec... (62 vectors): 19 compared at the
-# model layer, 43 not-run with the rule that keeps them out named. They move together with
+# re-pinned expectations for manifest d42b621165951dc0... (92 vectors): 37 compared at the
+# model layer, 55 not-run with the rule that keeps them out named. They move together with
 # the workflow's pinned literals, deliberately, and only when the suite is re-pinned by
 # reading what moved.
-n_eval <- 62L
-n_model <- 19L
+n_eval <- 92L
+n_model <- 37L
 bad <- 0L
 if (receipt$vectorsFailed > 0L) {
   say("FAIL: ", receipt$vectorsFailed, " vector(s) disagreed with the published layers")

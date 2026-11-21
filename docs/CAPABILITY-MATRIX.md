@@ -1,46 +1,38 @@
 # Capability matrix: type × operation × serialization × contract version
 
-Status date: **2026-11-18** (re-rendered with the round-13 coordinated draft re-pin: FHT
-contract `4156353a` and 82-vector suite, FHGM contract `b7075e58` and 62-vector suite).
-This file is the published capability statement of the
-`FAIRbioHeadersTools` R package. It is generated from `bh_capability()` by
-`tools/render_capability_matrix.R`; the code and this table cannot drift apart
-silently, because CI re-renders and compares.
+Status date: **2026-11-20**, after the user-requested development-pin refresh:
+FHT contract `eb6c36d3` / 93-vector suite `e6ba1c73`; FHGM record contract
+`06176262` remains unchanged / 92-vector suite `e8e26d7c`.
+This file is generated from `bh_capability()` by `tools/render_capability_matrix.R`;
+CI re-renders it and refuses drift between the code and this published table.
 
-The claim being bounded: **five types registered is not five types supported.**
-FHR, FHP and FHGFF3 are released contracts read natively. FHT and FHGM are drafts
-under rule V7 of `docs/SCHEMA-VERSIONS.md` (FAIR-bioHeaders-Specification): they
-have no `schemaVersion`, no entry in the version registry, no w3id URL, and no
-released form here. They are reachable only through the explicit, digest-pinned,
-warning-emitting opt-in lane. FHGM is additionally **not a header type at all**:
-its records are model records transported inside an FHGFF3 header under
-`x-fhgm-models`, carrying no `schema` field of their own. FHGM's two `draft-lane`
-cells cover the transport rule (K1, including its carrier-identity clause: the
-header must cite a registered FHGFF3 release) and the per-record contract (K2); the
-checker's cross-record rules K3-K6 stay `not-supported-yet` with their own rows,
-and 43 of the 62 vectors in FHGM's own suite are reported `not-run` rather than
-passed.
+**Five types registered is not five types supported.** FHR, FHP and FHGFF3 use
+released contracts bundled from specification v0.6.0. This consumer's FHT and
+FHGM forms remain an explicit, digest-pinned, warned development lane; the family
+has published FHT 1.0 and native FHGM 0.1, but this refresh does not adopt those
+released selection forms. The FHT snapshot carries schemaVersion 1.0. FHGM here
+is the historical extension model carried inside FHGFF3 under `x-fhgm-models`,
+not the published native model representation or a header type.
 
-Draft-scope limitation, stated rather than inherited (round-13, 2026-11-18): the
-pinned FHGM record-contract bytes incorporate a widened `layers.model` semantics -
-a model `pass` now additionally implies trimmed, invisible-character-free text,
-RFC 3986 schemes with a real host, non-blank deposits, NFC-unique identifiers and a
-root-level gene target. Upstream itself records that semantics in
-`development/conformance/LAYER-SEMANTICS-PROPOSAL.md` as **proposed, not adopted**
-(FHGM-Specification#22, #27 and #28 remain open decisions), and the file is vendored
-in `tests/draft/fhgm/` only because the suite mirrors the whole upstream non-script
-conformance subtree - its presence is not adoption here. K4 abstention is unresolved
-upstream; K4 stays `not-supported-yet` in this package **by design**, and all 11 K4
-vectors are reported not-run. On the FHT side, 4 of the 82 pinned suite vectors are
-marked `promotion: candidate-unreviewed` and are presented as unreviewed candidates,
-never as reviewed expectations.
+The FHT lane now enforces owning C1 completeness-count sums with exact integer
+arithmetic up to `2^53 - 1` per count; larger values raise `bh_limit` rather than
+crediting rounded equality. This consumer limit is not a schema maximum. Schema validation still decides count types and requiredness. Its
+93-vector development suite has no `candidate-unreviewed` entries at this pin.
+FHGM compares base and checksum on all 92 vectors and the implemented K1/K2
+model scope on 37 (6 expected passes and 31 expected rejections). The other 55
+are explicitly not-run at the model layer with named gaps: K3 occurs in 8, K4
+in 18, K5 in 8, K6 in 21 and B1 in 3; categories overlap. Passing base/checksum
+or a record schema never substitutes for those missing predicates or a full
+model verdict. The new owning manifest distinguishes historical `layers.model`
+process outcomes from earned full-model evidence. This partial consumer reports
+its actual scope rather than inheriting a complete model pass from either.
 
 Cell vocabulary:
 
 | mark | meaning |
 | --- | --- |
 | `native` | implemented in this package, covered by tests here and by the shared-vector run |
-| `draft-lane` | implemented against pinned unreleased bytes, reachable only with the rule V7 lane open, warned on every read, never a released-support claim |
+| `draft-lane` | implemented against pinned development bytes, reachable only with the rule V7 lane open, warned on every read, never a released-support claim |
 | `not-supported-yet` | a gap; the `blocker` column gives the reason and the `tracker` column the issue that owns it. Never blank, never implied by a neighbouring cell |
 | `not-applicable` | the combination does not exist in the specification (why is in `blocker`) |
 
@@ -65,11 +57,11 @@ compilation is not verified).
 | operation | serialization | contract versions | support | blocker | tracker |
 | --- | --- | --- | --- | --- | --- |
 | read_model_records | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **draft-lane** | bh_fhgm_models() returns the transported records and bh_draft_pins() names the bytes they were read against; this build retains the historical extension draft; native FHGM 0.1 is published in specification v0.8.0. FHGM records carry no schema field, so the file is routed by its own FHGFF3 citation under V1-V3 and the lane selects only the contract applied to the records. Reads through the shared reader stay uninterpreted extension data (R15); this operation is the opt-in lane, warning on every call. | FHGM-Specification#8,FHGM-Specification#9,FAIR-bioHeaders-Specification#204 |
-| validate_model_records | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **draft-lane** | bh_validate_fhgm() evaluates each record against the pinned draft contract (K2) plus the K1 transport rule (one or more records; no extension at all in an FHGFF3 1.0 header; and a carrier citation a registered FHGFF3 release answers to - raw main and unrecognised citation-version pairs are refused, while v0.5.0 with 1.1 and v0.6.0 with 1.1 or 1.2 are the recognised pairs, maintainer dual-base decision 2026-11-15), and reports the model verdict apart from the base FHGFF3 verdict. That is the earned scope: of the 62 published vectors, 19 turn on K1/K2 alone and are compared; the other 43 turn on K3-K6 or B1 and are reported not-run. The suite's own manifest records 42 of its 45 invalid vectors passing both the released base schema and the exact-byte checksum (43 pass the base layer and 44 the checksum layer singly), so only those cross-record rules separate them; passing them on the schema layer alone would inflate the claim rather than earn it. | FHGM-Specification#9 |
-| check_model_id_uniqueness | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K3 (modelId unique within one snapshot) is a cross-record check the draft checker performs and this package does not; the 7 vectors that turn on it are reported not-run by bh_draft_fhgm_vectors() | FHGM-Specification#9 |
-| resolve_feature_target | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K4 needs the GFF3 feature layer - featureId as written matching the decoded ID of exactly one local gene row - which belongs to gff3-validator, not to this package; the 11 vectors that turn on it are reported not-run. Whether the model layer may abstain from K4 at all is an open upstream decision (FHGM-Specification#22, #27, #28): the pinned bytes seal a widened model semantics that LAYER-SEMANTICS-PROPOSAL.md records as proposed, not adopted, and this package reports the K4 vectors not-run rather than inheriting that contested verdict | FHGM-Specification#9 |
-| check_reference_agreement | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K5 compares each record's reference with the enclosing file's genome link and rejects a contradiction; that cross-record comparison is part of the draft checker and is not ported here - only the record's own shape is checked (K2); the 7 vectors that turn on it are reported not-run | FHGM-Specification#9 |
-| resolve_revision_pointer | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K6 predecessor-pointer resolution against explicitly supplied prior snapshots is not implemented; a resolved pointer would in any case only identify a predecessor, not accept a revision, which is a curator decision. The 17 vectors that turn on it are reported not-run | FHGM-Specification#9,FAIR-bioHeaders-Specification#204 |
+| validate_model_records | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **draft-lane** | bh_validate_fhgm() evaluates each record against the pinned draft contract (K2) plus the K1 transport rule (one or more records; no extension at all in an FHGFF3 1.0 header; and a carrier citation a registered FHGFF3 release answers to - raw main and unrecognised citation-version pairs are refused, while v0.5.0 with 1.1 and v0.6.0 with 1.1 or 1.2 are the recognised pairs, maintainer dual-base decision 2026-11-15), and reports the model verdict apart from the base FHGFF3 verdict. Of the 92 pinned development vectors, 37 are compared within K1/K2; 55 require unimplemented K3-K6 or B1 and are reported not-run. Of the 68 invalid vectors, 65 pass both base schema and checksum (66 pass base and 67 checksum individually); those layers alone do not earn a full model verdict. | FHGM-Specification#9 |
+| check_model_id_uniqueness | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K3 (modelId unique within one snapshot) is a cross-record check the draft checker performs and this package does not; the 8 vectors that turn on it are reported not-run by bh_draft_fhgm_vectors() | FHGM-Specification#9 |
+| resolve_feature_target | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K4 needs the GFF3 feature layer - featureId as written matching the decoded ID of exactly one local gene row - which belongs to gff3-validator, not to this package; all 18 K4-dependent vectors are reported not-run because this build has no complete trustworthy feature inventory. No K4 or full-model pass is inferred from passing the record schema. | FHGM-Specification#9 |
+| check_reference_agreement | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K5 compares each record's reference with the enclosing file's genome link and rejects a contradiction; that cross-record comparison is part of the draft checker and is not ported here - only the record's own shape is checked (K2); the 8 vectors that turn on it are reported not-run | FHGM-Specification#9 |
+| resolve_revision_pointer | nested in fhgff3 via x-fhgm-models | historical draft pin (rule V7) | **not-supported-yet** | K6 predecessor-pointer resolution against explicitly supplied prior snapshots is not implemented; a resolved pointer would in any case only identify a predecessor, not accept a revision, which is a curator decision. The 21 vectors that turn on it are reported not-run | FHGM-Specification#9,FAIR-bioHeaders-Specification#204 |
 | verify_checksum | none | historical draft pin (rule V7) | **not-applicable** | FHGM is not a file type: its records are covered by the checksum of the FHGFF3 file that transports them | NA |
 | read_header | fasta,gfa,fhgff3,jsonld,microdata | historical draft pin (rule V7) | **not-applicable** | this historical FHGM extension lane has no separate serialization; native FHGM is outside this build | NA |
 

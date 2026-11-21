@@ -11,14 +11,15 @@ Two tables are kept apart on purpose.
 \item \code{\link[=bh_contracts]{bh_contracts()}} lists the frozen contract copies under \verb{inst/schemas/}, one per
 header type per version, with the release, the commit of the source tag and the
 SHA-256 of the bytes. Selection rules V1 to V6 name these.
-\item \code{\link[=bh_types]{bh_types()}} lists the family: FHR, FHP and FHGFF3 as released, FHT as a draft with
-no released contract, and FHGM as a draft \emph{model} type that is not a header type at
-all - its records ride inside an FHGFF3 header under \code{x-fhgm-models}, so they carry
-no \code{schema} field to select on and no serialization of their own.
+\item \code{\link[=bh_types]{bh_types()}} lists this consumer's forms: FHR, FHP and FHGFF3 as released;
+FHT as an explicit development snapshot; FHGM as the historical extension
+\emph{model} type, not a header type. Those records ride inside FHGFF3 under
+\code{x-fhgm-models}, with no record \code{schema} field or separate serialization here.
 }
 
 Neither table is a support claim beyond what \code{\link[=bh_capability]{bh_capability()}} states operation by
-operation. FHT and FHGM get no \code{schemaVersion}, no registry row and no w3id URL here,
-and they stay out of \code{inst/schemas/versions.json}: rule V7, drafts take no release
-form.
+operation. The family has published FHT 1.0 and native FHGM 0.1; this build
+does not adopt their released selection forms or add their registry rows. The
+FHT development schema contains schemaVersion 1.0. Both consumer lanes stay
+outside \code{inst/schemas/versions.json} and require rule V7 opt-in.
 }

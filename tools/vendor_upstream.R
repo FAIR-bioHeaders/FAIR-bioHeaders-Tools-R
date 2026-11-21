@@ -194,7 +194,7 @@ vendored_file("inst/drafts/fht-draft.json", fht_repo, fht_commit, "fht.json", "d
   list(
     header_type = "FHT", citation = "https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/fht.json",
     head_at_retrieval = git_out(fht_repo, c("rev-parse", "origin/main")),
-    status = "draft; no released contract, no schemaVersion, no registry row, no w3id URL",
+    status = "historical development lane; consumer opt-in only, distinct from published FHT 1.0; no released selection form is adopted",
     retrieved_by = paste0("Rscript tools/vendor_upstream.R; bytes from `git show ",
       substr(fht_commit, 1, 8), ":fht.json` in the FHT-Specification checkout")
   )
@@ -448,25 +448,22 @@ prov <- list(
     manifest_sha256 = unname(gper[["manifest.json"]]),
     combined_sha256 = gcombined,
     vectors = length(gman$vectors), status = gman$status,
+    status_source_note = paste0(
+      "status is the owning manifest's verbatim source text, including historical ",
+      "publication wording. Family native FHGM 0.1 is now published; this consumer ",
+      "refreshes only the development extension lane and makes no native support claim."
+    ),
     examples_dir = "tests/draft/examples", examples = length(esper),
     examples_sha256 = setNames(as.list(unname(esper)), names(esper)),
     note = paste0(
-      "draft evidence, not part of the 291. Layers are recorded per vector: base (the ",
-      "released fhgff3.json contract over the parsed header), checksum, gff3 (a separate ",
-      "tool; every vector is recorded as accept) and model (the draft checker). This ",
-      "package reports base, checksum and the K1/K2 model layer natively; the checker's ",
-      "cross-record rules K3-K6 and the gff3 layer are not implemented here and their ",
-      "vectors are reported not-run with the rule named. LIMITATION, stated not implied: ",
-      "the pinned record-contract bytes encode a widened layers.model semantics - a pass ",
-      "additionally implies trimmed, invisible-character-free text, RFC 3986 schemes with ",
-      "a real host, non-blank deposits, NFC-unique identifiers and a root-level gene ",
-      "target - which upstream records in development/conformance/LAYER-SEMANTICS-PROPOSAL.",
-      "md as proposed, not adopted (FHGM-Specification#22, #27 and #28 remain open ",
-      "decisions). That proposal file is vendored only because this suite mirrors the ",
-      "whole upstream non-script conformance subtree; its presence here is not adoption ",
-      "by this package. K4 abstention is unresolved upstream, and K4 stays not-supported-",
-      "yet here by design: this package does not implement the GFF3 feature layer and ",
-      "reports every K4 vector not-run rather than inheriting a contested verdict."
+      "development evidence, separate from the frozen 291. This consumer compares base ",
+      "and checksum for every vector and model outcomes only for its implemented K1/K2 ",
+      "scope. K3 uniqueness, K4 feature targeting, K5 reference agreement, K6 supplied ",
+      "history resolution and B1 complete evidence remain explicitly not-run where ",
+      "required; no complete FHGM model verdict is claimed from partial layers. ",
+      "Owning-suite layers.model records historical checker outcomes; newer earned ",
+      "evidence expectations remain separate. Published native FHGM 0.1 is a different ",
+      "representation, not adopted by this extension-lane refresh."
     ),
     previous = rotate_suite("draft_fhgm_vectors",
       unname(gper[["manifest.json"]]), gcombined,

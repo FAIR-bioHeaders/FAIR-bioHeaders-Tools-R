@@ -5,15 +5,16 @@
 #' * [bh_contracts()] lists the frozen contract copies under `inst/schemas/`, one per
 #'   header type per version, with the release, the commit of the source tag and the
 #'   SHA-256 of the bytes. Selection rules V1 to V6 name these.
-#' * [bh_types()] lists the family: FHR, FHP and FHGFF3 as released, FHT as a draft with
-#'   no released contract, and FHGM as a draft *model* type that is not a header type at
-#'   all - its records ride inside an FHGFF3 header under `x-fhgm-models`, so they carry
-#'   no `schema` field to select on and no serialization of their own.
+#' * [bh_types()] lists this consumer's forms: FHR, FHP and FHGFF3 as released;
+#'   FHT as an explicit development snapshot; FHGM as the historical extension
+#'   *model* type, not a header type. Those records ride inside FHGFF3 under
+#'   `x-fhgm-models`, with no record `schema` field or separate serialization here.
 #'
 #' Neither table is a support claim beyond what [bh_capability()] states operation by
-#' operation. FHT and FHGM get no `schemaVersion`, no registry row and no w3id URL here,
-#' and they stay out of `inst/schemas/versions.json`: rule V7, drafts take no release
-#' form.
+#' operation. The family has published FHT 1.0 and native FHGM 0.1; this build
+#' does not adopt their released selection forms or add their registry rows. The
+#' FHT development schema contains schemaVersion 1.0. Both consumer lanes stay
+#' outside `inst/schemas/versions.json` and require rule V7 opt-in.
 #'
 #' @name registry
 NULL
@@ -133,7 +134,8 @@ bh_types <- function() {
     note = c(
       rep("released in the v0.6.0 baseline", 3),
       paste0(
-        "no released contract: readable only through the rule V7 draft lane, ",
+        "this consumer has no released FHT selection form; development snapshot only ",
+        "through rule V7 (family FHT 1.0 is published), ",
         "pinned by commit and SHA-256, warns on every read"
       ),
       paste0(
