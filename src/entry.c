@@ -298,8 +298,8 @@ SEXP bh_selftest(void) {
   return ScalarInteger(0);
 }
 
-/* Registered under short names; NAMESPACE binds them with the "bh_" fix, so R code
- * calls .Call(bh_digest, ...). Keeping the two spellings apart makes it obvious in a
+/* Registered under short names; NAMESPACE binds them with the "C_" prefix, so R code
+ * calls .Call(C_digest, ...). Keeping the two spellings apart makes it obvious in a
  * backtrace which layer a failure came from. */
 static const R_CallMethodDef bh_calls[] = {
     {"digest", (DL_FUNC)&bh_digest, 3},

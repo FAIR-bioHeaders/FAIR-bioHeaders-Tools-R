@@ -21,6 +21,10 @@ NULL
 #' @param operation Optional filter, e.g. `"validate_contract"`.
 #' @return A data frame with `header_type`, `type_status`, `operation`, `serialization`,
 #'   `contract_versions`, `support`, `blocker` and `tracker`.
+#' @examples
+#' cap <- bh_capability()            # type x operation x serialization x version
+#' cap[cap$header_type == "FHR" & cap$operation == "verify_checksum", 1:5]
+#' bh_capability(header_type = "FHGM")   # narrow one type; operation does the same
 #' @export
 bh_capability <- function(header_type = NULL, operation = NULL) {
   rows <- .bh_cached("capability", .bh_rows())
@@ -58,7 +62,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
   fhr <- "FHR 1, 2.0, 2.1"
   fhp <- "FHP 1.0, 1.1, 1.2"
   fhg <- "FHGFF3 1.0, 1.1, 1.2"
-  none_yet <- "no released contract (rule V7)"
+  none_yet <- "historical draft pin (rule V7)"
 
   out <- list(
     # --- released types, native file forms ---
@@ -134,13 +138,13 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
 
     # --- draft types, lane only ---
     R("FHT", "draft", "read_header", "fasta (draft)", none_yet, "draft-lane",
-      "no released contract: scheduled as specification v0.7.0; readable only with the V7 lane open, against bytes pinned by commit and SHA-256, warning on every read",
+      "this build retains the historical FHT draft; family FHT 1.0 is published in specification v0.7.0; readable only with the V7 lane open, against bytes pinned by commit and SHA-256, warning on every read",
       "FHT-Specification#8,FHT-Specification#9,FHT-Specification#10"),
     R("FHT", "draft", "validate_contract", "fasta (draft)", none_yet, "draft-lane",
       "as above; a draft result is not a released-contract result and takes no release form",
       "FHT-Specification#9"),
     R("FHT", "draft", "verify_checksum", "fasta (draft)", none_yet, "draft-lane",
-      "the checksum rule is the shared one and runs natively; what is unresolved is selfChecksum/parentLink, which finalize at FHT release",
+      "the checksum rule is the shared one and runs natively; what is unresolved is selfChecksum/parentLink, which belong to this historical draft pin; this build does not adopt the published FHT contract",
       "FHT-Specification#10"),
     R("FHT", "draft", "select_schema_V1_V6", "fasta (draft)", none_yet, "not-applicable",
       "V1-V6 cover released types only; V7 is the lane, and a release-shaped FHT URL stays V5 with the lane open or closed",
@@ -155,7 +159,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       "draft-lane",
       paste0(
         "bh_fhgm_models() returns the transported records and bh_draft_pins() names the ",
-        "bytes they were read against; no released contract: scheduled as specification ",
+        "bytes they were read against; this build retains the historical extension draft; native FHGM 0.1 is published in specification ",
         "v0.8.0. FHGM records carry no schema field, so the file is routed by its own ",
         "FHGFF3 citation under V1-V3 and the lane selects only the contract applied to the ",
         "records. Reads through the shared reader stay uninterpreted extension data (R15); ",
@@ -172,34 +176,28 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
         "with 1.1 and v0.6.0 with 1.1 or 1.2 are the recognised pairs, maintainer ",
         "dual-base decision 2026-11-15), and reports the model verdict apart from the ",
         "base FHGFF3 ",
-        "verdict. That is the earned scope: of the 62 published vectors, 19 turn on K1/K2 ",
-        "alone and are compared; the other 43 turn on K3-K6 or B1 and are reported not-run. ",
-        "earn it. The suite's own manifest records 42 of its 45 invalid vectors passing ",
-        "both the released base schema and the exact-byte checksum (43 pass the base ",
-        "layer and 44 the checksum layer singly), so only those cross-record rules ",
-        "separate them; passing them on the ",
-        "schema layer alone would inflate the claim rather than earn it."
+        "verdict. Of the 92 pinned development vectors, 37 are compared within K1/K2; ",
+        "55 require unimplemented K3-K6 or B1 and are reported not-run. Of the 68 ",
+        "invalid vectors, 65 pass both base schema and checksum (66 pass base and 67 ",
+        "checksum individually); those layers alone do not earn a full model verdict."
       ),
       "FHGM-Specification#9"),
     R("FHGM", "draft", "check_model_id_uniqueness", "nested in fhgff3 via x-fhgm-models",
       none_yet, "not-supported-yet",
       paste0(
         "K3 (modelId unique within one snapshot) is a cross-record check the draft ",
-        "checker performs and this package does not; the 7 vectors that turn on it are ",
+        "checker performs and this package does not; the 8 vectors that turn on it are ",
         "reported not-run by bh_draft_fhgm_vectors()"
       ),
       "FHGM-Specification#9"),
     R("FHGM", "draft", "resolve_feature_target", "nested in fhgff3 via x-fhgm-models",
       none_yet, "not-supported-yet",
       paste0(
-        "K4 needs the GFF3 feature layer - featureId resolving, percent-decoded, to ",
+        "K4 needs the GFF3 feature layer - featureId as written matching the decoded ID of ",
         "exactly one local gene row - which belongs to gff3-validator, not to this ",
-        "package; the 11 vectors that turn on it are reported not-run. Whether the ",
-        "model layer may abstain from K4 at all is an open upstream decision ",
-        "(FHGM-Specification#22, #27, #28): the pinned bytes seal a widened model ",
-        "semantics that LAYER-SEMANTICS-PROPOSAL.md records as proposed, not adopted, ",
-        "and this package reports the K4 vectors not-run rather than inheriting that ",
-        "contested verdict"
+        "package; all 18 K4-dependent vectors are reported not-run because this build ",
+        "has no complete trustworthy feature inventory. No K4 or full-model pass is ",
+        "inferred from passing the record schema."
       ),
       "FHGM-Specification#9"),
     R("FHGM", "draft", "check_reference_agreement", "nested in fhgff3 via x-fhgm-models",
@@ -208,7 +206,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
         "K5 compares each record's reference with the enclosing file's genome link and ",
         "rejects a contradiction; that cross-record comparison is part of the draft ",
         "checker and is not ported here - only the record's own shape is checked (K2); ",
-        "the 7 vectors that turn on it are reported not-run"
+        "the 8 vectors that turn on it are reported not-run"
       ),
       "FHGM-Specification#9"),
     R("FHGM", "draft", "resolve_revision_pointer", "nested in fhgff3 via x-fhgm-models",
@@ -216,7 +214,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       paste0(
         "K6 predecessor-pointer resolution against explicitly supplied prior snapshots is ",
         "not implemented; a resolved pointer would in any case only identify a ",
-        "predecessor, not accept a revision, which is a curator decision. The 17 vectors ",
+        "predecessor, not accept a revision, which is a curator decision. The 21 vectors ",
         "that turn on it are reported not-run"
       ),
       "FHGM-Specification#9,FAIR-bioHeaders-Specification#204"),
@@ -224,7 +222,7 @@ bh_capability <- function(header_type = NULL, operation = NULL) {
       "FHGM is not a file type: its records are covered by the checksum of the FHGFF3 file that transports them",
       NA_character_),
     R("FHGM", "draft", "read_header", "fasta,gfa,fhgff3,jsonld,microdata", none_yet,
-      "not-applicable", "FHGM has no serialization of its own", NA_character_)
+      "not-applicable", "this historical FHGM extension lane has no separate serialization; native FHGM is outside this build", NA_character_)
   )
   do.call(rbind, out)
 }

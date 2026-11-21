@@ -18,3 +18,8 @@ A data frame with \code{header_type}, \code{type_status}, \code{operation}, \cod
 \description{
 The capability matrix
 }
+\examples{
+cap <- bh_capability()            # type x operation x serialization x version
+cap[cap$header_type == "FHR" & cap$operation == "verify_checksum", 1:5]
+bh_capability(header_type = "FHGM")   # narrow one type; operation does the same
+}

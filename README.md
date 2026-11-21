@@ -9,14 +9,35 @@ the checksum and the YAML rules are R and vendored C. JSON Schema validation use
 
 Released contracts, validated as JSON Schema draft/2020-12 with asserted `format`
 (specification v0.6.0): **FHR 2.1, FHP 1.2, FHGFF3 1.2**.
-FHT and FHGM are drafts under selection rule V7: opt-in, digest-pinned, warned on
-every read, and **never a support claim** - see `docs/CAPABILITY-MATRIX.md`.
+This package was built while FHT and FHGM were drafts under selection rule V7
+(opt-in, digest-pinned, warned on every read, never a support claim) and it
+still carries them that way: it recognises neither by default and claims no
+released-contract support for either. The family has since published FHT 1.0
+(specification v0.7.0, 2026-11-20) and FHGM 0.1 as a native model contract
+(v0.8.0, `model-contracts/fhgm/0.1/` — not a header type, so no header-registry
+row); promoting this consumer's pins to those released forms is a separate
+deliberate dated change, not implied. See `docs/CAPABILITY-MATRIX.md`.
+
+The user-requested CI repair on November 20 deliberately refreshed this development
+lane to FHT contract `eb6c36d3` (93 vectors at suite `e6ba1c73`) and FHGM suite
+`e8e26d7c` (92 vectors). FHGM record/overlay bytes and all released bundles stay
+unchanged. FHT C1 completeness sums are now checked explicitly, with exact
+arithmetic within the reader's exact-integer range (at most `2^53 - 1` per
+count); larger counts raise `bh_limit` instead of trusting rounded values. This
+is a consumer precision limit, not a schema maximum. The FHGM model scope remains K1/K2 and keeps every other required rule
+labelled not-run. See the dated entry in `docs/STATUS.md`.
 
 ## Install
 
 ```sh
 R CMD build . && R CMD INSTALL FAIRbioHeadersTools_*.tar.gz
 ```
+
+Not on CRAN (checked against the CRAN index and its archive on 2026-11-20: not
+present, no GitHub Release either); this is a source install, and `main` tracks
+development. Measured on 2026-11-20 with R 4.6.1 on macOS (Apple clang, system
+zlib): build, install, the 1200+ test suite and `tools/acceptance_native.R` all
+run clean from a fresh temporary library.
 
 A C compiler and `zlib` (`-lz` in `src/Makevars` / `src/Makevars.win`, declared in
 `DESCRIPTION` `SystemRequirements`) are required: `src/` compiles both the vendored
@@ -64,7 +85,7 @@ bh_draft_fhgm_vectors()                              # the FHGM suite, layer by 
 and `docs/CAPABILITY-MATRIX.md` is that table published. Unfilled cells carry a
 reason and a tracker - in particular the JSON-LD (37 vectors) and microdata
 (26 vectors) readers are **not implemented**, nor is the FHGM checker's cross-record
-layer (K3-K6/B1: 43 of its 62 vectors are reported `not-run`, not passed; 19 are
+layer (K3-K6/B1: 55 of its 92 vectors are reported `not-run`, not passed; 37 are
 compared at the model layer). FHGM's lane
 cells cover reading the transported records and validating each one against the
 pinned draft record contract (K1/K2).

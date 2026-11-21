@@ -144,6 +144,7 @@ NULL
   }
 
   rows <- list()
+  crosswalk <- jsonlite::fromJSON(.bh_inst("references", "retirement-crosswalk.json"), simplifyVector = FALSE)
   for (v in man$vectors) {
     fmt <- v$format
     rules <- unlist(if (!is.null(v$rules)) v$rules else v$rule)
@@ -158,21 +159,20 @@ NULL
           paste0("not-run: no native reader for the ", fmt, " serialization"))
       next
     }
+    if (!is.null(limit) && .bh_count_fmt(rows, fmt) >= limit) {
+      rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "not-run",
+        paste0("not-run: beyond the limit of ", limit, " vectors per format"))
+      next
+    }
     path <- file.path(dir, v$file)
     if (!file.exists(path)) {
       rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "missing-fixture",
         paste0("no such file: ", v$file))
       next
     }
-    if (!is.null(limit) && .bh_count_fmt(rows, fmt) >= limit) {
-      rows[[length(rows) + 1L]] <- .bh_conf_row(v, rules, "not-run",
-        paste0("not-run: beyond the limit of ", limit, " vectors per format"))
-      next
-    }
     # D9: historical noncanonical parents cannot prove the original predicate.
     # Bind both payloads, then evaluate the explicit canonical counterpart before
     # crediting its rule. Reports retain historical and evidence IDs separately.
-    crosswalk <- jsonlite::fromJSON(.bh_inst("references", "retirement-crosswalk.json"), simplifyVector = FALSE)
     retired <- Filter(function(x) identical(x$id, v$id), crosswalk$cases)
     if (length(retired)) {
       counterpart <- retired[[1L]]
@@ -359,7 +359,7 @@ NULL
 
 .bh_count_fmt <- function(rows, fmt) {
   sum(vapply(rows, function(r) identical(r$format, fmt) &&
-      r$status %in% c("pass", "fail"), logical(1L)))
+      r$status != "excluded", logical(1L)))
 }
 
 .bh_conf_row <- function(v, rules, status, reason, observed = NA_character_,
@@ -406,7 +406,7 @@ bh_conformance <- function(suite = NULL, formats = NULL, draft = FALSE, limit = 
 
 #' Runs the FHT development suite through the draft lane
 #'
-#' These 82 vectors are published by FHT-Specification, not by the shared specification, and
+#' These 93 vectors are published by FHT-Specification, not by the shared specification, and
 #' their manifest says its expectations are "derived from the rule text, never from an
 #' implementation under test". They are therefore reported separately, under the rule V7 lane
 #' with the pinned draft bytes, and they never join the 291. A result here is draft evidence:

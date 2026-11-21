@@ -29,16 +29,18 @@ jobs:
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Record the R runtime
         run: |
           which R Rscript || true
           R --version | head -2
 
-      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-pandoc@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
 
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
         with:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
@@ -107,7 +109,7 @@ jobs:
 
       - name: Upload the check log
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: check-${{ matrix.os }}-r${{ matrix.r }}
           path: ${{ runner.temp }}/check-reports

@@ -1,6 +1,6 @@
 # The FHT development suite, run natively through the rule V7 lane.
 #
-# These 82 vectors are published by FHT-Specification, not by the shared specification;
+# These 93 vectors are published by FHT-Specification, not by the shared specification;
 # their manifest states its expectations are "derived from the rule text, never from an
 # implementation under test". They are draft evidence: a pass here says what this build
 # does with the pinned unreleased bytes, never that FHT is supported. They are never
@@ -11,8 +11,8 @@ test_that("the pinned FHT suite runs in full, through the lane, with the pinned 
   pins <- bh_draft_pins()
   expect_true(all(pins$digest_ok))
   x <- bh_draft_vectors()
-  expect_equal(x$vectors, 82L)
-  expect_equal(sum(x$results$status == "pass"), 82L)
+  expect_equal(x$vectors, 93L)
+  expect_equal(sum(x$results$status == "pass"), 93L)
   expect_equal(sum(x$results$status %in% c("fail", "error", "missing-fixture")), 0L)
   expect_true(x$ok)
   expect_false(isTRUE(x$limited))
@@ -24,7 +24,7 @@ test_that("the pinned FHT suite runs in full, through the lane, with the pinned 
   # is named on the vectors that lean on it
   gap_rows <- x$results[nzchar(x$results$rule_gaps), ]
   expect_true(all(grepl("C2|C3", gap_rows$rule_gaps)))
-  cat("draft lane: 82/82 FHT development vectors pass against the pinned draft\n")
+  cat("draft lane: 93/93 FHT development vectors pass against the pinned draft\n")
 })
 
 test_that("the parentLink verdicts the re-pinned FHT suite seals are the verdicts we derive", {
@@ -220,7 +220,7 @@ test_that("a draft suite whose bytes moved off the pin is refused before any vec
 test_that("the shared run is unaffected by the draft lane existing: default off", {
   # with the lane closed (the default), the shared acceptance numbers are exactly what
   # they were before the lane existed - the same 228 supported vectors run, none of the
-  # 82 draft vectors is anywhere in the accounting, and no draft warning is emitted
+  # 93 draft vectors is anywhere in the accounting, and no draft warning is emitted
   warns <- character()
   x <- withCallingHandlers(
     bh_conformance(),

@@ -1,5 +1,41 @@
 # STATUS — measured state of the R library
 
+## Current — 2026-11-20 deliberate development-pin repair
+
+The user explicitly requested repair of the R #27 freshness failures. This
+supersedes earlier retain-pins dispositions for this PR, without adopting released
+FHT/native FHGM forms. Released schemas, the v0.6.0 registry, the frozen 291
+payloads and the default golden remain unchanged. Older dated receipts below
+remain historical evidence, not the current development pin statement.
+
+| Development target | Last-touch source commit | SHA-256 prefix | Bytes / vectors |
+| --- | --- | --- | --- |
+| FHT contract | `eb6c36d37771918a754d12719a29cad1876fb73c` | `b62c4e227042e162` | 35,293 bytes |
+| FHT suite | `e6ba1c737c9caddc53b99a4a107825d7a16a4765` | `d0147d3ad97c0fad` | 89,146 bytes / 93 vectors |
+| FHGM record, unchanged | `06176262f9824f26d974a15d8feeebde1fbeb0a8` | `b7075e5872e0a5ff` | 11,522 bytes |
+| FHGM overlay, unchanged | `019bc29e32ce225791053dd2ce323bb91f304ce1` | `533b3120f4a86590` | 3,191 bytes |
+| FHGM suite | `e8e26d7cb9024b83e474045291f56a46e57a1ecf` | `d42b621165951dc0` | 113,389 bytes / 92 vectors |
+
+Content-addressed GitHub API base64 payloads were measured and compared with
+independent private-clone git objects. FHT main was `188bda6c...`; FHGM main was
+`bebcc4db...`; file last-touch pins stay distinct from those observation heads.
+The existing vendor helper staged the data and provenance together, preserving
+previous pin records on actual byte changes. No upstream vector was edited here.
+
+Current development evidence: FHT **93/93**; FHGM **37 compared / 55 not-run of 92**,
+with base **92/92** and checksum **92/92**. The supported FHGM model scope remains
+K1/K2; K3–K6/B1 remain gaps with named reasons, not manufactured passes. The
+new FHT suite exposed two previously accepted invalid BUSCO sums. C1 now rejects
+both sum directions, accepts integral numeric values, defers missing/ill-typed
+counts to schema checks, and uses exact bounded subtraction. Numeric counts above
+`2^53 - 1` raise `bh_limit` as an explicit reader precision limit, not a schema
+maximum; a raw YAML rounding regression proves no arithmetic pass is credited.
+
+All full-suite and current-head CI receipts remain separate from these development
+counts. Source/measurement evidence for this repair is coordinated on R #27.
+See `docs/NATIVE-ACCEPTANCE.md` for the exact partial-model boundary and pinned
+upstream context links. The following dated sections describe previous snapshots.
+
 Date: **2026-11-14**, with the 2026-11-15 sections below added for #10 and #12, a
 2026-11-16 section for the draft-suite re-pin, a 2026-11-18 section for the
 round-13 coordinated draft re-pin, and a 2026-11-19 section for #21 and #23. Everything in

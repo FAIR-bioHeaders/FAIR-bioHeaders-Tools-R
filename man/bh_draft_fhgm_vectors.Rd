@@ -15,7 +15,7 @@ bh_draft_fhgm_vectors(suite = NULL, limit = NULL)
 A \code{bh_conformance}-shaped object with one column per layer.
 }
 \description{
-FHGM's published draft suite (62 vectors from FHGM-Specification
+FHGM's published draft suite (92 vectors from FHGM-Specification
 \verb{development/conformance/}) is written differently from the shared one: each vector
 records what four independent checks report, because separability is the point - \code{base}
 (the released FHGFF3 contract over the parsed header), \code{checksum} (whether the file-bound

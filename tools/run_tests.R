@@ -8,7 +8,7 @@
 
 suppressMessages(library(testthat))
 res <- as.data.frame(test_dir("tests/testthat",
-  package = "FAIRbioHeadersTools", reporter = "silent", stop_on_failure = FALSE
+  package = "FAIRbioHeadersTools", reporter = "summary", stop_on_failure = FALSE
 ))
 tests <- sum(res$nb)
 failed <- sum(res$failed)

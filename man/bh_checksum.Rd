@@ -21,3 +21,10 @@ bh_verify(path, ...)
 \description{
 Verifies a file's checksum, and nothing else
 }
+\examples{
+f <- tempfile(fileext = ".fasta")
+writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0", ">seq1", "ACGT"), f)
+cs <- bh_checksum(f)         # the byte layer: what the file must state vs what it is
+names(cs)                    # recorded, computed, valid, bytes, late_header_lines, why
+bh_verify(f)                 # one logical: does the stated checksum match?
+}

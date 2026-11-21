@@ -66,6 +66,9 @@ NULL
 #'   repository that owns the type is in the lane.
 #' @return A list with `rule`, `header_type`, `release`, `file`, `schema_version`,
 #'   `status` (`released`, `fhr1`, `draft` or `unsupported`), `message` and `warnings`.
+#' @examples
+#' bh_select("https://w3id.org/fair-bioheaders/fhr/v0.6.0", "2.1")  # V3, released FHR
+#' bh_select("https://example.org/unknown/1", NULL)                 # refused, not guessed
 #' @export
 bh_select <- function(value, schema_version = NULL, draft = FALSE) {
   reg <- .bh_registry()

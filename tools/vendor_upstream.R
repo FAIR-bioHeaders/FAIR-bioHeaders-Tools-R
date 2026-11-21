@@ -31,6 +31,8 @@
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
+source("tests/vendor_tree.R")
+
 .options <- commandArgs(trailingOnly = TRUE)
 arg <- function(name, default = NULL) {
   i <- match(name, .options)
@@ -192,7 +194,7 @@ vendored_file("inst/drafts/fht-draft.json", fht_repo, fht_commit, "fht.json", "d
   list(
     header_type = "FHT", citation = "https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/main/fht.json",
     head_at_retrieval = git_out(fht_repo, c("rev-parse", "origin/main")),
-    status = "draft; no released contract, no schemaVersion, no registry row, no w3id URL",
+    status = "historical development lane; consumer opt-in only, distinct from published FHT 1.0; no released selection form is adopted",
     retrieved_by = paste0("Rscript tools/vendor_upstream.R; bytes from `git show ",
       substr(fht_commit, 1, 8), ":fht.json` in the FHT-Specification checkout")
   )
@@ -230,7 +232,6 @@ cat("draft vectors (FHT-Specification, development suite, labelled as such upstr
 # These are NOT part of the 291. The FHT manifest's own status field says the expectations
 # are "derived from the rule text, never from an implementation under test", so the results
 # they produce are draft evidence and are reported separately by bh_draft_vectors().
-unlink(file.path(here, "tests", "draft", "fht"), recursive = TRUE)
 dcmd <- paste("git", shQuote("-C"), shQuote(fht_repo),
               "archive --format=tar origin/main conformance >", shQuote(tar <- tempfile()))
 dst <- system2("/bin/sh", c("-c", shQuote(dcmd)), stdout = TRUE, stderr = TRUE)
@@ -239,19 +240,17 @@ if (!is.null(attr(dst, "status")) && attr(dst, "status") != 0) {
 }
 tmp <- tempfile("fhtraw")
 dir.create(tmp)
-system2("tar", c("-xf", shQuote(tar), "-C", shQuote(tmp)))
+if (system2("tar", c("-xf", shQuote(tar), "-C", shQuote(tmp))) != 0L) stop("FHT archive extraction failed")
 unlink(tar)
 # the archive's own directory is conformance/; the destination names the type that owns
 # these bytes, so the draft set cannot be mistaken for the shared suite
 dest <- file.path(here, "tests", "draft")
-unlink(dest, recursive = TRUE) # a stale layout from an interrupted run must not survive
 if (!dir.exists(file.path(tmp, "conformance"))) {
   stop("unexpected FHT archive layout: no conformance/ directory")
 }
 dir.create(dest, showWarnings = FALSE, recursive = TRUE)
 dfh <- file.path(dest, "fht")
-unlink(dfh, recursive = TRUE)
-file.rename(file.path(tmp, "conformance"), dfh)
+replace_vendor_tree(file.path(tmp, "conformance"), dfh)
 unlink(tmp, recursive = TRUE)
 if (!file.exists(file.path(dfh, "manifest.json"))) {
   stop("the FHT draft vectors did not land at ", dfh)
@@ -290,10 +289,8 @@ fhgm_conformance_path <- "development/conformance"
 fhgm_examples_path <- "development/examples"
 gdest <- file.path(here, "tests", "draft", "fhgm")
 edest <- file.path(here, "tests", "draft", "examples")
-unlink(gdest, recursive = TRUE)
-unlink(edest, recursive = TRUE)
 
-archive_subtree <- function(sub, target) {
+archive_subtree <- function(sub, staging) {
   t <- tempfile(fileext = ".tar")
   c1 <- paste("git", shQuote("-C"), shQuote(fhgm_repo),
               "archive --format=tar origin/main", sub, ">", shQuote(t))
@@ -303,18 +300,23 @@ archive_subtree <- function(sub, target) {
   }
   u <- tempfile("fhgmr")
   dir.create(u)
-  system2("tar", c("-xf", shQuote(t), "-C", shQuote(u)))
+  if (system2("tar", c("-xf", shQuote(t), "-C", shQuote(u))) != 0L) stop("FHGM archive extraction failed")
   unlink(t)
   if (!dir.exists(file.path(u, sub))) stop("unexpected FHGM archive layout for ", sub)
-  dir.create(dirname(target), showWarnings = FALSE, recursive = TRUE)
-  file.rename(file.path(u, sub), target)
+  destination <- file.path(staging, basename(sub))
+  if (!isTRUE(file.rename(file.path(u, sub), destination))) stop("FHGM archive staging failed")
   unlink(u, recursive = TRUE)
-  invisible(target)
+  destination
 }
-archive_subtree(fhgm_conformance_path, gdest)
+fhgm_stage <- tempfile("fhgm-pair-")
+dir.create(fhgm_stage)
+gsource <- archive_subtree(fhgm_conformance_path, fhgm_stage)
 # Several vectors cite example files one level up (../examples/model/snapshot-v1.fhgff3.gff3
 # and friends), so those bytes are vendored alongside, at the path the citations resolve to.
-archive_subtree(fhgm_examples_path, edest)
+esource <- archive_subtree(fhgm_examples_path, fhgm_stage)
+if (!file.exists(file.path(gsource, "manifest.json"))) stop("FHGM staged manifest missing")
+replace_vendor_trees(c(gsource, esource), c(gdest, edest))
+unlink(fhgm_stage, recursive = TRUE)
 if (!file.exists(file.path(gdest, "manifest.json"))) stop("the FHGM suite did not land at ", gdest)
 
 # The owning repository's generator and checker scripts are not data this package reads;
@@ -349,7 +351,6 @@ cat(sprintf("  %d suite files + %d example files, %d upstream scripts left behin
             substr(unname(gper[["manifest.json"]]), 1, 16), length(gman$vectors)))
 
 cat("shared conformance suite\n")
-unlink(file.path(here, "tests/conformance"), recursive = TRUE)
 # The archive goes through a shell redirect: R replaces an unusable system2 stdout
 # target with TRUE, which would have streamed the tar to the console and left an empty
 # file to be "extracted".
@@ -363,7 +364,16 @@ if (!is.null(attr(st, "status")) && attr(st, "status") != 0) {
 if (is.na(file.info(tar)$size) || file.info(tar)$size < 1) {
   stop("git archive produced an empty tar")
 }
-system2("tar", c("-xf", shQuote(tar), "-C", shQuote(file.path(here, "tests"))))
+shared_stage <- tempfile("shared-suite-")
+dir.create(shared_stage)
+if (system2("tar", c("-xf", shQuote(tar), "-C", shQuote(shared_stage))) != 0L) {
+  stop("shared conformance archive extraction failed")
+}
+if (!file.exists(file.path(shared_stage, "conformance", "manifest.json"))) {
+  stop("unexpected shared conformance archive layout")
+}
+replace_vendor_tree(file.path(shared_stage, "conformance"), file.path(here, "tests/conformance"))
+unlink(shared_stage, recursive = TRUE)
 unlink(tar)
 suite <- file.path(here, "tests/conformance")
 files <- list.files(suite, recursive = TRUE, all.files = TRUE, no.. = TRUE)
@@ -438,25 +448,22 @@ prov <- list(
     manifest_sha256 = unname(gper[["manifest.json"]]),
     combined_sha256 = gcombined,
     vectors = length(gman$vectors), status = gman$status,
+    status_source_note = paste0(
+      "status is the owning manifest's verbatim source text, including historical ",
+      "publication wording. Family native FHGM 0.1 is now published; this consumer ",
+      "refreshes only the development extension lane and makes no native support claim."
+    ),
     examples_dir = "tests/draft/examples", examples = length(esper),
     examples_sha256 = setNames(as.list(unname(esper)), names(esper)),
     note = paste0(
-      "draft evidence, not part of the 291. Layers are recorded per vector: base (the ",
-      "released fhgff3.json contract over the parsed header), checksum, gff3 (a separate ",
-      "tool; every vector is recorded as accept) and model (the draft checker). This ",
-      "package reports base, checksum and the K1/K2 model layer natively; the checker's ",
-      "cross-record rules K3-K6 and the gff3 layer are not implemented here and their ",
-      "vectors are reported not-run with the rule named. LIMITATION, stated not implied: ",
-      "the pinned record-contract bytes encode a widened layers.model semantics - a pass ",
-      "additionally implies trimmed, invisible-character-free text, RFC 3986 schemes with ",
-      "a real host, non-blank deposits, NFC-unique identifiers and a root-level gene ",
-      "target - which upstream records in development/conformance/LAYER-SEMANTICS-PROPOSAL.",
-      "md as proposed, not adopted (FHGM-Specification#22, #27 and #28 remain open ",
-      "decisions). That proposal file is vendored only because this suite mirrors the ",
-      "whole upstream non-script conformance subtree; its presence here is not adoption ",
-      "by this package. K4 abstention is unresolved upstream, and K4 stays not-supported-",
-      "yet here by design: this package does not implement the GFF3 feature layer and ",
-      "reports every K4 vector not-run rather than inheriting a contested verdict."
+      "development evidence, separate from the frozen 291. This consumer compares base ",
+      "and checksum for every vector and model outcomes only for its implemented K1/K2 ",
+      "scope. K3 uniqueness, K4 feature targeting, K5 reference agreement, K6 supplied ",
+      "history resolution and B1 complete evidence remain explicitly not-run where ",
+      "required; no complete FHGM model verdict is claimed from partial layers. ",
+      "Owning-suite layers.model records historical checker outcomes; newer earned ",
+      "evidence expectations remain separate. Published native FHGM 0.1 is a different ",
+      "representation, not adopted by this extension-lane refresh."
     ),
     previous = rotate_suite("draft_fhgm_vectors",
       unname(gper[["manifest.json"]]), gcombined,

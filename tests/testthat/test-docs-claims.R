@@ -68,25 +68,25 @@ test_that("the package text does not claim to run without a foreign-language run
 test_that("prose counts in capability matrix, README, and Rd files match the pinned manifests (#21)", {
   prov <- FAIRbioHeadersTools:::.bh_vendored()
   expect_equal(prov$conformance$vectors, 291L)
-  expect_equal(prov$draft_vectors$vectors, 82L)
-  expect_equal(prov$draft_fhgm_vectors$vectors, 62L)
+  expect_equal(prov$draft_vectors$vectors, 93L)
+  expect_equal(prov$draft_fhgm_vectors$vectors, 92L)
 
   fhgm_run <- suppressWarnings(bh_draft_fhgm_vectors())
   n_fhgm_total <- fhgm_run$vectors
   n_fhgm_model <- sum(fhgm_run$results$status == "pass")
   n_fhgm_notrun <- sum(fhgm_run$results$status == "not-run")
-  expect_equal(n_fhgm_total, 62L)
-  expect_equal(n_fhgm_model, 19L)
-  expect_equal(n_fhgm_notrun, 43L)
+  expect_equal(n_fhgm_total, 92L)
+  expect_equal(n_fhgm_model, 37L)
+  expect_equal(n_fhgm_notrun, 55L)
 
   # Capability matrix row for FHGM validate_model_records states the exact measured split
   cap_fhgm <- bh_capability(header_type = "FHGM", operation = "validate_model_records")
   expect_equal(nrow(cap_fhgm), 1L)
   expect_match(
     cap_fhgm$blocker,
-    paste0("of the ", n_fhgm_total, " published vectors, ", n_fhgm_model,
-           " turn on K1/K2 alone and are compared; the other ", n_fhgm_notrun,
-           " turn on K3-K6 or B1 and are reported not-run"),
+    paste0("Of the ", n_fhgm_total, " pinned development vectors, ", n_fhgm_model,
+           " are compared within K1/K2; ", n_fhgm_notrun,
+           " require unimplemented K3-K6 or B1 and are reported not-run"),
     fixed = TRUE
   )
 
@@ -143,15 +143,15 @@ test_that("docs/NATIVE-ACCEPTANCE.md cites the live golden digest and current co
     prov <- FAIRbioHeadersTools:::.bh_vendored()
     expect_match(txt, paste0("**", prov$draft_vectors$vectors, " FHT development vectors**"), fixed = TRUE)
     expect_match(txt, paste0("**", prov$draft_fhgm_vectors$vectors, " FHGM development vectors**"), fixed = TRUE)
-    expect_match(txt, "base and checksum are compared on\nall 62, the model layer only on the 19", fixed = TRUE)
-    expect_match(txt, "The other 43\nturn on K3-K6 or B1 and are `not-run`", fixed = TRUE)
+    expect_match(txt, "base and checksum are compared on\nall 92, the model layer only on the 37", fixed = TRUE)
+    expect_match(txt, "The other 55\nturn on K3-K6 or B1 and are `not-run`", fixed = TRUE)
   }
 
   # Also check docs/STATUS.md, docs/DIGEST.md and docs/CAPABILITY-MATRIX.md when in checkout
   status_doc <- .bh_find_repo_file(file.path("docs", "STATUS.md"))
   if (!is.null(status_doc)) {
     st_txt <- paste(readLines(status_doc, warn = FALSE), collapse = "\n")
-    expect_match(st_txt, "their 43 vectors (out of 62 in the pinned", fixed = TRUE)
+    expect_match(st_txt, "Current development evidence: FHT **93/93**; FHGM **37 compared / 55 not-run of 92**", fixed = TRUE)
     expect_match(st_txt, "src/Makevars.win", fixed = TRUE)
     expect_match(st_txt, "zlib", fixed = TRUE)
   }
@@ -160,7 +160,7 @@ test_that("docs/NATIVE-ACCEPTANCE.md cites the live golden digest and current co
     cap_txt <- paste(readLines(cap_doc, warn = FALSE), collapse = "\n")
     expect_match(cap_txt, "src/Makevars.win", fixed = TRUE)
     expect_match(cap_txt, "zlib", fixed = TRUE)
-    expect_match(cap_txt, "43 of the 62 vectors in FHGM's own suite are reported `not-run`", fixed = TRUE)
+    expect_match(cap_txt, "The other 55\nare explicitly not-run at the model layer with named gaps", fixed = TRUE)
   }
 })
 

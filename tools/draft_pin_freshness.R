@@ -269,7 +269,7 @@ curl_probe <- function(url) {
   out <- tryCatch(
     system2(
       "curl",
-      c("-sS", "-o", shQuote(dest), "-w", shQuote("%{http_code} %{redirect_url}"), shQuote(url)),
+      c("-sS", "--connect-timeout", "10", "--max-time", "60", "-o", shQuote(dest), "-w", shQuote("%{http_code} %{redirect_url}"), shQuote(url)),
       stdout = TRUE, stderr = TRUE
     ),
     error = function(e) structure(conditionMessage(e), status = 1L)

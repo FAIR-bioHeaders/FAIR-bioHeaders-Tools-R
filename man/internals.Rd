@@ -24,7 +24,7 @@ The handful of primitives the rest of the package is built from: one format stri
 helper, one condition pair, and the byte-level file probes. They live together because
 each is three lines and each is used from several modules.
 
-Failures are classed conditions. Every error this package raises carries \code{bh_error} plus
+Reader refusals are classed conditions carrying \code{bh_error} plus
 a specific subclass, so a caller can catch the family or one kind of failure with
 \code{\link[=tryCatch]{tryCatch()}} instead of matching on message text. Warnings carry \code{bh_warning} plus a
 subclass. A rule that reports rather than rejects - R11 and R14, the empty-required-value

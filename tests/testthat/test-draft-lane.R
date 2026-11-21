@@ -14,16 +14,16 @@ test_that("the bundled drafts are pinned by commit and digest, and the bytes mat
   expect_true(all(pins$digest_ok))
   expect_match(pins$commit, "^[0-9a-f]{40}$")
   expect_match(pins$sha256, "^[0-9a-f]{64}$")
-  # the FHT draft is the transcriptome contract bytes, 34,396 of them, and FHGM is the
+  # the FHT draft is the transcriptome contract bytes, 35,293 of them, and FHGM is the
   # nested model contract, not a header contract
-  expect_equal(pins$bytes[pins$header_type == "FHT"], 34396L)
+  expect_equal(pins$bytes[pins$header_type == "FHT"], 35293L)
   expect_equal(pins$bytes[pins$header_type == "FHGM"], 11522L)
 })
 
 test_that("with the lane closed, a draft citation is selected exactly as V5 always did", {
   near_miss <- c(
     .fht_raw,
-    "https://w3id.org/fair-bioheaders/fht/v0.7.0", # a release number nobody registered
+    "https://w3id.org/fair-bioheaders/fht/v0.7.0", # not a registered release in this consumer
     "https://w3id.org/fair-bioheaders/fht/v9.9.9",
     "https://raw.githubusercontent.com/FAIR-bioHeaders/FHT-Specification/v0.7.0/fht.json",
     "https://raw.githubusercontent.com/FAIR-bioHeaders/FHGM-Specification/main/fhgm.json"
@@ -147,7 +147,7 @@ test_that("FHGM stays what the specification says it is: not a header type", {
   expect_equal(fhgm_schema[["$schema"]], "https://json-schema.org/draft/2020-12/schema")
 })
 
-test_that("nothing released claims FHT or FHGM: no registry row, no w3id, no version", {
+test_that("this consumer released registry does not select FHT or FHGM", {
   reg <- FAIRbioHeadersTools:::.bh_registry()
   expect_null(reg$files$FHT)
   expect_setequal(names(reg$files), c("FHR", "FHP", "FHGFF3"))

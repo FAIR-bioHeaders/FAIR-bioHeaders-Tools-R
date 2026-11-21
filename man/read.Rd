@@ -25,11 +25,12 @@ is not \code{http}, \code{https}, \code{ftp}, \verb{urn:}, \verb{doi:} or \verb{
 
 \section{Errors}{
 
-Everything this package raises is a classed condition (\code{bh_error} plus a subclass), so
+Reader input refusals are classed conditions (\code{bh_error} plus a subclass), so
 \code{tryCatch(expr, bh_error = handler)} catches the family. An invalid \emph{file} is not an
 error: the returned object says so. An unusable \emph{input} is - a missing file, a
 serialization the name does not identify, a header block over the reader limit, a
 gzip file that is corrupt, truncated or followed by bytes that are not gzip, a
-contract this build does not hold.
+contract this build does not hold. Ordinary R argument errors and native allocation
+failures may retain their original condition classes.
 }
 

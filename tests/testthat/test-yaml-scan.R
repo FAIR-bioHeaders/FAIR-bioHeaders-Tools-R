@@ -82,7 +82,13 @@ test_that("a 9,000-line header reads in seconds, not tens of seconds (M3)", {
   extra <- paste0(sprintf("x-k%d: value %d\n", 1:9000, 1:9000), collapse = "")
   path <- .bh_write_header_file(extra)
   bh_dialect_probe() # once per session; not what is being timed
-  t <- system.time(r <- suppressWarnings(bh_read(path)))[["elapsed"]]
+  tm <- system.time(r <- suppressWarnings(bh_read(path)))
+  # The guard is about THIS workload's cost, not the machine's momentary load:
+  # a single-threaded parse on a contended host inflates `elapsed` (wall) without
+  # touching cpu time - it measured 16.7s elapsed against ~6s cpu under a load
+  # average above 90 and failed spuriously. Bound user+sys instead; the
+  # pathological re-read regressions this guards (M3) raise CPU, not patience.
+  t <- unname(tm[["user.self"]] + tm[["sys.self"]])
   expect_true(r$valid)
   expect_lt(t, 15)
 })

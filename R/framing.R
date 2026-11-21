@@ -33,10 +33,26 @@ NULL
 # R/internals.R are the ones the namespace binds (this file is collated first), so #12 removed
 # these duplicates; both were byte-identical to the retained definitions.
 
+.bh_input_io <- function(expr) {
+  tryCatch(expr, error = function(e) {
+    if (inherits(e, "bh_error")) stop(e)
+    bh_abort("input", "%s", conditionMessage(e))
+  })
+}
+
+.bh_input_path <- function(path) {
+  if (!is.character(path) || length(path) != 1L || is.na(path) || !nzchar(path) ||
+      !file.exists(path) || isTRUE(file.info(path)$isdir)) {
+    bh_abort("input", "path must name one existing regular input file")
+  }
+  invisible(path)
+}
+
 .bh_is_gzip_file <- function(path) {
-  con <- file(path, "rb")
+  .bh_input_path(path)
+  con <- .bh_input_io(file(path, "rb"))
   on.exit(close(con), add = TRUE)
-  b <- readBin(con, what = "raw", n = 2L)
+  b <- .bh_input_io(readBin(con, what = "raw", n = 2L))
   length(b) == 2L && identical(b, as.raw(c(0x1f, 0x8b)))
 }
 
@@ -48,12 +64,13 @@ NULL
 #' warning. Here each of those is a classed `bh_input` error naming the problem.
 #' @noRd
 .bh_open_input <- function(path, compressed) {
+  .bh_input_path(path)
   if (!isTRUE(compressed)) {
-    con <- file(path, open = "rb")
-    return(list(read = function(n) readBin(con, what = "raw", n = n),
+    con <- .bh_input_io(file(path, open = "rb"))
+    return(list(read = function(n) .bh_input_io(readBin(con, what = "raw", n = n)),
                 close = function() close(con)))
   }
-  ptr <- .Call(C_gz_open, path)
+  ptr <- .bh_input_io(.Call(C_gz_open, path))
   list(
     read = function(n) {
       r <- .Call(C_gz_read, ptr, as.integer(n))
@@ -80,15 +97,15 @@ NULL
   magic <- readBin(con, what = "raw", n = 2L)
   close(con)
   if (length(magic) != 2L || !identical(magic, as.raw(c(0x1f, 0x8b)))) return(FALSE)
-  r <- .bh_capture({
+  r <- .bh_capture((function() {
     inp <- .bh_open_input(path, compressed = TRUE)
+    on.exit(inp$close(), add = TRUE)
     repeat {
       b <- inp$read(1048576L)
       if (!length(b)) break
     }
-    inp$close()
     TRUE
-  })
+  })())
   !is.null(r$error) &&
     grepl("truncated: the file ends inside a member", r$error, fixed = TRUE)
 }

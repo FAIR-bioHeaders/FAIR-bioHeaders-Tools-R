@@ -175,6 +175,9 @@ bh_dialect_probe <- function() {
     }
   }
   errors <- c(errors, .bh_canonical_checksums(record))
+  if (identical(selection$status, "draft") && identical(selection$header_type, "FHT")) {
+    errors <- c(errors, .bh_fht_completeness_issues(record))
+  }
   list(
     valid = isTRUE(res) && !length(errors), errors = errors, warnings = selection$warnings,
     contract = contract
@@ -217,4 +220,37 @@ bh_dialect_probe <- function() {
     if (is.list(parent)) check(parent$checksum, paste0("/derivedFrom/", i - 1L, "/checksum"))
   }
   out
+}
+
+
+# FHT C1 is an owning-development-contract arithmetic rule, not a schema sum.
+# R represents larger parsed integers as doubles: refuse unsupported count
+# precision rather than accepting equality produced by rounding. Within the safe
+# range, bounded subtraction from total is exact and cannot overflow. Missing or
+# ill-typed values remain schema decisions; integral doubles count, booleans do not.
+.bh_fht_completeness_issues <- function(record) {
+  counts <- record$completeness
+  if (!is.list(counts) || is.null(names(counts))) return(character())
+  parts <- c("completeSingle", "completeDuplicated", "fragmented", "missing")
+  keys <- c(parts, "total")
+  integer_count <- function(x) {
+    length(x) == 1L && typeof(x) %in% c("integer", "double") &&
+      is.finite(x) && x >= 0 && floor(x) == x
+  }
+  if (!all(vapply(keys, function(k) integer_count(counts[[k]]), logical(1L)))) {
+    return(character())
+  }
+  if (any(vapply(keys, function(k) counts[[k]] > 2^53 - 1, logical(1L)))) {
+    bh_abort("limit", paste0("FHT C1: a completeness count exceeds the R reader's ",
+      "exact-integer limit (2^53 - 1); cannot verify arithmetic after numeric rounding. ",
+      "This is a consumer precision limit, not a schema maximum."))
+  }
+  remaining <- counts$total
+  for (key in parts) {
+    if (counts[[key]] > remaining) {
+      return("C1: completeness component counts must sum to total")
+    }
+    remaining <- remaining - counts[[key]]
+  }
+  if (remaining == 0) character() else "C1: completeness component counts must sum to total"
 }

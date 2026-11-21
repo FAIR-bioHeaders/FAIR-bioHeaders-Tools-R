@@ -50,6 +50,14 @@ Reads a file's header, checksum and contract verdict
 Validates a file against the contract its own \code{schema} value selects
 }
 \examples{
-f <- system.file("VENDORED.json", package = "FAIRbioHeadersTools")
-file.exists(f)
+# A file whose header citation selects the released FHR 2.1 contract:
+f <- tempfile(fileext = ".fasta")
+writeLines(c(";~schema: https://w3id.org/fair-bioheaders/fhr/v0.6.0",
+             ';~schemaVersion: "2.1"', ">seq1", "ACGT"), f)
+x <- bh_read(f)
+x$selection          # which selection rule chose which contract
+x$valid              # FALSE here: the header carries no checksum line - a
+x$issues             # reader reports that loudly; never hand-edit a checksum,
+x$checksum$computed  # recombine with `bioheaders combine` instead.
+# bh_validate shares the result shape for the contract layer alone.
 }
